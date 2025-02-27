@@ -1,0 +1,30 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "compilerPath": "C:/devkitPro/devkitARM/bin/arm-none-eabi-gcc",
+            "compilerArgs": [
+                "-std=gnu++17"
+            ],
+            "includePath": [
+                "${workspaceFolder}/**",
+                "C:/devkitPro/libctru/include/**",
+                "C:/devkitPro/portlibs/3ds/include/**",
+                "C:/devkitPro/portlibs/3ds/include/lua5.1/**",
+                "C:/devkitPro/devkitARM/arm-none-eabi/include/**",
+                "C:/devkitPro/libctru/include/**",
+                "${workspaceFolder}/Includes/**",
+                "C:/devkitPro/**",
+                "C:/devkitPro/libctrpf/include/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "gnu++17"
+        }
+    ],
+    "version": 4
+}
