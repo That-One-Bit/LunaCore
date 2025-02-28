@@ -20,17 +20,19 @@ int l_Player_SetSwimSpeed(lua_State *L)
     return 0;
 }
 
-static const luaL_Reg player_functions[] =
-{
-    {"GetSwimSpeed", l_Player_GetSwimSpeed},
-    {"SetSwimSpeed", l_Player_SetSwimSpeed},
-    {NULL, NULL}
-};
-
 int luaopen_Player(lua_State *L)
 {
-    lua_newtable(L);
-    luaL_register(L, NULL, player_functions);
+    lua_newtable(L); // Player
+
+    lua_newtable(L); // SwimSpeed
+
+    lua_pushcfunction(L, l_Player_GetSwimSpeed);
+    lua_setfield(L, -2, "get");
+    lua_pushcfunction(L, l_Player_SetSwimSpeed);
+    lua_setfield(L, -2, "set");
+    
+    lua_setfield(L, -2, "SwimSpeed");
+
     lua_setglobal(L, "Player");
     return 0;
 }

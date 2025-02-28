@@ -1,29 +1,29 @@
 local activated = false
 
 function HoldKeyLWhileKeyTouch()
-    while Gamepad.isPressed(Gamepad.KeyCodes.TOUCHPAD) do
-        Gamepad.virtualPress(Gamepad.KeyCodes.L)
+    while Gamepad.IsDown(Gamepad.KeyCodes.TOUCHPAD) do
+        Gamepad.PressButton(Gamepad.KeyCodes.L)
         Async.wait()
     end
 end
 
 Gamepad.KeyPressed:Connect(function ()
     -- This enables/disables fast swimming speed
-    if Gamepad.isPressed(Gamepad.KeyCodes.ZL) then
+    if Gamepad.IsDown(Gamepad.KeyCodes.ZL) then
         if activated then
-            Player.SetSwimSpeed(0.02)
+            Player.SwimSpeed.set(0.02)
             Debug.showMessage("Normal swimming speed")
             activated = false
         else
-            Player.SetSwimSpeed(0.1)
+            Player.SwimSpeed.set(0.1)
             Debug.showMessage("Fast swimming speed")
             activated = true
         end
     end
 
     -- This imits the cheat code of Cracko298 'Touch To Place'
-    if Gamepad.isPressed(Gamepad.KeyCodes.TOUCHPAD) then
+    if Gamepad.IsDown(Gamepad.KeyCodes.TOUCHPAD) then
         Async.create(HoldKeyLWhileKeyTouch)
-        Gamepad.virtualPress(Gamepad.KeyCodes.L)
+        Gamepad.PressButton(Gamepad.KeyCodes.L)
     end
 end)
