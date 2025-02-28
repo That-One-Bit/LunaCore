@@ -1,4 +1,4 @@
-#include "Player.hpp"
+#include "World.hpp"
 
 #include <CTRPluginFramework.hpp>
 
@@ -6,9 +6,9 @@
 
 int l_World_SetCloudsHeight(lua_State *L)
 {
-    float vel = luaL_checknumber(L, 1);
+    float height = luaL_checknumber(L, 1);
 
-    CTRPluginFramework::Process::WriteFloat(value_address::playerWaterVelocity, vel);
+    CTRPluginFramework::Process::WriteFloat(value_address::cloudsHeight, height);
     return 0;
 }
 
