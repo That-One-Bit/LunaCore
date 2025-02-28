@@ -82,6 +82,7 @@
     "Lua.diagnostics.globals": [
         "Player",
         "Gamepad",
-        "Debug"
+        "Debug",
+        "Async"
     ]
 }

@@ -96,13 +96,14 @@ namespace CTRPluginFramework
         ToggleTouchscreenForceOn();
     }
 
-    void GamepadWatcher(void *arg)
+    void ScriptEventHandler(void *arg)
     {
         lua_State *L = (lua_State *)arg;
         u32 lastKeys = 0;
 
         while (keepRunning)
         {
+            // KeyPressed Event
             u32 currentKeys = Controller::GetKeysPressed();
             if (currentKeys != lastKeys && currentKeys > 0)
             {
@@ -125,7 +126,22 @@ namespace CTRPluginFramework
             }
             lastKeys = currentKeys;
 
-            Sleep(Milliseconds(10));
+            // Coroutines
+            lua_getglobal(L, "Async");
+            lua_getfield(L, -1, "tick");
+            
+            if (lua_isfunction(L, -1))
+            {
+                if (lua_pcall(L, 0, 0, 0))
+                {
+                    OSD::Notify("Lua error: " + std::string(lua_tostring(L, -1)));
+                    lua_pop(L, 1);
+                }
+            }
+            else
+                lua_pop(L, 1);
+
+            Sleep(Milliseconds(16));
         }
     }
 
@@ -201,7 +217,7 @@ namespace CTRPluginFramework
         s32 prio = 0;
         svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
 
-        threads[0] = threadCreate(GamepadWatcher, (void*)(Lua_global), 2048, prio-1, -2, false);
+        threads[0] = threadCreate(ScriptEventHandler, (void*)(Lua_global), 2048, prio-1, -2, false);
 
         romfsInit();
         FILE *file = fopen("romfs:/atlas/atlas.items.meta_79954554.uvs", "rb");

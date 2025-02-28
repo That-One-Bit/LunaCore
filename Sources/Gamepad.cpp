@@ -1,9 +1,8 @@
 #include "Gamepad.hpp"
 
-#include <string>
-
 #include <CTRPluginFramework.hpp>
 
+// TODO: Add isDown function
 int l_Gamepad_isPressed(lua_State *L)
 {
     CTRPluginFramework::Key keycode = (CTRPluginFramework::Key)lua_tointeger(L, 1);
