@@ -4,7 +4,7 @@
 
 #include "MemAddress.hpp"
 
-int l_Player_GetSwimSpeed(lua_State *L) 
+int l_Player_SwimSpeed_get(lua_State *L) 
 {
     float vel;
     CTRPluginFramework::Process::ReadFloat(value_address::playerSwimSpeed, vel);
@@ -12,7 +12,7 @@ int l_Player_GetSwimSpeed(lua_State *L)
     return 1;
 }
 
-int l_Player_SetSwimSpeed(lua_State *L) 
+int l_Player_SwimSpeed_set(lua_State *L) 
 {
     float vel = luaL_checknumber(L, 1);
 
@@ -20,19 +20,21 @@ int l_Player_SetSwimSpeed(lua_State *L)
     return 0;
 }
 
+static const luaL_Reg player_swimspeed_methods[] =
+{
+    {"get", l_Player_SwimSpeed_get},
+    {"set", l_Player_SwimSpeed_set},
+    {NULL, NULL}
+};
+
 int luaopen_Player(lua_State *L)
 {
     lua_newtable(L); // Player
 
     lua_newtable(L); // SwimSpeed
-
-    lua_pushcfunction(L, l_Player_GetSwimSpeed);
-    lua_setfield(L, -2, "get");
-    lua_pushcfunction(L, l_Player_SetSwimSpeed);
-    lua_setfield(L, -2, "set");
-    
+    luaL_register(L, NULL, player_swimspeed_methods);
     lua_setfield(L, -2, "SwimSpeed");
-
+    
     lua_setglobal(L, "Player");
     return 0;
 }
