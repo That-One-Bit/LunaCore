@@ -250,9 +250,11 @@ namespace CTRPluginFramework
 void getDefaults()
 {
     CTRPluginFramework::Process::ReadFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
+    CTRPluginFramework::Process::ReadFloat(value_address::cloudsHeight, default_values.cloudsHeight);
 }
 
 void resetDefaults()
 {
     CTRPluginFramework::Process::WriteFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
+    CTRPluginFramework::Process::WriteFloat(value_address::cloudsHeight, default_values.cloudsHeight);
 }
