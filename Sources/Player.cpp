@@ -4,7 +4,7 @@
 
 #include "MemAddress.hpp"
 
-int l_Player_SetSwimVelocity(lua_State *L) 
+int l_Player_SetSwimSpeed(lua_State *L) 
 {
     float vel = luaL_checknumber(L, 1);
 
@@ -14,7 +14,7 @@ int l_Player_SetSwimVelocity(lua_State *L)
 
 static const luaL_Reg player_functions[] =
 {
-    {"SetSwimVelocity", l_Player_SetSwimVelocity},
+    {"SetSwimSpeed", l_Player_SetSwimSpeed},
     {NULL, NULL}
 };
 
