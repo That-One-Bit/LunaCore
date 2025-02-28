@@ -96,6 +96,59 @@ namespace CTRPluginFramework
         ToggleTouchscreenForceOn();
     }
 
+    bool LoadScript(lua_State *L, const char *fp)
+    {
+        bool success = true;
+        File scriptFO;
+        File::Open(scriptFO, fp, File::Mode::READ);
+        scriptFO.Seek(0, File::SeekPos::END);
+        long fileSize = scriptFO.Tell();
+        scriptFO.Seek(0, File::SeekPos::SET);
+        char *fileContent = (char *)malloc(fileSize + 1);
+        if (fileContent != NULL)
+        {
+            scriptFO.Read(fileContent, fileSize);
+            fileContent[fileSize] = '\0';
+            int status_code = luaL_loadbuffer(Lua_global, fileContent, fileSize, fp);
+            if (status_code)
+            {
+                const char *error = lua_tostring(Lua_global, -1);
+                OSD::Notify(error);
+                success = false;
+            }
+            else
+            {
+                // Execute script on a private env
+                lua_newtable(L);
+                lua_pushvalue(L, -1);
+                lua_setfenv(L, -3);
+
+                if (lua_pcall(Lua_global, 0, 0, 0))
+                {
+                    OSD::Notify("Script error: " + std::string(lua_tostring(Lua_global, -1)));
+                    lua_pop(Lua_global, 2);
+                    success = false;
+                }
+                else
+                {
+                    // If success copy state to global env
+                    lua_getglobal(L, "_G");
+                    lua_pushnil(L);
+                    while (lua_next(L, -3))
+                    {
+                        lua_pushvalue(L, -2);
+                        lua_insert(L, -2);
+                        lua_settable(L, -3);
+                    }
+                    lua_pop(L, 2);
+                }
+            }
+        }
+        scriptFO.Close();
+        free(fileContent);
+        return success;
+    }
+
     void ScriptEventHandler(void *arg)
     {
         lua_State *L = (lua_State *)arg;
@@ -116,7 +169,7 @@ namespace CTRPluginFramework
                     lua_pushvalue(L, -2);
                     if (lua_pcall(L, 1, 0, 0))
                     {
-                        OSD::Notify("Lua error: " + std::string(lua_tostring(L, -1)));
+                        OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
                         lua_pop(L, 1);
                     }
                 }
@@ -134,7 +187,7 @@ namespace CTRPluginFramework
             {
                 if (lua_pcall(L, 0, 0, 0))
                 {
-                    OSD::Notify("Lua error: " + std::string(lua_tostring(L, -1)));
+                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
                     lua_pop(L, 1);
                 }
             }
@@ -172,45 +225,16 @@ namespace CTRPluginFramework
         luaL_openlibs(Lua_global);
         loadScriptingModules(Lua_global);
 
-        File scriptFO;
-        File::Open(scriptFO, "sdmc:/mc3ds/scripts/main.lua", File::Mode::READ);
-        scriptFO.Seek(0, File::SeekPos::END);
-        long fileSize = scriptFO.Tell();
-        scriptFO.Seek(0, File::SeekPos::SET);
-        char *fileContent = (char *)malloc(fileSize + 1);
-        if (fileContent != NULL)
-        {
-            scriptFO.Read(fileContent, fileSize);
-            fileContent[fileSize] = '\0';
-            int status_code = luaL_loadbuffer(Lua_global, fileContent, fileSize, "main.lua");
-            if (status_code)
-            {
-                const char *error = lua_tostring(Lua_global, -1);
-                OSD::Notify("Failed to load Lua script");
-                OSD::Notify(error);
-            }
-            else
-            {
-                OSD::Notify("Lua script loaded successfully");
-                // Set Lua path
-                lua_getglobal(Lua_global, "package");
-                lua_getfield(Lua_global, -1, "path");
-                const char *current_path = lua_tostring(Lua_global, -1);
-                lua_pop(Lua_global, 1);
-                lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/?.lua", current_path);
-                lua_setfield(Lua_global, -2, "path");
-                lua_pop(Lua_global, 1);
+        // Set Lua path
+        lua_getglobal(Lua_global, "package");
+        lua_getfield(Lua_global, -1, "path");
+        const char *current_path = lua_tostring(Lua_global, -1);
+        lua_pop(Lua_global, 1);
+        lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/?.lua", current_path);
+        lua_setfield(Lua_global, -2, "path");
+        lua_pop(Lua_global, 1);
 
-                // Execute script
-                if (lua_pcall(Lua_global, 0, 0, 0))
-                {
-                    OSD::Notify("Lua error: " + std::string(lua_tostring(Lua_global, -1)));
-                    lua_pop(Lua_global, 1);
-                }
-            }
-        }
-        scriptFO.Close();
-        free(fileContent);
+        LoadScript(Lua_global, "sdmc:/mc3ds/scripts/main.lua");
 
         // Start watcher threads
         Thread threads[1];
@@ -227,6 +251,7 @@ namespace CTRPluginFramework
         }
         else
             OSD::Notify("File NOT opened");
+        romfsExit();
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
