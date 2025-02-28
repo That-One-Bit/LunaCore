@@ -23,7 +23,7 @@ void resetDefaults();
 
 struct def_vals_s 
 {
-    float playerWaterVelocity;
+    float playerSwimSpeed;
     float cloudsHeight;
 };
 
@@ -249,10 +249,10 @@ namespace CTRPluginFramework
 
 void getDefaults()
 {
-    CTRPluginFramework::Process::ReadFloat(value_address::playerWaterVelocity, default_values.playerWaterVelocity);
+    CTRPluginFramework::Process::ReadFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
 }
 
 void resetDefaults()
 {
-    CTRPluginFramework::Process::WriteFloat(value_address::playerWaterVelocity, default_values.playerWaterVelocity);
+    CTRPluginFramework::Process::WriteFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
 }

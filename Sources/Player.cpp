@@ -8,7 +8,7 @@ int l_Player_SetSwimSpeed(lua_State *L)
 {
     float vel = luaL_checknumber(L, 1);
 
-    CTRPluginFramework::Process::WriteFloat(value_address::playerWaterVelocity, vel);
+    CTRPluginFramework::Process::WriteFloat(value_address::playerSwimSpeed, vel);
     return 0;
 }
 
