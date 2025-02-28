@@ -2,23 +2,33 @@
 
 #include <CTRPluginFramework.hpp>
 
-// TODO: Add isDown function
-int l_Gamepad_isPressed(lua_State *L)
+int l_Gamepad_IsPressed(lua_State *L)
 {
     CTRPluginFramework::Key keycode = (CTRPluginFramework::Key)lua_tointeger(L, 1);
 
-    if (CTRPluginFramework::Controller::IsKeyDown(keycode) | CTRPluginFramework::Controller::IsKeyPressed(keycode))
+    if (CTRPluginFramework::Controller::IsKeyPressed(keycode))
         lua_pushboolean(L, true);
     else
         lua_pushboolean(L, false);
     return 1;
 }
 
-int l_Gamepad_virtualPress(lua_State *L)
+int l_Gamepad_IsDown(lua_State *L)
 {
     CTRPluginFramework::Key keycode = (CTRPluginFramework::Key)lua_tointeger(L, 1);
 
-    CTRPluginFramework::Process::Write32(0x00B329E8, keycode);
+    if (CTRPluginFramework::Controller::IsKeyDown(keycode))
+        lua_pushboolean(L, true);
+    else
+        lua_pushboolean(L, false);
+    return 1;
+}
+
+int l_Gamepad_PressButton(lua_State *L)
+{
+    CTRPluginFramework::Key keycode = (CTRPluginFramework::Key)lua_tointeger(L, 1);
+
+    /*CTRPluginFramework::Process::Write32(0x00B329E8, keycode);
     CTRPluginFramework::Process::Write32(0x00B32948, keycode);
     CTRPluginFramework::Process::Write32(0x00B32A00, keycode);
     CTRPluginFramework::Process::Write32(0x00B32A18, keycode);
@@ -27,14 +37,16 @@ int l_Gamepad_virtualPress(lua_State *L)
     CTRPluginFramework::Process::Write32(0x00B32A60, keycode);
     CTRPluginFramework::Process::Write32(0x00B32A78, keycode);
     CTRPluginFramework::Process::Write32(0x00B32A90, keycode);
-    CTRPluginFramework::Process::Write32(0x00B32AB0, keycode);
+    CTRPluginFramework::Process::Write32(0x00B32AB0, keycode);*/
+    CTRPluginFramework::Controller::InjectKey(keycode);
     return 0;
 }
 
 static const luaL_Reg gamepad_functions[] =
 {
-    {"isPressed", l_Gamepad_isPressed},
-    {"virtualPress", l_Gamepad_virtualPress},
+    {"IsPressed", l_Gamepad_IsPressed},
+    {"IsDown", l_Gamepad_IsDown},
+    {"PressButton", l_Gamepad_PressButton},
     {NULL, NULL}
 };
 
