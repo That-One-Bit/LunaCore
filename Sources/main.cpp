@@ -109,24 +109,31 @@ namespace CTRPluginFramework
         {
             scriptFO.Read(fileContent, fileSize);
             fileContent[fileSize] = '\0';
-            int status_code = luaL_loadbuffer(Lua_global, fileContent, fileSize, fp);
+
+            lua_newtable(L);
+            lua_newtable(L);
+            lua_getglobal(L, "_G");
+            lua_setfield(L, -2, "__index");
+            lua_setmetatable(L, -2);
+
+            int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp);
             if (status_code)
             {
-                const char *error = lua_tostring(Lua_global, -1);
+                const char *error = lua_tostring(L, -1);
                 OSD::Notify(error);
+                lua_pop(L, 2);
                 success = false;
             }
             else
             {
                 // Execute script on a private env
-                lua_newtable(L);
-                lua_pushvalue(L, -1);
-                lua_setfenv(L, -3);
+                lua_pushvalue(L, -2);
+                lua_setfenv(L, -2);
 
-                if (lua_pcall(Lua_global, 0, 0, 0))
+                if (lua_pcall(L, 0, 0, 0))
                 {
-                    OSD::Notify("Script error: " + std::string(lua_tostring(Lua_global, -1)));
-                    lua_pop(Lua_global, 2);
+                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                    lua_pop(L, 2);
                     success = false;
                 }
                 else
@@ -138,7 +145,7 @@ namespace CTRPluginFramework
                     {
                         lua_pushvalue(L, -2);
                         lua_insert(L, -2);
-                        lua_settable(L, -3);
+                        lua_settable(L, -4);
                     }
                     lua_pop(L, 2);
                 }
