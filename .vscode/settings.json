@@ -79,10 +79,7 @@
         "fastnoiselite.h": "c",
         "render3d.h": "c"
     },
-    "Lua.diagnostics.globals": [
-        "Player",
-        "Gamepad",
-        "Debug",
-        "Async"
+    "Lua.workspace.library": [
+        "./.vscode/MC3DSScriptEngineGlobals.lua"
     ]
 }
