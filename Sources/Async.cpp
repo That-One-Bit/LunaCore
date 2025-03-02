@@ -26,11 +26,14 @@ int luaopen_Async(lua_State *L)
     const char *luaCode = R"(
         Async.scripts = {}
 
-        function Async.create(func)
+        function Async.create(func, ...)
             if type(func) ~= "function" then
                 error("Expected function in 'func'", 2)
             else
-                table.insert(Async.scripts, coroutine.create(func))
+                local args = { ... }
+                table.insert(Async.scripts, coroutine.create(function ()
+                    func(unpack(args))
+                end))
             end
         end
 
