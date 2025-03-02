@@ -2,17 +2,17 @@
 
 #include <CTRPluginFramework.hpp>
 
-int l_Debug_showMessage(lua_State *L)
+int l_Debug_Message(lua_State *L)
 {
-    const char *message = lua_tostring(L, 1);
+    const char *msg = lua_tostring(L, 1);
 
-    CTRPluginFramework::OSD::Notify(message);
+    CTRPluginFramework::OSD::Notify(msg);
     return 0;
 }
 
 static const luaL_Reg debug_functions[] =
 {
-    {"showMessage", l_Debug_showMessage},
+    {"Message", l_Debug_Message},
     {NULL, NULL}
 };
 

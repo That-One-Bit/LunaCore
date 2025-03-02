@@ -25,7 +25,6 @@ int luaopen_Async(lua_State *L)
 
     const char *luaCode = R"(
         Async.scripts = {}
-        Async.dt = 0
 
         function Async.create(func)
             if type(func) ~= "function" then
