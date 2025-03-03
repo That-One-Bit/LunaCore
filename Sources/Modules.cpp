@@ -12,6 +12,7 @@ void loadScriptingModules(lua_State *L)
 {
     luaopen_Bits(L);
     luaopen_Debug(L);
+    luaopen_System(L);
     luaopen_Async(L);
     luaopen_Gamepad(L);
     luaopen_World(L);
