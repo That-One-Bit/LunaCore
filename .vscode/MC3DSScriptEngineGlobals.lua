@@ -1,4 +1,11 @@
 ---@diagnostic disable: missing-return
+
+--                                      --
+--                                      --
+--      Bits Module Functions           --
+--                                      --
+--                                      --
+
 ---@class Bits
 Bits = {}
 
@@ -26,12 +33,24 @@ function Bits.band(a, b) end
 ---@return integer
 function Bits.bor(a, b) end
 
+--                                      --
+--                                      --
+--      System Module Functions         --
+--                                      --
+--                                      --
+
 ---@class System
 System = {}
 
 ---Returns the system unix time
 ---@return number
 function System.GetTime() end
+
+--                                      --
+--                                      --
+--      Async Module Functions          --
+--                                      --
+--                                      --
 
 ---@class Async
 Async = {}
@@ -47,6 +66,12 @@ function Async.wait(seconds) end
 
 ---Executes all registered coroutines. Shouldn't be called manually
 function Async.tick() end
+
+--                                      --
+--                                      --
+--      Gamepad Module Functions        --
+--                                      --
+--                                      --
 
 ---@class Gamepad
 Gamepad = {}
@@ -108,12 +133,24 @@ function Gamepad.KeyPressed:Connect(func) end
 ---Triggers the KeyPressed event. Shouldn't be called manually
 function Gamepad.KeyPressed:Trigger() end
 
+--                                      --
+--                                      --
+--      Debug Module Functions          --
+--                                      --
+--                                      --
+
 ---@class Debug
 Debug = {}
 
 ---Prints a message on screen
 ---@param msg string
 function Debug.Message(msg) end
+
+--                                      --
+--                                      --
+--      World Module Functions          --
+--                                      --
+--                                      --
 
 ---@class World
 World = {}
@@ -122,17 +159,11 @@ World = {}
 ---@param height number
 function World.SetCloudsHeight(height) end
 
----@class Player
-Player = {}
-Player.SwimSpeed = {}
-
----Returns the current swimming speed of the player
----@return number
-function Player.SwimSpeed.get() end
-
----Sets the swimming speed for the player
----@param vel number
-function Player.SwimSpeed.set(vel) end
+--                                      --
+--                                      --
+--      Camera Module Functions         --
+--                                      --
+--                                      --
 
 ---@class Camera
 Camera = {}
@@ -145,3 +176,31 @@ function Camera.FOV.get() end
 ---Sets the camera FOV
 ---@param fov number
 function Camera.FOV.set(fov) end
+
+--                                      --
+--                                      --
+--      Player Module Functions         --
+--                                      --
+--                                      --
+
+---@class Player
+Player = {}
+Player.ReachDistance = {}
+
+---Returns the current block reach distance of the player
+---@return number
+function Player.ReachDistance.get() end
+
+---Sets the block reach distance for the player
+---@param distance number
+function Player.ReachDistance.set(distance) end
+
+Player.SwimSpeed = {}
+
+---Returns the current swimming speed of the player
+---@return number
+function Player.SwimSpeed.get() end
+
+---Sets the swimming speed for the player
+---@param vel number
+function Player.SwimSpeed.set(vel) end
