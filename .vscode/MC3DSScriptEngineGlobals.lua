@@ -115,20 +115,33 @@ Debug = {}
 ---@param msg string
 function Debug.Message(msg) end
 
----@class Player
-Player = {}
-Player.SwimSpeed = {}
-
----Returns the current swimming speed of the player
-function Player.SwimSpeed.get() end
-
----Sets the swimming speed for the player
----@param vel number
-function Player.SwimSpeed.set(vel) end
-
 ---@class World
 World = {}
 
 ---Sets the height at which clouds will be rendered
 ---@param height number
 function World.SetCloudsHeight(height) end
+
+---@class Player
+Player = {}
+Player.SwimSpeed = {}
+
+---Returns the current swimming speed of the player
+---@return number
+function Player.SwimSpeed.get() end
+
+---Sets the swimming speed for the player
+---@param vel number
+function Player.SwimSpeed.set(vel) end
+
+---@class Camera
+Camera = {}
+Camera.FOV = {}
+
+---Returns the current camera FOV
+---@return number
+function Camera.FOV.get() end
+
+---Sets the camera FOV
+---@param fov number
+function Camera.FOV.set(fov) end

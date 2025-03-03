@@ -18,17 +18,7 @@ extern "C" {
 #include "MemAddress.hpp"
 #include "Modules.hpp"
 
-void getDefaults();
-void resetDefaults();
-
-struct def_vals_s 
-{
-    float playerSwimSpeed;
-    float cloudsHeight;
-};
-
 lua_State *Lua_global;
-struct def_vals_s default_values;
 
 static bool keepRunning = true;
 
@@ -225,8 +215,6 @@ namespace CTRPluginFramework
     {
         PluginMenu *menu = new PluginMenu("Action Replay", 0, 1, 0,
             "A blank template plugin.\nGives you access to the ActionReplay and others tools.");
-        
-        getDefaults();
 
         Lua_global = luaL_newstate();
         luaL_openlibs(Lua_global);
@@ -277,16 +265,4 @@ namespace CTRPluginFramework
         // Exit plugin
         return 0;
     }
-}
-
-void getDefaults()
-{
-    CTRPluginFramework::Process::ReadFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
-    CTRPluginFramework::Process::ReadFloat(value_address::cloudsHeight, default_values.cloudsHeight);
-}
-
-void resetDefaults()
-{
-    CTRPluginFramework::Process::WriteFloat(value_address::playerSwimSpeed, default_values.playerSwimSpeed);
-    CTRPluginFramework::Process::WriteFloat(value_address::cloudsHeight, default_values.cloudsHeight);
 }

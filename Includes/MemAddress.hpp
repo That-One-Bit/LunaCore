@@ -4,6 +4,7 @@
 
 enum value_address : u32
 {
-    playerSwimSpeed = 0x00100000 + 0x003EA090,
-    cloudsHeight = 0x00100000 + 0x002C5398
+    cameraFOV = 0x100000 + 0x2CEE80,
+    playerSwimSpeed = 0x100000 + 0x3EA090,
+    cloudsHeight = 0x100000 + 0x2C5398
 };

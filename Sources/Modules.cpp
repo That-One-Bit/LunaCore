@@ -6,6 +6,7 @@
 #include "Async.hpp"
 #include "Gamepad.hpp"
 #include "World.hpp"
+#include "Camera.hpp"
 #include "Player.hpp"
 
 void loadScriptingModules(lua_State *L)
@@ -16,5 +17,6 @@ void loadScriptingModules(lua_State *L)
     luaopen_Async(L);
     luaopen_Gamepad(L);
     luaopen_World(L);
+    luaopen_Camera(L);
     luaopen_Player(L);
 }
