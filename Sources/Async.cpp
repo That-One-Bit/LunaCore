@@ -2,28 +2,10 @@
 
 #include <CTRPluginFramework.hpp>
 
-#include <time.h>
-
-// TODO: Move to another module
-int l_Async_getTime(lua_State *L)
-{
-    lua_pushnumber(L, time(NULL));
-    return 1;
-}
-
-static const luaL_Reg async_functions[] =
-{
-    {"getTime", l_Async_getTime},
-    {NULL, NULL}
-};
-
 int luaopen_Async(lua_State *L)
 {
-    lua_newtable(L);
-    luaL_register(L, NULL, async_functions);
-    lua_setglobal(L, "Async");
-
     const char *luaCode = R"(
+        Async = {}
         Async.scripts = {}
 
         function Async.create(func, ...)
@@ -42,9 +24,8 @@ int luaopen_Async(lua_State *L)
                 coroutine.yield()
                 return
             end
-            -- TODO: Lua get time
-            local start = Async.getTime()
-            while Async.getTime() - start < seconds do
+            local start = System.GetTime()
+            while System.GetTime() - start < seconds do
                 coroutine.yield()
             end
         end

@@ -7,4 +7,4 @@ extern "C"
     #include <lualib.h>
 }
 
-int luaopen_Async(lua_State *L);
+int luaopen_System(lua_State *L);

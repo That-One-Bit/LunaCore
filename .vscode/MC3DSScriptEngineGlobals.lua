@@ -14,17 +14,24 @@ function Bits.lshift(a, n) end
 ---@return integer
 function Bits.rshift(a, n) end
 
----Binary and operation
+---Binary AND operation
 ---@param a integer
 ---@param b integer
 ---@return integer
 function Bits.band(a, b) end
 
----Binary or operation
+---Binary OR operation
 ---@param a integer
 ---@param b integer
 ---@return integer
 function Bits.bor(a, b) end
+
+---@class System
+System = {}
+
+---Returns the system unix time
+---@return number
+function System.GetTime() end
 
 ---@class Async
 Async = {}
@@ -40,10 +47,6 @@ function Async.wait(seconds) end
 
 ---Executes all registered coroutines. Shouldn't be called manually
 function Async.tick() end
-
----Returns the system unix time (Needs to be moved to another module)
----@return number
-function Async.getTime() end
 
 ---@class Gamepad
 Gamepad = {}
