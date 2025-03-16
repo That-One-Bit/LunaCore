@@ -27,7 +27,7 @@ static const luaL_Reg camera_fov_methods[] =
     {NULL, NULL}
 };
 
-int luaopen_Player(lua_State *L)
+int luaopen_Camera(lua_State *L)
 {
     lua_newtable(L); // Camera
 

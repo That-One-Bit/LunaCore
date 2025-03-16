@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 #include <cstdlib>
-#include <cstdio>
 
 extern "C" {
     #include <lua.h>
@@ -237,16 +236,6 @@ namespace CTRPluginFramework
         svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
 
         threads[0] = threadCreate(ScriptEventHandler, (void*)(Lua_global), 2048, prio-1, -2, false);
-
-        romfsInit();
-        FILE *file = fopen("romfs:/atlas/atlas.items.meta_79954554.uvs", "rb");
-        if (file) {
-            OSD::Notify("File opened");
-            fclose(file);
-        }
-        else
-            OSD::Notify("File NOT opened");
-        romfsExit();
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);

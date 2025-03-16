@@ -54,6 +54,26 @@ static const luaL_Reg player_swimspeed_methods[] =
 
 // ----------------------------------------------------------------------------
 
+int l_Player_Position_get(lua_State *L) 
+{
+    float x, y, z;
+    CTRPluginFramework::Process::ReadFloat(value_address::playerPositionX, x);
+    CTRPluginFramework::Process::ReadFloat(value_address::playerPositionY, y);
+    CTRPluginFramework::Process::ReadFloat(value_address::playerPositionZ, z);
+    lua_pushnumber(L, x);
+    lua_pushnumber(L, y);
+    lua_pushnumber(L, z);
+    return 1;
+}
+
+static const luaL_Reg player_position_methods[] =
+{
+    {"get", l_Player_Position_get},
+    {NULL, NULL}
+};
+
+// ----------------------------------------------------------------------------
+
 int luaopen_Player(lua_State *L)
 {
     lua_newtable(L); // Player
