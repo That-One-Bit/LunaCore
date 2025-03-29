@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 
 #include <cstdlib>
@@ -90,6 +91,13 @@ namespace CTRPluginFramework
         bool success = true;
         File scriptFO;
         File::Open(scriptFO, fp, File::Mode::READ);
+        if (!scriptFO.IsOpen())
+        {
+            std::string message("Failed to open script: ");
+            message += fp;
+            OSD::Notify(message);
+            return false;
+        }
         scriptFO.Seek(0, File::SeekPos::END);
         long fileSize = scriptFO.Tell();
         scriptFO.Seek(0, File::SeekPos::SET);
@@ -224,11 +232,21 @@ namespace CTRPluginFramework
         lua_getfield(Lua_global, -1, "path");
         const char *current_path = lua_tostring(Lua_global, -1);
         lua_pop(Lua_global, 1);
-        lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/?.lua", current_path);
+        lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/init.lua", current_path);
         lua_setfield(Lua_global, -2, "path");
         lua_pop(Lua_global, 1);
 
-        LoadScript(Lua_global, "sdmc:/mc3ds/scripts/main.lua");
+        if (Directory::IsExists("sdmc:/mc3ds/scripts"))
+        {
+            Directory dir;
+            Directory::Open(dir, "sdmc:/mc3ds/scripts");
+            std::vector<std::string> files;
+            dir.ListFiles(files);
+            for (auto &file : files)
+            {
+                LoadScript(Lua_global, ("sdmc:" + dir.GetFullName() + "/" + file).c_str());
+            }
+        }
 
         // Start watcher threads
         Thread threads[1];
@@ -239,8 +257,10 @@ namespace CTRPluginFramework
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
+        menu->ShowWelcomeMessage(false);
 
         // Init our menu entries & folders
+        OSD::Notify("Script engine is active");
         InitMenu(*menu);
 
         // Launch menu and mainloop
@@ -248,6 +268,7 @@ namespace CTRPluginFramework
 
         delete menu;
 
+        keepRunning = false;
         threadJoin(threads[0], U64_MAX);
         threadFree(threads[0]);
 

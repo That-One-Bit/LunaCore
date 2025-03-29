@@ -66,9 +66,22 @@ int l_Player_Position_get(lua_State *L)
     return 1;
 }
 
+int l_Player_Position_set(lua_State *L) 
+{
+    float x, y, z;
+    x = luaL_checknumber(L, 1);
+    y = luaL_checknumber(L, 2);
+    z = luaL_checknumber(L, 3);
+    CTRPluginFramework::Process::WriteFloat(value_address::playerPositionX, x);
+    CTRPluginFramework::Process::WriteFloat(value_address::playerPositionY, y);
+    CTRPluginFramework::Process::WriteFloat(value_address::playerPositionZ, z);
+    return 0;
+}
+
 static const luaL_Reg player_position_methods[] =
 {
     {"get", l_Player_Position_get},
+    {"set", l_Player_Position_set},
     {NULL, NULL}
 };
 

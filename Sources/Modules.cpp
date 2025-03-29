@@ -1,5 +1,7 @@
 #include "Modules.hpp"
 
+#include "lua_json.hpp"
+
 #include "Bits.hpp"
 #include "Debug.hpp"
 #include "System.hpp"
@@ -11,6 +13,8 @@
 
 void loadScriptingModules(lua_State *L)
 {
+    register_lua_json_module(L);
+
     luaopen_Bits(L);
     luaopen_Debug(L);
     luaopen_System(L);
