@@ -9,21 +9,16 @@
 
 #include <cstdlib>
 
-extern "C" {
-    #include <lua.h>
-    #include <lauxlib.h>
-    #include <lualib.h>
-}
-
-#include "MemAddress.hpp"
+#include "lua_common.h"
+#include "Minecraft.hpp"
 #include "Modules.hpp"
 
 lua_State *Lua_global;
-
-static bool keepRunning = true;
+int scriptsLoadedCount = 0;
 
 namespace CTRPluginFramework
 {
+    PluginMenu *menu;
     // This patch the NFC disabling the touchscreen when scanning an amiibo, which prevents ctrpf to be used
     static void    ToggleTouchscreenForceOn(void)
     {
@@ -76,6 +71,7 @@ namespace CTRPluginFramework
     void    PatchProcess(FwkSettings &settings)
     {
         ToggleTouchscreenForceOn();
+        Minecraft::PatchProcess();
     }
 
     // This function is called when the process exits
@@ -153,43 +149,62 @@ namespace CTRPluginFramework
         return success;
     }
 
-    void ScriptEventHandler(void *arg)
+    bool DrawMonitors(const Screen &screen)
     {
-        lua_State *L = (lua_State *)arg;
-        u32 lastKeys = 0;
-
-        while (keepRunning)
+        if (screen.IsTop)
         {
-            // KeyPressed Event
-            u32 currentKeys = Controller::GetKeysPressed();
-            if (currentKeys != lastKeys && currentKeys > 0)
+            int memusgkb = lua_gc(Lua_global, LUA_GCCOUNT, 0);
+            int memusgb = lua_gc(Lua_global, LUA_GCCOUNTB, 0);
+            screen.Draw("Lua memory: "+std::to_string(memusgkb * 1024 + memusgb), 10, 10, Color::Black, Color(0, 0, 0, 0));
+        }
+        return false;
+    }
+
+    bool ScriptingNewFrameEventCallback(const Screen &screen)
+    {
+        lua_State *L = Lua_global;
+
+        lua_getglobal(L, "Game");
+        lua_getfield(L, -1, "Event");
+        lua_getfield(L, -1, "OnNewFrame");
+        lua_getfield(L, -1, "Trigger");
+
+        if (lua_isfunction(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            if (screen.IsTop)
+                lua_pushstring(L, "top");
+            else
+                lua_pushstring(L, "bottom");
+            if (lua_pcall(L, 2, 0, 0))
             {
-                lua_getglobal(L, "Gamepad");
-                lua_getfield(L, -1, "KeyPressed");
-                lua_getfield(L, -1, "Trigger");
-
-                if (lua_isfunction(L, -1))
-                {
-                    lua_pushvalue(L, -2);
-                    if (lua_pcall(L, 1, 0, 0))
-                    {
-                        OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
-                        lua_pop(L, 1);
-                    }
-                }
-                else
-                    lua_pop(L, 1);
-                lua_pop(L, 2);
+                OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                lua_pop(L, 1);
             }
-            lastKeys = currentKeys;
+        }
+        else
+            lua_pop(L, 1);
+        lua_pop(L, 3);
+        return true;
+    }
 
-            // Coroutines
-            lua_getglobal(L, "Async");
-            lua_getfield(L, -1, "tick");
-            
+    void ScriptingEventHandlerCallback()
+    {
+        lua_State *L = Lua_global;
+
+        // KeyPressed Event
+        u32 pressedKeys = Controller::GetKeysPressed();
+        if (pressedKeys > 0)
+        {
+            lua_getglobal(L, "Game");
+            lua_getfield(L, -1, "Event");
+            lua_getfield(L, -1, "OnKeyPressed");
+            lua_getfield(L, -1, "Trigger");
+
             if (lua_isfunction(L, -1))
             {
-                if (lua_pcall(L, 0, 0, 0))
+                lua_pushvalue(L, -2);
+                if (lua_pcall(L, 1, 0, 0))
                 {
                     OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
                     lua_pop(L, 1);
@@ -197,9 +212,59 @@ namespace CTRPluginFramework
             }
             else
                 lua_pop(L, 1);
-
-            Sleep(Milliseconds(16));
+            lua_pop(L, 3);
         }
+
+        u32 releasedKeys = Controller::GetKeysReleased();
+        if (releasedKeys > 0)
+        {
+            lua_getglobal(L, "Game");
+            lua_getfield(L, -1, "Event");
+            lua_getfield(L, -1, "OnKeyReleased");
+            lua_getfield(L, -1, "Trigger");
+
+            if (lua_isfunction(L, -1))
+            {
+                lua_pushvalue(L, -2);
+                if (lua_pcall(L, 1, 0, 0))
+                {
+                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                    lua_pop(L, 1);
+                }
+            }
+            else
+                lua_pop(L, 1);
+            lua_pop(L, 3);
+        }
+
+        // Coroutines
+        lua_getglobal(L, "Async");
+        lua_getfield(L, -1, "tick");
+        
+        if (lua_isfunction(L, -1))
+        {
+            if (lua_pcall(L, 0, 0, 0))
+            {
+                OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                lua_pop(L, 1);
+            }
+        }
+        else
+            lua_pop(L, 1);
+    }
+
+    void PreloadScripts()
+    {
+        Directory dir;
+        Directory::Open(dir, "sdmc:/mc3ds/scripts");
+        std::vector<std::string> files;
+        if (scriptsLoadedCount >= dir.ListFiles(files))
+        {
+            *menu -= PreloadScripts;
+            return;
+        }
+        LoadScript(Lua_global, ("sdmc:" + dir.GetFullName() + "/" + files[scriptsLoadedCount]).c_str());
+        scriptsLoadedCount++;
     }
 
     void    InitMenu(PluginMenu &menu)
@@ -220,7 +285,7 @@ namespace CTRPluginFramework
 
     int main()
     {
-        PluginMenu *menu = new PluginMenu("Action Replay", 0, 1, 0,
+        menu = new PluginMenu("Action Replay", 0, 1, 0,
             "A blank template plugin.\nGives you access to the ActionReplay and others tools.");
 
         Lua_global = luaL_newstate();
@@ -237,40 +302,23 @@ namespace CTRPluginFramework
         lua_pop(Lua_global, 1);
 
         if (Directory::IsExists("sdmc:/mc3ds/scripts"))
-        {
-            Directory dir;
-            Directory::Open(dir, "sdmc:/mc3ds/scripts");
-            std::vector<std::string> files;
-            dir.ListFiles(files);
-            for (auto &file : files)
-            {
-                LoadScript(Lua_global, ("sdmc:" + dir.GetFullName() + "/" + file).c_str());
-            }
-        }
-
-        // Start watcher threads
-        Thread threads[1];
-        s32 prio = 0;
-        svcGetThreadPriority(&prio, CUR_THREAD_HANDLE);
-
-        threads[0] = threadCreate(ScriptEventHandler, (void*)(Lua_global), 2048, prio-1, -2, false);
+            menu->Callback(PreloadScripts);
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
         // Init our menu entries & folders
-        OSD::Notify("Script engine is active");
+        OSD::Notify("Script engine initialized");
+        OSD::Run(DrawMonitors);
+        menu->Callback(ScriptingEventHandlerCallback);
+        OSD::Run(ScriptingNewFrameEventCallback);
         InitMenu(*menu);
 
         // Launch menu and mainloop
         menu->Run();
 
         delete menu;
-
-        keepRunning = false;
-        threadJoin(threads[0], U64_MAX);
-        threadFree(threads[0]);
 
         // Exit plugin
         return 0;

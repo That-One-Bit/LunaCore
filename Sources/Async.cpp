@@ -2,6 +2,17 @@
 
 #include <CTRPluginFramework.hpp>
 
+/*
+$Async
+
+- Adds the function to the queue that will run apart from the game until the functions ends
+## func: function
+### Async.create
+
+- Yeilds the current task until time has passed
+## seconds: number?
+### Async.wait
+*/
 int luaopen_Async(lua_State *L)
 {
     const char *luaCode = R"(
@@ -24,8 +35,8 @@ int luaopen_Async(lua_State *L)
                 coroutine.yield()
                 return
             end
-            local start = System.GetTime()
-            while System.GetTime() - start < seconds do
+            local start = System.getTime()
+            while System.getTime() - start < seconds do
                 coroutine.yield()
             end
         end

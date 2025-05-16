@@ -1,9 +1,5 @@
 #pragma once
 
-extern "C" {
-    #include <lua.h>
-    #include <lauxlib.h>
-    #include <lualib.h>
-}
+#include "lua_common.h"
 
-int luaopen_Debug(lua_State *L);
+int l_register_Debug(lua_State *L);

@@ -2,26 +2,46 @@
 
 #include <CTRPluginFramework.hpp>
 
-#include "MemAddress.hpp"
+namespace CTRPF = CTRPluginFramework;
 
-int l_World_SetCloudsHeight(lua_State *L)
+enum world_offsets : u32
+{
+    cloudsHeight = 0x100000 + 0x2C5398
+};
+
+//$Game.World
+
+// ----------------------------------------------------------------------------
+
+//$Game.World.CloudsHeight
+
+/*
+- Sets world clouds height
+## height: number
+### Game.World.CloudsHeight.set
+*/
+int l_World_CloudsHeight_set(lua_State *L)
 {
     float height = luaL_checknumber(L, 1);
 
-    CTRPluginFramework::Process::WriteFloat(value_address::cloudsHeight, height);
+    CTRPF::Process::WriteFloat(world_offsets::cloudsHeight, height);
     return 0;
 }
 
-static const luaL_Reg world_functions[] =
+static const luaL_Reg world_clouds_functions[] =
 {
-    {"SetCloudsHeight", l_World_SetCloudsHeight},
+    {"set", l_World_CloudsHeight_set},
     {NULL, NULL}
 };
 
-int luaopen_World(lua_State *L)
+// ----------------------------------------------------------------------------
+
+int l_register_World(lua_State *L)
 {
+    lua_getglobal(L, "Game");
     lua_newtable(L);
-    luaL_register(L, NULL, world_functions);
-    lua_setglobal(L, "World");
+    luaC_register_field(L, world_clouds_functions, "CloudsHeight");
+    lua_setfield(L, -2, "World");
+    lua_pop(L, 1);
     return 0;
 }

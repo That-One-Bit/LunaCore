@@ -1,31 +1,34 @@
 local activated = false
+local localPlayer = Game.LocalPlayer
+local world = Game.World
+local Gamepad = Game.Gamepad
 
 function HoldKeyLWhileKeyTouch()
-    while Gamepad.IsDown(Gamepad.KeyCode.TOUCHPAD) do
-        Gamepad.PressButton(Gamepad.KeyCode.L)
+    while Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) do
+        Gamepad.PressButton(Gamepad.KeyCodes.L)
         Async.wait()
     end
 end
 
-Gamepad.KeyPressed:Connect(function ()
+Game.Event.OnKeyPressed:Connect(function ()
     -- This enables/disables fast swimming speed
-    if Gamepad.IsDown(Gamepad.KeyCode.ZL) then
+    if Gamepad.isDown(Gamepad.KeyCodes.ZL) then
         if activated then
-            Player.SwimSpeed.set(0.02)
-            Debug.Message("Normal swimming speed")
+            localPlayer.SwimSpeed.set(0.02)
+            Game.Debug.message("Normal swimming speed")
             activated = false
         else
-            Player.SwimSpeed.set(0.1)
-            Debug.Message("Fast swimming speed")
+            localPlayer.SwimSpeed.set(0.1)
+            Game.Debug.message("Fast swimming speed")
             activated = true
         end
     end
 
     -- This imits the cheat code of Cracko298 'Touch To Place'
-    if Gamepad.IsDown(Gamepad.KeyCode.TOUCHPAD) then
+    if Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) then
         Async.create(HoldKeyLWhileKeyTouch)
-        Gamepad.PressButton(Gamepad.KeyCode.L)
+        Gamepad.PressButton(Gamepad.KeyCodes.L)
     end
 end)
 
-World.SetCloudsHeight(0)
+Game.Debug.message("Loaded main.lua")

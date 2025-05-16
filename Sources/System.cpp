@@ -2,7 +2,16 @@
 
 #include <time.h>
 
-int l_System_GetTime(lua_State *L)
+//$System
+
+// ----------------------------------------------------------------------------
+
+/*
+- Returns UNIX time
+## return: number
+### System.getTime
+*/
+int l_System_getTime(lua_State *L)
 {
     lua_pushnumber(L, time(NULL));
     return 1;
@@ -10,9 +19,11 @@ int l_System_GetTime(lua_State *L)
 
 static const luaL_Reg system_functions[] =
 {
-    {"GetTime", l_System_GetTime},
+    {"getTime", l_System_getTime},
     {NULL, NULL}
 };
+
+// ----------------------------------------------------------------------------
 
 int luaopen_System(lua_State *L)
 {

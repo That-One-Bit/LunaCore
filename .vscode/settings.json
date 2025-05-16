@@ -80,6 +80,6 @@
         "render3d.h": "c"
     },
     "Lua.workspace.library": [
-        "./.vscode/MC3DSScriptEngineGlobals.lua"
+        "./api_docs.lua"
     ]
 }

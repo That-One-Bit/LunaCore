@@ -2,7 +2,19 @@
 
 #include <CTRPluginFramework.hpp>
 
-int l_Debug_Message(lua_State *L)
+namespace CTRPF = CTRPluginFramework;
+
+//!include Sources/Modules.cpp
+//$Game.Debug
+
+// ----------------------------------------------------------------------------
+
+/*
+- Displays a notification on screen
+## msg: string
+### Game.Debug.message
+*/
+int l_Debug_message(lua_State *L)
 {
     const char *msg = lua_tostring(L, 1);
 
@@ -12,14 +24,16 @@ int l_Debug_Message(lua_State *L)
 
 static const luaL_Reg debug_functions[] =
 {
-    {"Message", l_Debug_Message},
+    {"message", l_Debug_message},
     {NULL, NULL}
 };
 
-int luaopen_Debug(lua_State *L)
+// ----------------------------------------------------------------------------
+
+int l_register_Debug(lua_State *L)
 {
-    lua_newtable(L);
-    luaL_register(L, NULL, debug_functions);
-    lua_setglobal(L, "Debug");
+    lua_getglobal(L, "Game");
+    luaC_register_field(L, debug_functions, "Debug");
+    lua_pop(L, 1);
     return 0;
 }
