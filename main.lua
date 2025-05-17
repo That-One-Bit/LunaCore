@@ -5,7 +5,7 @@ local Gamepad = Game.Gamepad
 
 function HoldKeyLWhileKeyTouch()
     while Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) do
-        Gamepad.PressButton(Gamepad.KeyCodes.L)
+        Gamepad.pressButton(Gamepad.KeyCodes.L)
         Async.wait()
     end
 end
@@ -27,7 +27,7 @@ Game.Event.OnKeyPressed:Connect(function ()
     -- This imits the cheat code of Cracko298 'Touch To Place'
     if Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) then
         Async.create(HoldKeyLWhileKeyTouch)
-        Gamepad.PressButton(Gamepad.KeyCodes.L)
+        Gamepad.pressButton(Gamepad.KeyCodes.L)
     end
 end)
 

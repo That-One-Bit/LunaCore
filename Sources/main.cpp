@@ -15,6 +15,8 @@
 
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
+bool isTargetTitle = true;
+u16 gameVersion = 0;
 
 namespace CTRPluginFramework
 {
@@ -70,8 +72,17 @@ namespace CTRPluginFramework
     // Useful to do code edits safely
     void    PatchProcess(FwkSettings &settings)
     {
+        std::string titleID;
+        Process::GetTitleID(titleID);
+        if (titleID != "00040000001B8700")
+        {
+            isTargetTitle = false;
+            return;
+        }
         ToggleTouchscreenForceOn();
-        Minecraft::PatchProcess();
+        gameVersion = Process::GetVersion();
+        if (gameVersion == 9216)
+            Minecraft::PatchProcess();
     }
 
     // This function is called when the process exits
@@ -172,11 +183,7 @@ namespace CTRPluginFramework
         if (lua_isfunction(L, -1))
         {
             lua_pushvalue(L, -2);
-            if (screen.IsTop)
-                lua_pushstring(L, "top");
-            else
-                lua_pushstring(L, "bottom");
-            if (lua_pcall(L, 2, 0, 0))
+            if (lua_pcall(L, 1, 0, 0))
             {
                 OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
@@ -251,6 +258,7 @@ namespace CTRPluginFramework
         }
         else
             lua_pop(L, 1);
+        lua_pop(L, 1);
     }
 
     void PreloadScripts()
@@ -285,6 +293,9 @@ namespace CTRPluginFramework
 
     int main()
     {
+        if (!isTargetTitle)
+            return 0;
+
         menu = new PluginMenu("Action Replay", 0, 1, 0,
             "A blank template plugin.\nGives you access to the ActionReplay and others tools.");
 
@@ -310,6 +321,8 @@ namespace CTRPluginFramework
 
         // Init our menu entries & folders
         OSD::Notify("Script engine initialized");
+        if (gameVersion != 9216)
+            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9216 (9.12.0)! Scripting will be limited");
         OSD::Run(DrawMonitors);
         menu->Callback(ScriptingEventHandlerCallback);
         OSD::Run(ScriptingNewFrameEventCallback);

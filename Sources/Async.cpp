@@ -46,7 +46,8 @@ int luaopen_Async(lua_State *L)
                 if coroutine.status(Async.scripts[i]) ~= "dead" then
                     local success, message = coroutine.resume(Async.scripts[i])
                     if not success then
-                        Debug.showMessage("Error in script: "..message)
+                        Game.Debug.message("Error in script: "..message)
+                        table.remove(Async.scripts, i)
                     end
                 else
                     table.remove(Async.scripts, i)

@@ -33,8 +33,12 @@ int l_register_Event(lua_State *L)
         end
 
         function Game.Event.BaseEvent:Trigger()
-            for _, listener in ipairs(self.listeners) do
-                listener()
+            for i = #self.listeners, 1, -1 do
+                local success, message = pcall(self.listeners[i])
+                if not success then
+                    Game.Debug.message("Error in function call: "..message)
+                    table.remove(self.listeners, 1)
+                end
             end
         end
     )";
