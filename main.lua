@@ -29,6 +29,11 @@ Game.Event.OnKeyPressed:Connect(function ()
         Async.create(HoldKeyLWhileKeyTouch)
         Gamepad.pressButton(Gamepad.KeyCodes.L)
     end
+
+    -- This imits the cheat code of Cracko298 'Touch To Place'
+    if Gamepad.isDown(Gamepad.KeyCodes.DPADDOWN) then
+        localPlayer.Position.set(0, 0, 0)
+    end
 end)
 
 Game.Debug.message("Loaded main.lua")

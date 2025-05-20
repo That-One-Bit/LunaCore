@@ -13,6 +13,10 @@
 #include "Minecraft.hpp"
 #include "Modules.hpp"
 
+#define IS_VERSION_COMPATIBLE(version) (version == 9408)
+#define EMULATOR_VERSION(version) (version == 9216)
+#define IS_TARGET_ID(id) (id == "00040000001B8700")
+
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
 bool isTargetTitle = true;
@@ -74,15 +78,15 @@ namespace CTRPluginFramework
     {
         std::string titleID;
         Process::GetTitleID(titleID);
-        if (titleID != "00040000001B8700")
+        if (!IS_TARGET_ID(titleID))
         {
             isTargetTitle = false;
             return;
         }
         ToggleTouchscreenForceOn();
         gameVersion = Process::GetVersion();
-        if (gameVersion == 9216)
-            Minecraft::PatchProcess();
+        //if (EMULATOR_VERSION(gameVersion))
+            //Minecraft::PatchProcess();
     }
 
     // This function is called when the process exits
@@ -321,8 +325,12 @@ namespace CTRPluginFramework
 
         // Init our menu entries & folders
         OSD::Notify("Script engine initialized");
-        if (gameVersion != 9216)
-            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9216 (9.12.0)! Scripting will be limited");
+        if (EMULATOR_VERSION(gameVersion))
+            OSD::Notify("Detected emulator version. Unstable features enabled");
+        else if (IS_VERSION_COMPATIBLE(gameVersion))
+            OSD::Notify("Detected console version");
+        else
+            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Scripting will be limited");
         OSD::Run(DrawMonitors);
         menu->Callback(ScriptingEventHandlerCallback);
         OSD::Run(ScriptingNewFrameEventCallback);
