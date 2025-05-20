@@ -1053,7 +1053,6 @@ void Minecraft::GetPlayerPosition(float& posX, float& posY, float& posZ)
 void Minecraft::SetPlayerPosition(float posX, float posY, float posZ)
 {
     const u32 BaseAddr = GetBaseAddress(Base::Player);
-    OSD::Notify("Player base address: "+std::to_string(BaseAddr));
     if (BaseAddr) {
         // X座標
         Process::WriteFloat(BaseAddr + 0x288, posX + 0.2f);

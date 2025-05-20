@@ -70,6 +70,9 @@ Game.Event.OnNewFrame = {}
 ---@class OnKeyPressed: EventClass
 Game.Event.OnKeyPressed = {}
 
+---@class OnKeyDown: EventClass
+Game.Event.OnKeyDown = {}
+
 ---@class OnKeyReleased: EventClass
 Game.Event.OnKeyReleased = {}
 

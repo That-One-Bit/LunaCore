@@ -32,9 +32,9 @@ int l_register_Event(lua_State *L)
             table.insert(self.listeners, func)
         end
 
-        function Game.Event.BaseEvent:Trigger()
+        function Game.Event.BaseEvent:Trigger(...)
             for i = #self.listeners, 1, -1 do
-                local success, message = pcall(self.listeners[i])
+                local success, message = pcall(self.listeners[i], ...)
                 if not success then
                     Game.Debug.message("Error in function call: "..message)
                     table.remove(self.listeners, 1)
@@ -72,6 +72,13 @@ int l_register_Event(lua_State *L)
     lua_newtable(L);
     lua_setfield(L, -2, "listeners");
     lua_setfield(L, -2, "OnKeyPressed");
+
+    //$@@@Game.Event.OnKeyDown: EventClass
+    lua_newtable(L);
+    luaC_setmetatable(L, "EventClass");
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    lua_setfield(L, -2, "OnKeyDown");
 
     //$@@@Game.Event.OnKeyReleased: EventClass
     lua_newtable(L);

@@ -13,14 +13,12 @@
 #include "Minecraft.hpp"
 #include "Modules.hpp"
 
-#define IS_VERSION_COMPATIBLE(version) (version == 9408)
-#define EMULATOR_VERSION(version) (version == 9216)
-#define IS_TARGET_ID(id) (id == "00040000001B8700")
+#define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
+#define EMULATOR_VERSION(version) ((version) == 9216)
+#define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL)
 
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
-bool isTargetTitle = true;
-u16 gameVersion = 0;
 
 namespace CTRPluginFramework
 {
@@ -76,17 +74,11 @@ namespace CTRPluginFramework
     // Useful to do code edits safely
     void    PatchProcess(FwkSettings &settings)
     {
-        std::string titleID;
-        Process::GetTitleID(titleID);
-        if (!IS_TARGET_ID(titleID))
-        {
-            isTargetTitle = false;
+        if (!IS_TARGET_ID(Process::GetTitleID()))
             return;
-        }
         ToggleTouchscreenForceOn();
-        gameVersion = Process::GetVersion();
-        //if (EMULATOR_VERSION(gameVersion))
-            //Minecraft::PatchProcess();
+        if (IS_VERSION_COMPATIBLE(Process::GetVersion()))
+            Minecraft::PatchProcess();
     }
 
     // This function is called when the process exits
@@ -187,7 +179,8 @@ namespace CTRPluginFramework
         if (lua_isfunction(L, -1))
         {
             lua_pushvalue(L, -2);
-            if (lua_pcall(L, 1, 0, 0))
+            lua_pushboolean(L, screen.IsTop);
+            if (lua_pcall(L, 2, 0, 0))
             {
                 OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
@@ -297,7 +290,7 @@ namespace CTRPluginFramework
 
     int main()
     {
-        if (!isTargetTitle)
+        if (!IS_TARGET_ID(Process::GetTitleID()))
             return 0;
 
         menu = new PluginMenu("Action Replay", 0, 1, 0,
@@ -323,17 +316,18 @@ namespace CTRPluginFramework
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
-        // Init our menu entries & folders
         OSD::Notify("Script engine initialized");
-        if (EMULATOR_VERSION(gameVersion))
-            OSD::Notify("Detected emulator version. Unstable features enabled");
-        else if (IS_VERSION_COMPATIBLE(gameVersion))
-            OSD::Notify("Detected console version");
+        u16 gameVersion = Process::GetVersion();
+        if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
+            OSD::Notify("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features");
         else
-            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Scripting will be limited");
+            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled");
+
         OSD::Run(DrawMonitors);
         menu->Callback(ScriptingEventHandlerCallback);
         OSD::Run(ScriptingNewFrameEventCallback);
+
+        // Init our menu entries & folders
         InitMenu(*menu);
 
         // Launch menu and mainloop
