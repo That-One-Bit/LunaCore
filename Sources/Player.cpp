@@ -1,7 +1,10 @@
 #include "Player.hpp"
 
+#include <cstring>
+
 #include <CTRPluginFramework.hpp>
 #include "Minecraft.hpp"
+#include "string_hash.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
@@ -18,76 +21,6 @@ enum player_offsets : u32 {
 
 // ----------------------------------------------------------------------------
 
-//$Game.LocalPlayer.MaxHP
-
-/*
-- Gets current local player max hp
-## return: number
-### Game.LocalPlayer.MaxHP.get
-*/
-int l_Player_MaxHP_get(lua_State *L) 
-{
-    float maxhp = Minecraft::GetMaxHP();
-    lua_pushnumber(L, maxhp);
-    return 1;
-}
-
-/*
-- Sets local player max hp
-## maxhp: number
-### Game.LocalPlayer.MaxHP.set
-*/
-int l_Player_MaxHP_set(lua_State *L) 
-{
-    float maxhp = luaL_checknumber(L, 1);
-    Minecraft::SetMaxHP(maxhp);
-    return 0;
-}
-
-static const luaL_Reg player_maxhp_methods[] =
-{
-    {"get", l_Player_MaxHP_get},
-    {"set", l_Player_MaxHP_set},
-    {NULL, NULL}
-};
-
-// ----------------------------------------------------------------------------
-
-//$Game.LocalPlayer.HP
-
-/*
-- Gets current local player hp
-## return: number
-### Game.LocalPlayer.HP.get
-*/
-int l_Player_HP_get(lua_State *L) 
-{
-    float maxhp = Minecraft::GetMaxHP();
-    lua_pushnumber(L, maxhp);
-    return 1;
-}
-
-/*
-- Sets local player hp
-## maxhp: number
-### Game.LocalPlayer.HP.set
-*/
-int l_Player_HP_set(lua_State *L) 
-{
-    float maxhp = luaL_checknumber(L, 1);
-    Minecraft::SetMaxHP(maxhp);
-    return 0;
-}
-
-static const luaL_Reg player_hp_methods[] =
-{
-    {"get", l_Player_HP_get},
-    {"set", l_Player_HP_set},
-    {NULL, NULL}
-};
-
-// ----------------------------------------------------------------------------
-
 //$Game.LocalPlayer.Position
 
 /*
@@ -101,9 +34,6 @@ int l_Player_Position_get(lua_State *L)
 {
     float x, y, z;
     Minecraft::GetPlayerPosition(x, y, z);
-    //CTRPF::Process::ReadFloat(player_offsets::playerPositionX, x);
-    //CTRPF::Process::ReadFloat(player_offsets::playerPositionY, y);
-    //CTRPF::Process::ReadFloat(player_offsets::playerPositionZ, z);
     lua_pushnumber(L, x);
     lua_pushnumber(L, y);
     lua_pushnumber(L, z);
@@ -123,9 +53,6 @@ int l_Player_Position_set(lua_State *L)
     float y = luaL_checknumber(L, 2);
     float z = luaL_checknumber(L, 3);
     Minecraft::SetPlayerPosition(x, y, z);
-    //CTRPF::Process::WriteFloat(player_offsets::playerPositionX, x);
-    //CTRPF::Process::WriteFloat(player_offsets::playerPositionY, y);
-    //CTRPF::Process::WriteFloat(player_offsets::playerPositionZ, z);
     return 0;
 }
 
@@ -133,80 +60,6 @@ static const luaL_Reg player_position_methods[] =
 {
     {"get", l_Player_Position_get},
     {"set", l_Player_Position_set},
-    {NULL, NULL}
-};
-
-// ----------------------------------------------------------------------------
-
-//$Game.LocalPlayer.SwimSpeed
-
-/*
-- Gets current local player swim speed
-## return: number
-### Game.LocalPlayer.SwimSpeed.get
-*/
-int l_Player_SwimSpeed_get(lua_State *L) 
-{
-    float vel;
-    CTRPF::Process::ReadFloat(player_offsets::playerSwimSpeed, vel);
-    lua_pushnumber(L, vel);
-    return 1;
-}
-
-/*
-- Sets local player swim speed
-## vel: number
-### Game.LocalPlayer.SwimSpeed.set
-*/
-int l_Player_SwimSpeed_set(lua_State *L) 
-{
-    float vel = luaL_checknumber(L, 1);
-
-    CTRPF::Process::WriteFloat(player_offsets::playerSwimSpeed, vel);
-    return 0;
-}
-
-static const luaL_Reg player_swimspeed_methods[] =
-{
-    {"get", l_Player_SwimSpeed_get},
-    {"set", l_Player_SwimSpeed_set},
-    {NULL, NULL}
-};
-
-// ----------------------------------------------------------------------------
-
-//$Game.LocalPlayer.ReachDistance
-
-/*
-- Gets current local player block reach distance
-## return: number
-### Game.LocalPlayer.ReachDistance.get
-*/
-int l_Player_ReachDistance_get(lua_State *L) 
-{
-    float distance;
-    CTRPF::Process::ReadFloat(player_offsets::playerReachDistance, distance);
-    lua_pushnumber(L, distance);
-    return 1;
-}
-
-/*
-- Sets local player block reach distance
-## distance: number
-### Game.LocalPlayer.ReachDistance.set
-*/
-int l_Player_ReachDistance_set(lua_State *L) 
-{
-    float distance = luaL_checknumber(L, 1);
-
-    CTRPF::Process::WriteFloat(player_offsets::playerReachDistance, distance);
-    return 0;
-}
-
-static const luaL_Reg player_reachdistance_methods[] =
-{
-    {"get", l_Player_ReachDistance_get},
-    {"set", l_Player_ReachDistance_set},
     {NULL, NULL}
 };
 
@@ -250,16 +103,159 @@ static const luaL_Reg player_camera_fov_methods[] =
 
 // ----------------------------------------------------------------------------
 
+/*
+=Game.LocalPlayer.OnGround = false
+=Game.LocalPlayer.Sneaking = false
+=Game.LocalPlayer.Jumping = false
+=Game.LocalPlayer.Sprinting = false
+=Game.LocalPlayer.Flying = false
+=Game.LocalPlayer.UnderWater = false
+=Game.LocalPlayer.TouchingWall = false
+=Game.LocalPlayer.MoveSpeed = 0.0
+=Game.LocalPlayer.SwimSpeed = 0.02
+=Game.LocalPlayer.CurrentHP = 0.0
+=Game.LocalPlayer.MaxHP = 0.0
+=Game.LocalPlayer.CurrentHunger = 0.0
+=Game.LocalPlayer.MaxHunger = 0.0
+=Game.LocalPlayer.ReachDistance = 0.0
+*/
+int l_LocalPlayer_index(lua_State *L)
+{
+    uint32_t key = hash(lua_tostring(L, 2));
+    bool valid_key = true;
+
+    switch (key) {
+        case hash("OnGround"):
+            lua_pushboolean(L, Minecraft::IsPlayerOnGround());
+            break;
+        case hash("Sneaking"):
+            lua_pushboolean(L, Minecraft::IsPlayerSneaking());
+            break;
+        case hash("Jumping"):
+            lua_pushboolean(L, Minecraft::IsPlayerJumping());
+            break;
+        case hash("Sprinting"):
+            lua_pushboolean(L, Minecraft::IsPlayerSprinting());
+            break;
+        case hash("Flying"):
+            lua_pushboolean(L, Minecraft::IsPlayerFlying());
+            break;
+        case hash("UnderWater"):
+            lua_pushboolean(L, Minecraft::IsPlayerUnderWater());
+            break;
+        case hash("TouchingWall"):
+            lua_pushboolean(L, Minecraft::IsPlayerTouchingWall());
+            break;
+        case hash("MoveSpeed"):
+            lua_pushnumber(L, Minecraft::GetPlayerMoveSpeed());
+            break;
+        case hash("SwimSpeed"): {
+            float vel;
+            CTRPF::Process::ReadFloat(player_offsets::playerSwimSpeed, vel);
+            lua_pushnumber(L, vel);
+            break;
+        }
+        case hash("CurrentHP"): 
+            lua_pushnumber(L, Minecraft::GetCurrentHP());
+            break;
+        case hash("MaxHP"):
+            lua_pushnumber(L, Minecraft::GetMaxHP());
+            break;
+        case hash("CurrentHunger"):
+            lua_pushnumber(L, Minecraft::GetCurrentHunger());
+            break;
+        case hash("MaxHunger"):
+            lua_pushnumber(L, Minecraft::GetMaxHunger());
+            break;
+        case hash("ReachDistance"): {
+            float distance;
+            CTRPF::Process::ReadFloat(player_offsets::playerReachDistance, distance);
+            lua_pushnumber(L, distance);
+            break;
+        }
+        default:
+            valid_key = false;
+            break;
+    }
+    
+    if (valid_key)
+        return 1;
+    else
+        return 0;
+}
+
+int l_LocalPlayer_newindex(lua_State *L)
+{
+    uint32_t key = hash(lua_tostring(L, 2));
+    bool valid_key = true;
+
+    switch (key) {
+        case hash("OnGround"):
+            Minecraft::SetPlayerOnGround(lua_toboolean(L, 3));
+            break;
+        case hash("Sneaking"):
+            Minecraft::SetPlayerSneaking(lua_toboolean(L, 3));
+            break;
+        case hash("Jumping"):
+            Minecraft::SetPlayerJump(lua_toboolean(L, 3));
+            break;
+        case hash("Sprinting"):
+            Minecraft::SetPlayerSprinting(lua_toboolean(L, 3));
+            break;
+        case hash("Flying"):
+            Minecraft::SetPlayerFlying(lua_toboolean(L, 3));
+            break;
+        case hash("UnderWater"):
+            Minecraft::SetPlayerUnderWater(lua_toboolean(L, 3));
+            break;
+        case hash("TouchingWall"):
+            Minecraft::SetPlayerTouchingWall(lua_toboolean(L, 3));
+            break;
+        case hash("MoveSpeed"):
+            Minecraft::SetPlayerMoveSpeed(luaL_checknumber(L, 3));
+            break;
+        case hash("SwimSpeed"):
+            CTRPF::Process::WriteFloat(player_offsets::playerSwimSpeed, luaL_checknumber(L, 3));
+            break;
+        case hash("CurrentHP"):
+            Minecraft::SetCurrentHP(luaL_checknumber(L, 3));
+            break;
+        case hash("MaxHP"):
+            Minecraft::SetMaxHP(luaL_checknumber(L, 3));
+            break;
+        case hash("CurrentHunger"):
+            Minecraft::SetCurrentHunger(luaL_checknumber(L, 3));
+            break;
+        case hash("MaxHunger"):
+            Minecraft::SetMaxHunger(luaL_checknumber(L, 3));
+            break;
+        case hash("ReachDistance"):
+            CTRPF::Process::WriteFloat(player_offsets::playerReachDistance, luaL_checknumber(L, 3));
+            break;
+    }
+
+    if (valid_key)
+        return 0;
+    else
+        return luaL_error(L, "'%s' is not a valid member of object or is not and editable value", key);
+}
+
+// ----------------------------------------------------------------------------
+
 int l_register_LocalPlayer(lua_State *L)
 {
+    luaL_newmetatable(L, "LocalPlayerMetatable");
+    lua_pushcfunction(L, l_LocalPlayer_index);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, l_LocalPlayer_newindex);
+    lua_setfield(L, -2, "__newindex");
+    lua_pop(L, 1);
+
     lua_getglobal(L, "Game");
     lua_newtable(L); // LocalPlayer
+    luaC_setmetatable(L, "LocalPlayerMetatable");
 
-    luaC_register_field(L, player_maxhp_methods, "MaxHP");
-    luaC_register_field(L, player_hp_methods, "HP");
     luaC_register_field(L, player_position_methods, "Position");
-    luaC_register_field(L, player_swimspeed_methods, "SwimSpeed");
-    luaC_register_field(L, player_reachdistance_methods, "ReachDistance");
 
     lua_newtable(L); // LocalPlayer.Camera
     luaC_register_field(L, player_camera_fov_methods, "FOV");

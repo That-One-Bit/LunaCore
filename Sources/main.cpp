@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
+#include <cstdlib>
 
 #include <cstdlib>
 
@@ -77,7 +78,8 @@ namespace CTRPluginFramework
         if (!IS_TARGET_ID(Process::GetTitleID()))
             return;
         ToggleTouchscreenForceOn();
-        if (IS_VERSION_COMPATIBLE(Process::GetVersion()))
+        u16 gameVersion = Process::GetVersion();
+        if (IS_VERSION_COMPATIBLE(gameVersion) || EMULATOR_VERSION(gameVersion))
             Minecraft::PatchProcess();
     }
 
@@ -219,6 +221,28 @@ namespace CTRPluginFramework
             lua_pop(L, 3);
         }
 
+        u32 downKeys = Controller::GetKeysDown();
+        if (downKeys > 0)
+        {
+            lua_getglobal(L, "Game");
+            lua_getfield(L, -1, "Event");
+            lua_getfield(L, -1, "OnKeyDown");
+            lua_getfield(L, -1, "Trigger");
+
+            if (lua_isfunction(L, -1))
+            {
+                lua_pushvalue(L, -2);
+                if (lua_pcall(L, 1, 0, 0))
+                {
+                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                    lua_pop(L, 1);
+                }
+            }
+            else
+                lua_pop(L, 1);
+            lua_pop(L, 3);
+        }
+
         u32 releasedKeys = Controller::GetKeysReleased();
         if (releasedKeys > 0)
         {
@@ -286,6 +310,8 @@ namespace CTRPluginFramework
 
             MessageBox("UA", body)();
         });*/
+        auto developerFolder = new MenuFolder("Developer Tools");
+        menu.Append(developerFolder);
     }
 
     int main()

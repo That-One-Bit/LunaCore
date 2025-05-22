@@ -7,6 +7,7 @@ $Async
 
 - Adds the function to the queue that will run apart from the game until the functions ends
 ## func: function
+## ...: any
 ### Async.create
 
 - Yeilds the current task until time has passed

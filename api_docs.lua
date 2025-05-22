@@ -4,7 +4,8 @@ Async = {}
 
 ---Adds the function to the queue that will run apart from the game until the functions ends
 ---@param func function
-function Async.create(func) end
+---@param ... any
+function Async.create(func, ...) end
 
 ---Yeilds the current task until time has passed
 ---@param seconds number?
@@ -56,6 +57,10 @@ local EventClass = {}
 ---@param func function
 function EventClass:Connect(func) end
 
+---Removes the function if present on listeners
+---@param func function
+function EventClass:Disconnect(func) end
+
 ---Fire this event
 function EventClass:Trigger() end
 
@@ -98,6 +103,11 @@ function Game.Gamepad.isReleased(keycode) end
 ---Performs a virtual button press
 ---@param keycode KeyCode
 function Game.Gamepad.pressButton(keycode) end
+
+---Returns touch x and y position
+---@return number
+---@return number
+function Game.Gamepad.getTouch() end
 
 Game.Gamepad.KeyCodes = {}
 
@@ -161,26 +171,6 @@ Game.Gamepad.KeyCodes.CSTICK = 184549376
 
 Game.LocalPlayer = {}
 
-Game.LocalPlayer.MaxHP = {}
-
----Gets current local player max hp
----@return number
-function Game.LocalPlayer.MaxHP.get() end
-
----Sets local player max hp
----@param maxhp number
-function Game.LocalPlayer.MaxHP.set(maxhp) end
-
-Game.LocalPlayer.HP = {}
-
----Gets current local player hp
----@return number
-function Game.LocalPlayer.HP.get() end
-
----Sets local player hp
----@param maxhp number
-function Game.LocalPlayer.HP.set(maxhp) end
-
 Game.LocalPlayer.Position = {}
 
 ---Gets local player position
@@ -195,26 +185,6 @@ function Game.LocalPlayer.Position.get() end
 ---@param z number
 function Game.LocalPlayer.Position.set(x, y, z) end
 
-Game.LocalPlayer.SwimSpeed = {}
-
----Gets current local player swim speed
----@return number
-function Game.LocalPlayer.SwimSpeed.get() end
-
----Sets local player swim speed
----@param vel number
-function Game.LocalPlayer.SwimSpeed.set(vel) end
-
-Game.LocalPlayer.ReachDistance = {}
-
----Gets current local player block reach distance
----@return number
-function Game.LocalPlayer.ReachDistance.get() end
-
----Sets local player block reach distance
----@param distance number
-function Game.LocalPlayer.ReachDistance.set(distance) end
-
 Game.LocalPlayer.Camera = {}
 
 Game.LocalPlayer.Camera.FOV = {}
@@ -226,6 +196,34 @@ function Game.LocalPlayer.Camera.FOV.get() end
 ---Sets local player camera FOV
 ---@param fov number
 function Game.LocalPlayer.Camera.FOV.set(fov) end
+
+Game.LocalPlayer.OnGround = false
+
+Game.LocalPlayer.Sneaking = false
+
+Game.LocalPlayer.Jumping = false
+
+Game.LocalPlayer.Sprinting = false
+
+Game.LocalPlayer.Flying = false
+
+Game.LocalPlayer.UnderWater = false
+
+Game.LocalPlayer.TouchingWall = false
+
+Game.LocalPlayer.MoveSpeed = 0.0
+
+Game.LocalPlayer.SwimSpeed = 0.02
+
+Game.LocalPlayer.CurrentHP = 0.0
+
+Game.LocalPlayer.MaxHP = 0.0
+
+Game.LocalPlayer.CurrentHunger = 0.0
+
+Game.LocalPlayer.MaxHunger = 0.0
+
+Game.LocalPlayer.ReachDistance = 0.0
 
 System = {}
 
