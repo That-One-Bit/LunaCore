@@ -61,12 +61,28 @@ int l_Gamepad_pressButton(lua_State *L)
     return 0;
 }
 
+/*
+- Returns touch x and y position
+## return: number
+## return: number
+### Game.Gamepad.getTouch
+*/
+int l_Gamepad_getTouch(lua_State *L)
+{
+    touchPosition touch;
+    hidTouchRead(&touch);
+    lua_pushnumber(L, touch.px);
+    lua_pushnumber(L, touch.py);
+    return 2;
+}
+
 static const luaL_Reg gamepad_functions[] =
 {
     {"isPressed", l_Gamepad_isPressed},
     {"isDown", l_Gamepad_isDown},
     {"isReleased", l_Gamepad_isReleased},
     {"pressButton", l_Gamepad_pressButton},
+    {"getTouch", l_Gamepad_getTouch},
     {NULL, NULL}
 };
 
