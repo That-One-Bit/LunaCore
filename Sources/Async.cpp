@@ -10,8 +10,9 @@ $Async
 ## ...: any
 ### Async.create
 
-- Yeilds the current task until time has passed
+- Yeilds the current task until time has passed. Always returns true
 ## seconds: number?
+## return: boolean
 ### Async.wait
 */
 int luaopen_Async(lua_State *L)
@@ -34,12 +35,13 @@ int luaopen_Async(lua_State *L)
         function Async.wait(seconds)
             if seconds == nil then
                 coroutine.yield()
-                return
+                return true
             end
             local start = System.getTime()
             while System.getTime() - start < seconds do
                 coroutine.yield()
             end
+            return true
         end
 
         function Async.tick()

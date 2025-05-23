@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
-#include <cstdlib>
+#include <chrono>
 
 #include <cstdlib>
 
@@ -335,14 +335,11 @@ namespace CTRPluginFramework
         lua_setfield(Lua_global, -2, "path");
         lua_pop(Lua_global, 1);
 
-        if (Directory::IsExists("sdmc:/mc3ds/scripts"))
-            menu->Callback(PreloadScripts);
-
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
-        OSD::Notify("Script engine initialized");
+        OSD::Notify("Script engine loaded");
         u16 gameVersion = Process::GetVersion();
         if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
             OSD::Notify("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features");
@@ -350,6 +347,11 @@ namespace CTRPluginFramework
             OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled");
 
         OSD::Run(DrawMonitors);
+
+        // Wait until some things has been loaded
+        Sleep(Seconds(15));
+        if (Directory::IsExists("sdmc:/mc3ds/scripts"))
+            menu->Callback(PreloadScripts); // Iterates over all scripts under 'sdmc:/mc3ds/scripts'
         menu->Callback(ScriptingEventHandlerCallback);
         OSD::Run(ScriptingNewFrameEventCallback);
 

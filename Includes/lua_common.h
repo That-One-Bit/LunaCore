@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -5,6 +7,11 @@ extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
+
+#include <cmath>
+
+#define STRINGIFY(x) #x
+#define EXPAND_AND_STRINGIFY(x) STRINGIFY(x)
 
 #define luaC_register_global(L, reg, globalName) ({\
         lua_newtable(L);\
@@ -27,6 +34,10 @@ extern "C" {
         luaL_getmetatable(L, (name));\
         lua_setmetatable(L, -2);\
     })
+
+static inline int luaC_invalid_newindex(lua_State *L) {
+    return luaL_error(L, "Attempt to modify read-only table");
+}
 
 #ifdef __cplusplus
 }

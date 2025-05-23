@@ -7,8 +7,9 @@ Async = {}
 ---@param ... any
 function Async.create(func, ...) end
 
----Yeilds the current task until time has passed
+---Yeilds the current task until time has passed. Always returns true
 ---@param seconds number?
+---@return boolean
 function Async.wait(seconds) end
 
 Bits = {}
@@ -185,18 +186,6 @@ function Game.LocalPlayer.Position.get() end
 ---@param z number
 function Game.LocalPlayer.Position.set(x, y, z) end
 
-Game.LocalPlayer.Camera = {}
-
-Game.LocalPlayer.Camera.FOV = {}
-
----Gets current local player camera FOV
----@return number
-function Game.LocalPlayer.Camera.FOV.get() end
-
----Sets local player camera FOV
----@param fov number
-function Game.LocalPlayer.Camera.FOV.set(fov) end
-
 Game.LocalPlayer.OnGround = false
 
 Game.LocalPlayer.Sneaking = false
@@ -205,15 +194,25 @@ Game.LocalPlayer.Jumping = false
 
 Game.LocalPlayer.Sprinting = false
 
+Game.LocalPlayer.CanFly = false
+
 Game.LocalPlayer.Flying = false
 
 Game.LocalPlayer.UnderWater = false
 
 Game.LocalPlayer.TouchingWall = false
 
+Game.LocalPlayer.Invincible = false
+
+Game.LocalPlayer.CanConsumeItems = false
+
+Game.LocalPlayer.BaseMoveSpeed = 0.0
+
 Game.LocalPlayer.MoveSpeed = 0.0
 
 Game.LocalPlayer.SwimSpeed = 0.02
+
+Game.LocalPlayer.FlySpeed = 0.0
 
 Game.LocalPlayer.CurrentHP = 0.0
 
@@ -223,7 +222,34 @@ Game.LocalPlayer.CurrentHunger = 0.0
 
 Game.LocalPlayer.MaxHunger = 0.0
 
+Game.LocalPlayer.CurrentLevel = 0.0
+
+Game.LocalPlayer.LevelProgress = 0.0
+
+Game.LocalPlayer.Gamemode = 0
+
 Game.LocalPlayer.ReachDistance = 0.0
+
+Game.LocalPlayer.SprintDelay = 0.0
+
+Game.LocalPlayer.Camera = {}
+
+Game.LocalPlayer.Camera.FOV = 0.0
+
+---@class InventorySlot
+local InventorySlot = {}
+
+InventorySlot.Slot = 0
+
+InventorySlot.ItemID = 0
+
+InventorySlot.ItemCount = 0
+
+InventorySlot.ItemData = 0
+
+Game.LocalPlayer.Inventory = {}
+
+Game.LocalPlayer.Inventory.Slots = {}
 
 System = {}
 
