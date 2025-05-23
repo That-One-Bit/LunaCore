@@ -1,6 +1,5 @@
 local activated = false
 local localPlayer = Game.LocalPlayer
-local world = Game.World
 local Gamepad = Game.Gamepad
 
 Game.Event.OnKeyPressed:Connect(function ()
@@ -8,7 +7,7 @@ Game.Event.OnKeyPressed:Connect(function ()
         local handSlot = localPlayer.Inventory.Slots["hand"]
         if handSlot then
             local itemName = handSlot.ItemName
-            Game.Debug.message("Player is holding item id: "..itemName)
+            Game.Debug.message("Player is holding item: "..itemName)
         end
     end
 
@@ -42,6 +41,16 @@ Async.create(function ()
                 Game.Debug.message("Player is not on ground")
             end
         end
+    end
+end)
+
+Async.create(function ()
+    while not Gamepad.isDown(Gamepad.KeyCodes.A) do
+        Async.wait()
+    end
+    local idx = 0
+    while true do
+        idx = idx + 1
     end
 end)
 

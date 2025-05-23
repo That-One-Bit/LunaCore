@@ -20,6 +20,14 @@
 
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
+CTRPluginFramework::Clock timeoutClock;
+bool timeoutClockStarted = false;
+
+void TimeoutHook(lua_State *L, lua_Debug *ar)
+{
+    if (timeoutClock.HasTimePassed(CTRPluginFramework::Milliseconds(2000)) && timeoutClockStarted)
+        luaL_error(L, "Exceeded execution time (2000 ms)");
+}
 
 namespace CTRPluginFramework
 {
@@ -172,6 +180,7 @@ namespace CTRPluginFramework
     bool ScriptingNewFrameEventCallback(const Screen &screen)
     {
         lua_State *L = Lua_global;
+        lua_sethook(L, TimeoutHook, LUA_MASKCOUNT, 100);
 
         lua_getglobal(L, "Game");
         lua_getfield(L, -1, "Event");
@@ -191,12 +200,14 @@ namespace CTRPluginFramework
         else
             lua_pop(L, 1);
         lua_pop(L, 3);
+        lua_sethook(L, nullptr, 0, 0); // Important to disable after use
         return true;
     }
 
     void ScriptingEventHandlerCallback()
     {
         lua_State *L = Lua_global;
+        lua_sethook(L, TimeoutHook, LUA_MASKCOUNT, 100);
 
         // KeyPressed Event
         u32 pressedKeys = Controller::GetKeysPressed();
@@ -265,7 +276,10 @@ namespace CTRPluginFramework
             lua_pop(L, 3);
         }
 
-        // Coroutines
+        // Async handles timeout hooks individually so we can disable hook here
+        lua_sethook(L, nullptr, 0, 0);
+
+        // Async coroutines
         lua_getglobal(L, "Async");
         lua_getfield(L, -1, "tick");
         

@@ -8,7 +8,7 @@
 #include "Debug.hpp"
 #include "Gamepad.hpp"
 #include "World.hpp"
-#include "Player.hpp"
+#include "Player/Player.hpp"
 #include "Event.hpp"
 
 void loadScriptingModules(lua_State *L)

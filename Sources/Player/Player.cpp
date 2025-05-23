@@ -1,4 +1,4 @@
-#include "Player.hpp"
+#include "Player/Player.hpp"
 
 #include <CTRPluginFramework.hpp>
 #include "Minecraft.hpp"
@@ -12,9 +12,6 @@ namespace CTRPF = CTRPluginFramework;
 enum player_offsets : u32 {
     playerReachDistance = 0x100000 + 0x54FB68,
     playerSwimSpeed = 0x100000 + 0x3EA090,
-    playerPositionX = 0xAC1E48,
-    playerPositionY = 0xAC1E4C,
-    playerPositionZ = 0xAC1E50,
 };
 
 //$Game.LocalPlayer

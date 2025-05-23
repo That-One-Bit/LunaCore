@@ -14,7 +14,7 @@ enum player_camera_offsets : u32 {
 // ----------------------------------------------------------------------------
 
 /*
-!include Sources/Player.cpp
+!include Sources/Player/Player.cpp
 $Game.LocalPlayer.Camera
 =Game.LocalPlayer.Camera.FOV = 0.0
 =Game.LocalPlayer.Camera.Yaw = 0.0

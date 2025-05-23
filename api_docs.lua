@@ -58,10 +58,6 @@ local EventClass = {}
 ---@param func function
 function EventClass:Connect(func) end
 
----Removes the function if present on listeners
----@param func function
-function EventClass:Disconnect(func) end
-
 ---Fire this event
 function EventClass:Trigger() end
 
@@ -194,8 +190,6 @@ Game.LocalPlayer.Jumping = false
 
 Game.LocalPlayer.Sprinting = false
 
-Game.LocalPlayer.CanFly = false
-
 Game.LocalPlayer.Flying = false
 
 Game.LocalPlayer.UnderWater = false
@@ -203,6 +197,8 @@ Game.LocalPlayer.UnderWater = false
 Game.LocalPlayer.TouchingWall = false
 
 Game.LocalPlayer.Invincible = false
+
+Game.LocalPlayer.CanFly = false
 
 Game.LocalPlayer.CanConsumeItems = false
 
@@ -236,6 +232,10 @@ Game.LocalPlayer.Camera = {}
 
 Game.LocalPlayer.Camera.FOV = 0.0
 
+Game.LocalPlayer.Camera.Yaw = 0.0
+
+Game.LocalPlayer.Camera.Pitch = 0.0
+
 ---@class InventorySlot
 local InventorySlot = {}
 
@@ -246,6 +246,8 @@ InventorySlot.ItemID = 0
 InventorySlot.ItemCount = 0
 
 InventorySlot.ItemData = 0
+
+InventorySlot.ItemName = ""
 
 Game.LocalPlayer.Inventory = {}
 

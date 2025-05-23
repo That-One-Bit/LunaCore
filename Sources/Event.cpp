@@ -8,10 +8,6 @@
 ## func: function
 ### EventClass:Connect
 
-- Removes the function if present on listeners
-## func: function
-### EventClass:Disconnect
-
 - Fire this event
 ### EventClass:Trigger
 */
@@ -33,16 +29,11 @@ int l_register_Event(lua_State *L)
 
     const char* luaCode = R"(
         function Game.Event.BaseEvent:Connect(func)
-            table.insert(self.listeners, func)
-        end
-
-        function Game.Event.BaseEvent:Disconnect(func)
-            for i, v in ipairs(self.listeners) do
-                if v == func then
-                    table.remove(self.listeners, i)
-                    return
-                end
-            end
+            table.insert(self.listeners, function (...)
+                Async.startInternalClock()
+                func(...)
+                Async.stopInternalClock()
+            end)
         end
 
         function Game.Event.BaseEvent:Trigger(...)
