@@ -185,7 +185,7 @@ int l_LocalPlayer_index(lua_State *L)
 int l_LocalPlayer_newindex(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
-        return luaL_error(L, "Attempt to set unknown member of object");
+        return luaL_error(L, "Attempt to set unknown member of LocalPlayer");
 
     uint32_t key = hash(lua_tostring(L, 2));
     bool valid_key = true;
@@ -268,7 +268,7 @@ int l_LocalPlayer_newindex(lua_State *L)
     if (valid_key)
         return 0;
     else
-        return luaL_error(L, "'%s' is not a valid member of object or is not and editable value", key);
+        return luaL_error(L, "'%s' is not a valid member of LocalPlayer or is not and editable value", key);
 }
 
 // ----------------------------------------------------------------------------

@@ -131,7 +131,7 @@ int luaopen_Async(lua_State *L)
     )";
     if (luaL_dostring(L, luaCode))
     {
-        DebugLogMessage("Script module error: " + std::string(lua_tostring(L, -1)), true);
+        DebugLogMessage("Engine Async module failed load: " + std::string(lua_tostring(L, -1)), true);
         lua_pop(L, 1);
     }
     lua_getglobal(L, "Async");

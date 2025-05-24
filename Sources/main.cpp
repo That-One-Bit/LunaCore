@@ -9,6 +9,7 @@
 #include <chrono>
 
 #include <cstdlib>
+#include <cstring>
 
 #include "lua_common.h"
 #include "Minecraft.hpp"
@@ -106,7 +107,7 @@ namespace CTRPluginFramework
         File::Open(scriptFO, fp, File::Mode::READ);
         if (!scriptFO.IsOpen())
         {
-            DebugLogMessage("Failed to open script"+std::string(fp), true);
+            DebugLogMessage("Failed to open file"+std::string(fp), true);
             return false;
         }
         scriptFO.Seek(0, File::SeekPos::END);
@@ -203,18 +204,25 @@ namespace CTRPluginFramework
 
     void PreloadScripts()
     {
+        static int readFiles = 0;
         Directory dir;
         Directory::Open(dir, "sdmc:/mc3ds/scripts");
         std::vector<std::string> files;
-        if (scriptsLoadedCount >= dir.ListFiles(files))
+        if (readFiles >= dir.ListFiles(files))
         {
             *menu -= PreloadScripts;
             return;
         }
-        std::string fullPath("sdmc:" + dir.GetFullName() + "/" + files[scriptsLoadedCount]);
+        if (strcmp(files[readFiles].c_str() + files[readFiles].size() - 4, ".lua") != 0) // Skip not .lua files
+        {
+            readFiles++;
+            return;
+        }
+        std::string fullPath("sdmc:" + dir.GetFullName() + "/" + files[readFiles]);
         DebugLogMessage("Loading script '"+fullPath+"'", false);
-        LoadScript(Lua_global, fullPath.c_str());
-        scriptsLoadedCount++;
+        if (LoadScript(Lua_global, fullPath.c_str()))
+            scriptsLoadedCount++;
+        readFiles++;
     }
 
     void    InitMenu(PluginMenu &menu)
@@ -245,8 +253,8 @@ namespace CTRPluginFramework
         if (!DebugOpenLogFile(LOG_FILE))
             OSD::Notify("Failed to open log file");
 
-        DebugLogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
         DebugLogMessage("Starting plugin", false);
+        DebugLogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
 
         menu = new PluginMenu("Script Engine", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
             "Allows to execute Lua scripts.");

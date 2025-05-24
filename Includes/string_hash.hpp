@@ -2,9 +2,11 @@
 
 #include <cstdint>
 
-constexpr uint32_t hash(const char *str)
+typedef uint32_t shash;
+
+constexpr shash hash(const char *str)
 {
-    uint32_t hash_ = 0;
+    shash hash_ = 0;
     while (*str)
     {
         hash_ += *str;

@@ -4,8 +4,7 @@ Async = {}
 
 ---Adds the function to the queue that will run apart from the game until the functions ends
 ---@param func function
----@param ... any
-function Async.create(func, ...) end
+function Async.create(func) end
 
 ---Yeilds the current task until time has passed. Always returns true
 ---@param seconds number?
@@ -50,6 +49,19 @@ Game.Debug = {}
 ---Displays a notification on screen
 ---@param msg string
 function Game.Debug.message(msg) end
+
+---Appends the message to log file. Optionally shows the message on screen
+---@param msg string
+---@param showOnScreen boolean
+function Game.Debug.log(msg, showOnScreen) end
+
+---Appends the error message to log file and shows it on screen
+---@param msg string
+function Game.Debug.logerror(msg) end
+
+---Show error on screen
+---@param msg string
+function Game.Debug.error(msg) end
 
 ---@class EventClass
 local EventClass = {}
@@ -261,8 +273,4 @@ function System.getTime() end
 
 Game.World = {}
 
-Game.World.CloudsHeight = {}
-
----Sets world clouds height
----@param height number
-function Game.World.CloudsHeight.set(height) end
+Game.World.CloudsHeight = 0.0

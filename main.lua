@@ -2,6 +2,7 @@ local activated = false
 local localPlayer = Game.LocalPlayer
 local Gamepad = Game.Gamepad
 
+-- Test input and LocalPlayer Inventory
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.DPADDOWN) then
         local handSlot = localPlayer.Inventory.Slots["hand"]
@@ -12,6 +13,14 @@ Game.Event.OnKeyPressed:Connect(function ()
     end
 end)
 
+-- Test Game read-only
+Game.Event.OnKeyPressed:Connect(function ()
+    if Gamepad.isDown(Gamepad.KeyCodes.DPADUP) then
+        Game.LocalPlayer = nil -- >:)
+    end
+end)
+
+-- Test LocalPlayer set values
 Game.Event.OnKeyPressed:Connect(function ()
     -- This enables/disables fast swimming speed
     if Gamepad.isDown(Gamepad.KeyCodes.ZL) and Gamepad.isDown(Gamepad.KeyCodes.ZR) then
@@ -27,6 +36,7 @@ Game.Event.OnKeyPressed:Connect(function ()
     end
 end)
 
+-- Test getTouch
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) then
         local px, py = Gamepad.getTouch()
@@ -34,12 +44,14 @@ Game.Event.OnKeyPressed:Connect(function ()
     end
 end)
 
+-- Test events timeout
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.B) then
         while true do end
     end
 end)
 
+-- Test Async function and LocalPlayer usage
 Async.create(function ()
     local lastOnGround = localPlayer.OnGround
     while Async.wait() do
@@ -54,6 +66,7 @@ Async.create(function ()
     end
 end)
 
+-- Test Async timeout
 Async.create(function ()
     while not Gamepad.isDown(Gamepad.KeyCodes.A) do
         Async.wait()
