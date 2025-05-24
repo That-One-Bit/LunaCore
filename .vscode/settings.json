@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.unistore": "jsonc",
         "string": "cpp",
         "unordered_map": "cpp",
         "archive.h": "c",
@@ -77,7 +78,8 @@
         "future": "cpp",
         "mutex": "cpp",
         "fastnoiselite.h": "c",
-        "render3d.h": "c"
+        "render3d.h": "c",
+        "list": "cpp"
     },
     "Lua.workspace.library": [
         "./api_docs.lua"

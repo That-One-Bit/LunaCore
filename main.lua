@@ -10,7 +10,9 @@ Game.Event.OnKeyPressed:Connect(function ()
             Game.Debug.message("Player is holding item: "..itemName)
         end
     end
+end)
 
+Game.Event.OnKeyPressed:Connect(function ()
     -- This enables/disables fast swimming speed
     if Gamepad.isDown(Gamepad.KeyCodes.ZL) and Gamepad.isDown(Gamepad.KeyCodes.ZR) then
         if activated then
@@ -23,10 +25,18 @@ Game.Event.OnKeyPressed:Connect(function ()
             activated = true
         end
     end
+end)
 
+Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.TOUCHPAD) then
         local px, py = Gamepad.getTouch()
         Game.Debug.message("Touch at x: "..px.." y: "..py)
+    end
+end)
+
+Game.Event.OnKeyPressed:Connect(function ()
+    if Gamepad.isDown(Gamepad.KeyCodes.B) then
+        while true do end
     end
 end)
 

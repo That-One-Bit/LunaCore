@@ -13,21 +13,21 @@
 #include "lua_common.h"
 #include "Minecraft.hpp"
 #include "Modules.hpp"
+#include "Debug.hpp"
+#include "Event.hpp"
+#include "Async.hpp"
 
 #define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
 #define EMULATOR_VERSION(version) ((version) == 9216)
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL)
 
+#define PLUGIN_VERSION_MAJOR 0
+#define PLUGIN_VERSION_MINOR 1
+#define PLUGIN_VERSION_PATCH 0
+#define LOG_FILE "sdmc:/mc3ds/log.txt"
+
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
-CTRPluginFramework::Clock timeoutClock;
-bool timeoutClockStarted = false;
-
-void TimeoutHook(lua_State *L, lua_Debug *ar)
-{
-    if (timeoutClock.HasTimePassed(CTRPluginFramework::Milliseconds(2000)) && timeoutClockStarted)
-        luaL_error(L, "Exceeded execution time (2000 ms)");
-}
 
 namespace CTRPluginFramework
 {
@@ -106,9 +106,7 @@ namespace CTRPluginFramework
         File::Open(scriptFO, fp, File::Mode::READ);
         if (!scriptFO.IsOpen())
         {
-            std::string message("Failed to open script: ");
-            message += fp;
-            OSD::Notify(message);
+            DebugLogMessage("Failed to open script"+std::string(fp), true);
             return false;
         }
         scriptFO.Seek(0, File::SeekPos::END);
@@ -129,8 +127,7 @@ namespace CTRPluginFramework
             int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp);
             if (status_code)
             {
-                const char *error = lua_tostring(L, -1);
-                OSD::Notify(error);
+                DebugLogMessage(std::string(lua_tostring(L, -1)), true);
                 lua_pop(L, 2);
                 success = false;
             }
@@ -142,7 +139,7 @@ namespace CTRPluginFramework
 
                 if (lua_pcall(L, 0, 0, 0))
                 {
-                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                    DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
                     lua_pop(L, 2);
                     success = false;
                 }
@@ -168,19 +165,20 @@ namespace CTRPluginFramework
 
     bool DrawMonitors(const Screen &screen)
     {
+        // TODO: Cannot access to lua state
         if (screen.IsTop)
         {
             int memusgkb = lua_gc(Lua_global, LUA_GCCOUNT, 0);
             int memusgb = lua_gc(Lua_global, LUA_GCCOUNTB, 0);
-            screen.Draw("Lua memory: "+std::to_string(memusgkb * 1024 + memusgb), 10, 10, Color::Black, Color(0, 0, 0, 0));
+            screen.Draw("Lua memory: "+std::to_string(memusgkb * 1024 + memusgb)+" b", 10, 10, Color::Black, Color(0, 0, 0, 0));
         }
         return false;
     }
 
     bool ScriptingNewFrameEventCallback(const Screen &screen)
     {
+        // TODO: Cannot access to lua state
         lua_State *L = Lua_global;
-        lua_sethook(L, TimeoutHook, LUA_MASKCOUNT, 100);
 
         lua_getglobal(L, "Game");
         lua_getfield(L, -1, "Event");
@@ -193,107 +191,14 @@ namespace CTRPluginFramework
             lua_pushboolean(L, screen.IsTop);
             if (lua_pcall(L, 2, 0, 0))
             {
-                OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
+                DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
                 lua_pop(L, 1);
             }
         }
         else
             lua_pop(L, 1);
         lua_pop(L, 3);
-        lua_sethook(L, nullptr, 0, 0); // Important to disable after use
         return true;
-    }
-
-    void ScriptingEventHandlerCallback()
-    {
-        lua_State *L = Lua_global;
-        lua_sethook(L, TimeoutHook, LUA_MASKCOUNT, 100);
-
-        // KeyPressed Event
-        u32 pressedKeys = Controller::GetKeysPressed();
-        if (pressedKeys > 0)
-        {
-            lua_getglobal(L, "Game");
-            lua_getfield(L, -1, "Event");
-            lua_getfield(L, -1, "OnKeyPressed");
-            lua_getfield(L, -1, "Trigger");
-
-            if (lua_isfunction(L, -1))
-            {
-                lua_pushvalue(L, -2);
-                if (lua_pcall(L, 1, 0, 0))
-                {
-                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
-                    lua_pop(L, 1);
-                }
-            }
-            else
-                lua_pop(L, 1);
-            lua_pop(L, 3);
-        }
-
-        u32 downKeys = Controller::GetKeysDown();
-        if (downKeys > 0)
-        {
-            lua_getglobal(L, "Game");
-            lua_getfield(L, -1, "Event");
-            lua_getfield(L, -1, "OnKeyDown");
-            lua_getfield(L, -1, "Trigger");
-
-            if (lua_isfunction(L, -1))
-            {
-                lua_pushvalue(L, -2);
-                if (lua_pcall(L, 1, 0, 0))
-                {
-                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
-                    lua_pop(L, 1);
-                }
-            }
-            else
-                lua_pop(L, 1);
-            lua_pop(L, 3);
-        }
-
-        u32 releasedKeys = Controller::GetKeysReleased();
-        if (releasedKeys > 0)
-        {
-            lua_getglobal(L, "Game");
-            lua_getfield(L, -1, "Event");
-            lua_getfield(L, -1, "OnKeyReleased");
-            lua_getfield(L, -1, "Trigger");
-
-            if (lua_isfunction(L, -1))
-            {
-                lua_pushvalue(L, -2);
-                if (lua_pcall(L, 1, 0, 0))
-                {
-                    OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
-                    lua_pop(L, 1);
-                }
-            }
-            else
-                lua_pop(L, 1);
-            lua_pop(L, 3);
-        }
-
-        // Async handles timeout hooks individually so we can disable hook here
-        lua_sethook(L, nullptr, 0, 0);
-
-        // Async coroutines
-        lua_getglobal(L, "Async");
-        lua_getfield(L, -1, "tick");
-        
-        if (lua_isfunction(L, -1))
-        {
-            if (lua_pcall(L, 0, 0, 0))
-            {
-                OSD::Notify("Script error: " + std::string(lua_tostring(L, -1)));
-                lua_pop(L, 1);
-            }
-        }
-        else
-            lua_pop(L, 1);
-        lua_pop(L, 1);
     }
 
     void PreloadScripts()
@@ -306,7 +211,9 @@ namespace CTRPluginFramework
             *menu -= PreloadScripts;
             return;
         }
-        LoadScript(Lua_global, ("sdmc:" + dir.GetFullName() + "/" + files[scriptsLoadedCount]).c_str());
+        std::string fullPath("sdmc:" + dir.GetFullName() + "/" + files[scriptsLoadedCount]);
+        DebugLogMessage("Loading script '"+fullPath+"'", false);
+        LoadScript(Lua_global, fullPath.c_str());
         scriptsLoadedCount++;
     }
 
@@ -333,11 +240,21 @@ namespace CTRPluginFramework
         if (!IS_TARGET_ID(Process::GetTitleID()))
             return 0;
 
-        menu = new PluginMenu("Action Replay", 0, 1, 0,
-            "A blank template plugin.\nGives you access to the ActionReplay and others tools.");
+        if (!Directory::IsExists("sdmc:/mc3ds"))
+            Directory::Create("sdmc:/mc3ds");
+        if (!DebugOpenLogFile(LOG_FILE))
+            OSD::Notify("Failed to open log file");
 
+        DebugLogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
+        DebugLogMessage("Starting plugin", false);
+
+        menu = new PluginMenu("Script Engine", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
+            "Allows to execute Lua scripts.");
+
+        DebugLogMessage("Loading Lua environment", false);
         Lua_global = luaL_newstate();
         luaL_openlibs(Lua_global);
+        DebugLogMessage("Loading scripting modules", false);
         loadScriptingModules(Lua_global);
 
         // Set Lua path
@@ -348,32 +265,37 @@ namespace CTRPluginFramework
         lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/init.lua", current_path);
         lua_setfield(Lua_global, -2, "path");
         lua_pop(Lua_global, 1);
+        DebugLogMessage("Lua environment loaded", false);
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
-        OSD::Notify("Script engine loaded");
+        DebugLogMessage("Script engine loaded", true);
         u16 gameVersion = Process::GetVersion();
         if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
-            OSD::Notify("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features");
+            DebugLogMessage("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features", false);
         else
-            OSD::Notify("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled");
+            DebugLogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
 
-        OSD::Run(DrawMonitors);
+        //OSD::Run(DrawMonitors);
 
-        // Wait until some things has been loaded
+        // Wait until some things has been loaded otherwise instability may occur
+        DebugLogMessage("Waiting to load scripts", false);
         Sleep(Seconds(15));
         if (Directory::IsExists("sdmc:/mc3ds/scripts"))
             menu->Callback(PreloadScripts); // Iterates over all scripts under 'sdmc:/mc3ds/scripts'
         menu->Callback(ScriptingEventHandlerCallback);
-        OSD::Run(ScriptingNewFrameEventCallback);
+        //OSD::Run(ScriptingNewFrameEventCallback);
+        menu->Callback(ScriptingAsyncHandlerCallback);
 
         // Init our menu entries & folders
         InitMenu(*menu);
 
         // Launch menu and mainloop
+        DebugLogMessage("Starting plugin mainloop", false);
         menu->Run();
+        DebugCloseLogFile();
 
         delete menu;
 

@@ -2,41 +2,99 @@
 
 #include <CTRPluginFramework.hpp>
 
-extern CTRPluginFramework::Clock timeoutClock;
-extern bool timeoutClockStarted;
+#include "Debug.hpp"
 
-void AsyncTimeoutHook(lua_State *L, lua_Debug *ar)
+extern lua_State *Lua_global;
+CTRPluginFramework::Clock timeoutAsynClock;
+bool timeoutAsyncClockStarted;
+
+void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutClock.HasTimePassed(CTRPluginFramework::Milliseconds(2000)) && timeoutClockStarted)
-        luaL_error(L, "Exceeded execution time (2000 ms)");
+    if (timeoutAsynClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)) && timeoutAsyncClockStarted)
+        luaL_error(L, "Exceeded execution time (5000 ms)");
 }
 
-int l_registerCoroutineTimeoutHook(lua_State *L)
+void ScriptingAsyncHandlerCallback()
 {
-    luaL_checktype(L, 1, LUA_TTHREAD);
+    lua_State *L = Lua_global;
 
-    lua_State *co = lua_tothread(L, 1);
+    // Async handles timeout hooks individually so no need to configure
+    // Async coroutines
+    lua_getglobal(L, "Async");
+    lua_getfield(L, -1, "tick");
+    
+    if (lua_isfunction(L, -1))
+    {
+        if (lua_pcall(L, 0, 0, 0))
+        {
+            DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
+            lua_pop(L, 1);
+        }
+    }
+    else
+        lua_pop(L, 1);
+    lua_pop(L, 1);
+}
 
-    lua_sethook(co, AsyncTimeoutHook, LUA_MASKCOUNT, 100);
+int l_Async_create(lua_State *L)
+{
+    luaL_checktype(L, 1, LUA_TFUNCTION);
+
+    lua_State *co = lua_newthread(L);
+    lua_pushvalue(L, 1);
+    lua_xmove(L, co, 1);
+
+    lua_sethook(co, TimeoutAsyncHook, LUA_MASKCOUNT, 100);
+
+    lua_getglobal(L, "Async");
+    lua_getfield(L, -1, "scripts");
+    lua_remove(L, -2);
+
+    int len = lua_objlen(L, -1);
+    lua_pushvalue(L, -2);
+    lua_rawseti(L, -2, len + 1);
+
+    lua_pop(L, 2);
     return 0;
 }
 
-int l_startInternalClock(lua_State *L)
+int l_Async_tick(lua_State *L)
 {
-    timeoutClock.Restart();
-    timeoutClockStarted = true;
-    return 0;
-}
+    lua_getglobal(L, "Async");
+    lua_getfield(L, -1, "scripts");
+    lua_remove(L, -2);
 
-int l_stopInternalClock(lua_State *L)
-{
-    timeoutClockStarted = false;
-    return 0;
-}
+    int len = lua_objlen(L, -1);
 
-int l_restartInternalClock(lua_State *L)
-{
-    timeoutClock.Restart();
+    for (int i = len; i >= 1; --i) {
+        lua_rawgeti(L, -1, i);
+        lua_State *co = lua_tothread(L, -1);
+        lua_pop(L, 1);
+
+        int status = lua_status(co);
+        if (status != 0 && status != LUA_YIELD) {
+            lua_pushnil(L);
+            lua_rawseti(L, -2, i);
+            luaL_dostring(L, "collectgarbage('collect')");
+            continue;
+        }
+
+        timeoutAsyncClockStarted = true;
+        timeoutAsynClock.Restart();
+
+        int call_result = lua_resume(co, 0);
+
+        timeoutAsyncClockStarted = false;
+
+        if (call_result != 0 && call_result != LUA_YIELD) {
+            DebugLogError("Async script error: "+std::string(lua_tostring(co, -1)));
+            lua_pushnil(L);
+            lua_rawseti(L, -2, i);
+            luaL_dostring(L, "collectgarbage('collect')");
+            continue;
+        }
+    }
+    lua_pop(L, 1);
     return 0;
 }
 
@@ -45,7 +103,6 @@ $Async
 
 - Adds the function to the queue that will run apart from the game until the functions ends
 ## func: function
-## ...: any
 ### Async.create
 
 - Yeilds the current task until time has passed. Always returns true
@@ -59,22 +116,7 @@ int luaopen_Async(lua_State *L)
         Async = {}
         Async.scripts = {}
 
-        function Async.create(func, ...)
-            if type(func) ~= "function" then
-                error("Expected function in 'func'", 2)
-            else
-                local co = coroutine.create(function ()
-                    Async.startInternalClock()
-                    func(...)
-                    Async.stopInternalClock()
-                end)
-                Async.registerTimeoutHook(co)
-                table.insert(Async.scripts, co)
-            end
-        end
-
         function Async.wait(seconds)
-            Async.restartInternalClock()
             if seconds == nil then
                 coroutine.yield()
                 return true
@@ -86,35 +128,17 @@ int luaopen_Async(lua_State *L)
             end
             return true
         end
-
-        function Async.tick()
-            for i = #Async.scripts, 1, -1 do
-                if coroutine.status(Async.scripts[i]) ~= "dead" then
-                    local success, message = coroutine.resume(Async.scripts[i])
-                    if not success then
-                        Game.Debug.message("Error in script: "..message)
-                        table.remove(Async.scripts, i)
-                    end
-                else
-                    table.remove(Async.scripts, i)
-                end
-            end
-        end
     )";
     if (luaL_dostring(L, luaCode))
     {
-        const char *error = lua_tostring(L, -1);
-        CTRPluginFramework::OSD::Notify("Lua error: " + std::string(lua_tostring(L, -1)));
+        DebugLogMessage("Script module error: " + std::string(lua_tostring(L, -1)), true);
+        lua_pop(L, 1);
     }
     lua_getglobal(L, "Async");
-    lua_pushcfunction(L, l_registerCoroutineTimeoutHook);
-    lua_setfield(L, -2, "registerTimeoutHook");
-    lua_pushcfunction(L, l_restartInternalClock);
-    lua_setfield(L, -2, "restartInternalClock");
-    lua_pushcfunction(L, l_startInternalClock);
-    lua_setfield(L, -2, "startInternalClock");
-    lua_pushcfunction(L, l_stopInternalClock);
-    lua_setfield(L, -2, "stopInternalClock");
+    lua_pushcfunction(L, l_Async_create);
+    lua_setfield(L, -2, "create");
+    lua_pushcfunction(L, l_Async_tick);
+    lua_setfield(L, -2, "tick");
     lua_pop(L, 1);
     return 0;
 }
