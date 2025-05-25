@@ -1,5 +1,7 @@
 #include "Event.hpp"
 
+#include <string>
+
 #include <CTRPluginFramework.hpp>
 
 #include "Debug.hpp"
@@ -8,15 +10,14 @@ namespace CTRPF = CTRPluginFramework;
 
 extern lua_State *Lua_global;
 CTRPF::Clock timeoutEventClock;
-bool timeoutEventClockStarted = false;
 
 void TimeoutEventHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutEventClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)) && timeoutEventClockStarted)
+    if (timeoutEventClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)))
         luaL_error(L, "Event listener exceeded execution time (5000 ms)");
 }
 
-void ScriptingEventHandlerCallback()
+void CoreEventHandlerCallback()
 {
     lua_State *L = Lua_global;
 
@@ -34,12 +35,12 @@ void ScriptingEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Engine Event module error in OnKeyPressed: " + std::string(lua_tostring(L, -1)));
+                DebugLogError("Core error. Event module error in OnKeyPressed: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Unexpected type for Event.OnKeyPressed:Trigger");
+            DebugLogError("Core error. Unexpected type for Event.OnKeyPressed:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -58,12 +59,12 @@ void ScriptingEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Engine Event module error in OnKeyDown: " + std::string(lua_tostring(L, -1)));
+                DebugLogError("Core error. Event module error in OnKeyDown: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Unexpected type for Event.OnKeyDown:Trigger");
+            DebugLogError("Core error. Unexpected type for Event.OnKeyDown:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -82,44 +83,29 @@ void ScriptingEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Engine Event module error in OnKeyReleased: " + std::string(lua_tostring(L, -1)));
+                DebugLogError("Core error. Event module error in OnKeyReleased: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Unexpected type for Event.OnKeyReleased:Trigger");
+            DebugLogError("Core error. Unexpected type for Event.OnKeyReleased:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
     }
 }
 
-int l_Event_BaseEvent_Connect(lua_State *L)
+//@@EventClass
+
+/*
+- Adds a function to call when this events fires
+## func: function
+### EventClass:Connect
+*/
+static int l_Event_BaseEvent_Connect(lua_State *L)
 {
     luaL_checktype(L, 1, LUA_TTABLE);
     luaL_checktype(L, 2, LUA_TFUNCTION);
-
-    lua_pushvalue(L, 2);
-    lua_pushcclosure(L, [](lua_State* L) -> int {
-        lua_sethook(L, TimeoutEventHook, LUA_MASKCOUNT, 100); // Timeout hook
-        timeoutEventClockStarted = true;
-        timeoutEventClock.Restart();
-
-        int nargs = lua_gettop(L);
-        lua_pushvalue(L, lua_upvalueindex(1));
-
-        for (int i = 1; i <= nargs; ++i)
-            lua_pushvalue(L, i);
-
-        int status = lua_pcall(L, nargs, LUA_MULTRET, 0);
-
-        timeoutEventClockStarted = false;
-        lua_sethook(L, nullptr, 0, 0); // Disable after use
-
-        if (status != 0)
-            return lua_error(L);
-        return lua_gettop(L);
-    }, 1);
 
     lua_getfield(L, 1, "listeners");
     if (!lua_istable(L, -1)) {
@@ -130,24 +116,79 @@ int l_Event_BaseEvent_Connect(lua_State *L)
     }
 
     int index = lua_objlen(L, -1) + 1;
-    lua_pushvalue(L, -2);
+    lua_pushvalue(L, 2);
     lua_rawseti(L, -2, index);
     
     lua_pop(L, 1);
     return 0;
 }
 
-//@@EventClass
 /*
-- Adds a function to call when this events fires
-## func: function
-### EventClass:Connect
-
 - Fire this event
 ### EventClass:Trigger
 */
+static int l_Event_BaseEvent_Trigger(lua_State *L)
+{
+    luaL_checktype(L, 1, LUA_TTABLE);
+    int argc = lua_gettop(L) - 1;
 
-int l_register_Event(lua_State *L)
+    lua_getfield(L, 1, "listeners");
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 1);
+        return luaL_error(L, "'listeners' is not a table");
+    }
+    int listenersIdx = lua_gettop(L);
+    int len = lua_objlen(L, listenersIdx);
+
+    for (int i = len; i >= 1; --i) {
+        lua_rawgeti(L, listenersIdx, i);
+        if (!lua_isfunction(L, -1)) {
+            lua_pop(L, 1);
+            continue;
+        }
+
+        for (int j = 0; j < argc; ++j) 
+            lua_pushvalue(L, 2 + j);
+
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_remove(L, -2);
+
+        int errfunc = lua_gettop(L);
+
+        lua_insert(L, errfunc - (argc + 1));
+
+        lua_sethook(L, TimeoutEventHook, LUA_MASKCOUNT, 100); // Timeout hook
+        timeoutEventClock.Restart();
+        
+        if (lua_pcall(L, argc, 0, errfunc - (argc + 1))) {
+            const char *errMsg = lua_tostring(L, -1);
+            lua_pop(L, 1);
+            lua_remove(L, errfunc - (argc + 1));
+
+            std::string newErrMsg(errMsg);
+            size_t pos = 0;
+            while ((pos = newErrMsg.find("\t", pos)) != std::string::npos) {
+                newErrMsg.replace(pos, 1, "    ");
+                pos += 4;
+            }
+
+            DebugLogError(newErrMsg);
+
+            lua_pushnil(L);
+            lua_rawseti(L, listenersIdx, i);
+            lua_gc(L, LUA_GCCOLLECT, 0);
+        } else {
+            lua_remove(L, errfunc - (argc + 1));
+        }
+
+        lua_sethook(L, nullptr, 0, 0); // Disable after use
+    }
+    lua_pop(L, 1);
+    return 0;
+}
+
+bool CoreRegisterEventModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     //$Game.Event
@@ -157,41 +198,14 @@ int l_register_Event(lua_State *L)
     lua_newtable(L);
     lua_pushcfunction(L, l_Event_BaseEvent_Connect);
     lua_setfield(L, -2, "Connect");
+    lua_pushcfunction(L, l_Event_BaseEvent_Trigger);
+    lua_setfield(L, -2, "Trigger");
     lua_newtable(L);
     lua_setfield(L, -2, "listeners");
     lua_setfield(L, -2, "BaseEvent");
 
     lua_setfield(L, -2, "Event");
     lua_pop(L, 1);
-
-    const char* luaCode = R"(
-        local function errHandler(err)
-            return {
-                message = tostring(err),
-                traceback = debug.traceback(err, 2)
-            }
-        end
-
-        function Game.Event.BaseEvent:Trigger(...)
-            for i = #self.listeners, 1, -1 do
-                local args = { ... }
-                local listener = self.listeners[i]
-                local success, result = xpcall(function()
-                    return listener(unpack(args))
-                end, errHandler)
-                if not success then
-                    Game.Debug.error(result.message)
-                    Game.Debug.logerror(result.traceback)
-                    table.remove(self.listeners, i)
-                end
-            end
-        end
-    )";
-    if (luaL_dostring(L, luaCode))
-    {
-        DebugLogMessage("Engine module 'Event.BaseEvent' failed load: " + std::string(lua_tostring(L, -1)), true);
-        lua_pop(L, 1);
-    }
 
     luaL_newmetatable(L, "EventClass");
     int metatableIdx = lua_gettop(L);
@@ -235,5 +249,14 @@ int l_register_Event(lua_State *L)
     lua_setfield(L, -2, "OnKeyReleased");
 
     lua_pop(L, 2);
+
+    const char *lua_Code = R"(
+        Game.Event.BaseEvent = readOnlyTable(Game.Event.BaseEvent, "BaseEvent")
+    )";
+    if (luaL_dostring(L, lua_Code))
+    {
+        DebugLogError("Core error. Unable to set 'Game.Event.BaseEvent' read-only: "+std::string(lua_tostring(L, -1)));
+        lua_pop(L, 1);
+    }
     return 0;
 }

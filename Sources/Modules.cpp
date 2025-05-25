@@ -32,7 +32,7 @@ void loadScriptingModules(lua_State *L)
     l_register_Gamepad(L);
     l_register_World(L);
     l_register_LocalPlayer(L);
-    l_register_Event(L);
+    CoreRegisterEventModule(L);
 
     const char *lua_Code = R"(
         local realGame = readOnlyTable(Game, "Game")
@@ -46,19 +46,18 @@ void loadScriptingModules(lua_State *L)
                     return rawget(_G, key)
                 end
             end,
-            __newindex = function(_, key, value)
+            __newindex = function(tbl, key, value)
                 if key == "Game" then
                     error("Cannot overwrite global 'Game'", 2)
                 else
-                    rawset(_G, key, value)
+                    rawset(tbl, key, value)
                 end
             end
         })
     )";
-
     if (luaL_dostring(L, lua_Code))
     {
-        DebugLogError("Engine error. Unable to set 'Game' global read-only: "+std::string(lua_tostring(L, -1)));
+        DebugLogError("Core error. Unable to set 'Game' global read-only: "+std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
     }
 

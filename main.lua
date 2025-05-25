@@ -2,6 +2,8 @@ local activated = false
 local localPlayer = Game.LocalPlayer
 local Gamepad = Game.Gamepad
 
+MiGlobal = 34
+
 -- Test input and LocalPlayer Inventory
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.DPADDOWN) then
@@ -14,6 +16,11 @@ Game.Event.OnKeyPressed:Connect(function ()
 end)
 
 -- Test Game read-only
+Game.Event.OnKeyPressed:Connect(function ()
+    if Gamepad.isDown(Gamepad.KeyCodes.DPADUP) then
+        Game = nil -- >:))
+    end
+end)
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.DPADUP) then
         Game.LocalPlayer = nil -- >:)

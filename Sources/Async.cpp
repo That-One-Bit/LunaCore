@@ -6,15 +6,14 @@
 
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
-bool timeoutAsyncClockStarted;
 
 void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutAsynClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)) && timeoutAsyncClockStarted)
-        luaL_error(L, "Exceeded execution time (5000 ms)");
+    if (timeoutAsynClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)))
+        luaL_error(L, "Async coroutine exceeded execution time (5000 ms)");
 }
 
-void ScriptingAsyncHandlerCallback()
+void CoreAsyncHandlerCallback()
 {
     lua_State *L = Lua_global;
 
@@ -27,7 +26,7 @@ void ScriptingAsyncHandlerCallback()
     {
         if (lua_pcall(L, 0, 0, 0))
         {
-            DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
+            DebugLogError("Core error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
     }
@@ -63,38 +62,54 @@ int l_Async_tick(lua_State *L)
     lua_getglobal(L, "Async");
     lua_getfield(L, -1, "scripts");
     lua_remove(L, -2);
+    int scriptsTableIdx = lua_gettop(L);
 
     int len = lua_objlen(L, -1);
 
     for (int i = len; i >= 1; --i) {
         lua_rawgeti(L, -1, i);
         lua_State *co = lua_tothread(L, -1);
-        lua_pop(L, 1);
+        int coIdx = lua_gettop(L);
 
         int status = lua_status(co);
         if (status != 0 && status != LUA_YIELD) {
+            lua_pop(L, 1); // Remove co
             lua_pushnil(L);
-            lua_rawseti(L, -2, i);
-            luaL_dostring(L, "collectgarbage('collect')");
+            lua_rawseti(L, scriptsTableIdx, i);
+            lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
         }
 
-        timeoutAsyncClockStarted = true;
         timeoutAsynClock.Restart();
-
         int call_result = lua_resume(co, 0);
 
-        timeoutAsyncClockStarted = false;
-
         if (call_result != 0 && call_result != LUA_YIELD) {
-            DebugLogError("Async script error: "+std::string(lua_tostring(co, -1)));
+            const char *errMsg = lua_tostring(co, -1);
+            
+            // TODO: Improve this code to not use temporal globals
+            lua_pushvalue(L, coIdx);
+            lua_setglobal(L, "__THREAD_TEMP");
+            lua_pop(L, 1); // Remove co
+
+            lua_pushstring(L, errMsg);
+            lua_setglobal(L, "__ERRMSG_TEMP");
+
+            if (luaL_dostring(L, "Game.Debug.logerror(debug.traceback(__THREAD_TEMP, __ERRMSG_TEMP):gsub('\\t', '    '))")) {
+                DebugLogError("Core error: "+std::string(lua_tostring(L, -1)));
+                lua_pop(L, 1);
+            }
+
+            lua_pushnil(L); lua_setglobal(L, "__THREAD_TEMP");
+            lua_pushnil(L); lua_setglobal(L, "__ERRMSG_TEMP");
+
             lua_pushnil(L);
-            lua_rawseti(L, -2, i);
-            luaL_dostring(L, "collectgarbage('collect')");
+            lua_rawseti(L, scriptsTableIdx, i);
+            lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
         }
+        lua_pop(L, 1); // Remove co
     }
-    lua_pop(L, 1);
+    lua_pop(L, 1); // Remove scripts
     return 0;
 }
 
@@ -123,7 +138,6 @@ int luaopen_Async(lua_State *L)
             end
             local start = System.getTime()
             while System.getTime() - start < seconds do
-                Async.restartInternalClock()
                 coroutine.yield()
             end
             return true

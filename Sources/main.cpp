@@ -6,7 +6,7 @@
 #include <string>
 #include <sstream>
 #include <unordered_map>
-#include <chrono>
+#include <atomic>
 
 #include <cstdlib>
 #include <cstring>
@@ -17,6 +17,7 @@
 #include "Debug.hpp"
 #include "Event.hpp"
 #include "Async.hpp"
+#include "Graphics.hpp"
 
 #define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
 #define EMULATOR_VERSION(version) ((version) == 9216)
@@ -29,6 +30,14 @@
 
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
+CTRPluginFramework::Clock timeoutLoadClock;
+std::atomic<int> luaMemoryUsage = 0;
+
+void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
+{
+    if (timeoutLoadClock.HasTimePassed(CTRPluginFramework::Milliseconds(2000)))
+        luaL_error(L, "Script load exceeded execution time (2000 ms)");
+}
 
 namespace CTRPluginFramework
 {
@@ -100,14 +109,14 @@ namespace CTRPluginFramework
         ToggleTouchscreenForceOn();
     }
 
-    bool LoadScript(lua_State *L, const char *fp)
+    bool LoadScript(lua_State *L, const std::string& fp)
     {
         bool success = true;
         File scriptFO;
         File::Open(scriptFO, fp, File::Mode::READ);
         if (!scriptFO.IsOpen())
         {
-            DebugLogMessage("Failed to open file"+std::string(fp), true);
+            DebugLogMessage("Failed to open file"+fp, false);
             return false;
         }
         scriptFO.Seek(0, File::SeekPos::END);
@@ -123,12 +132,19 @@ namespace CTRPluginFramework
             lua_newtable(L);
             lua_getglobal(L, "_G");
             lua_setfield(L, -2, "__index");
+            lua_getglobal(L, "_G");
+            lua_getmetatable(L, -1);
+            lua_getfield(L, -1, "__newindex");
+            int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+            lua_pop(L, 2);
+            lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+            lua_setfield(L, -2, "__newindex");
             lua_setmetatable(L, -2);
 
-            int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp);
+            int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp.c_str());
             if (status_code)
             {
-                DebugLogMessage(std::string(lua_tostring(L, -1)), true);
+                DebugLogError(std::string(lua_tostring(L, -1)));
                 lua_pop(L, 2);
                 success = false;
             }
@@ -138,9 +154,11 @@ namespace CTRPluginFramework
                 lua_pushvalue(L, -2);
                 lua_setfenv(L, -2);
 
+                lua_sethook(L, TimeoutLoadHook, LUA_MASKCOUNT, 100);
+                timeoutLoadClock.Restart();
                 if (lua_pcall(L, 0, 0, 0))
                 {
-                    DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
+                    DebugLogError("\""+fp+"\""+": " + std::string(lua_tostring(L, -1)));
                     lua_pop(L, 2);
                     success = false;
                 }
@@ -157,6 +175,7 @@ namespace CTRPluginFramework
                     }
                     lua_pop(L, 2);
                 }
+                lua_sethook(L, nullptr, 0, 0);
             }
         }
         scriptFO.Close();
@@ -164,14 +183,19 @@ namespace CTRPluginFramework
         return success;
     }
 
+    void UpdateLuaStatistics()
+    {
+        lua_State *L = Lua_global;
+        int memusgkb = lua_gc(L, LUA_GCCOUNT, 0);
+        int memusgb = lua_gc(L, LUA_GCCOUNTB, 0);
+        luaMemoryUsage.store(memusgkb * 1024 + memusgb);
+    }
+
     bool DrawMonitors(const Screen &screen)
     {
-        // TODO: Cannot access to lua state
         if (screen.IsTop)
         {
-            int memusgkb = lua_gc(Lua_global, LUA_GCCOUNT, 0);
-            int memusgb = lua_gc(Lua_global, LUA_GCCOUNTB, 0);
-            screen.Draw("Lua memory: "+std::to_string(memusgkb * 1024 + memusgb)+" b", 10, 10, Color::Black, Color(0, 0, 0, 0));
+            screen.Draw("Lua memory: "+std::to_string(luaMemoryUsage.load()), 10, 10, Color::Black, Color(0, 0, 0, 0));
         }
         return false;
     }
@@ -207,14 +231,16 @@ namespace CTRPluginFramework
         static int readFiles = 0;
         Directory dir;
         Directory::Open(dir, "sdmc:/mc3ds/scripts");
-        std::vector<std::string> files;
-        if (readFiles >= dir.ListFiles(files))
-        {
+        if (!dir.IsOpen()) {
             *menu -= PreloadScripts;
             return;
         }
-        if (strcmp(files[readFiles].c_str() + files[readFiles].size() - 4, ".lua") != 0) // Skip not .lua files
-        {
+        std::vector<std::string> files;
+        if (readFiles >= dir.ListFiles(files, ".lua")) {
+            *menu -= PreloadScripts;
+            return;
+        }
+        if (strcmp(files[readFiles].c_str() + files[readFiles].size() - 4, ".lua") != 0) { // Double check to skip not .lua files
             readFiles++;
             return;
         }
@@ -279,23 +305,33 @@ namespace CTRPluginFramework
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
-        DebugLogMessage("Script engine loaded", true);
+        DebugLogMessage("Script core loaded", true);
         u16 gameVersion = Process::GetVersion();
         if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
             DebugLogMessage("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features", false);
         else
             DebugLogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
 
-        //OSD::Run(DrawMonitors);
+        OSD::Run(DrawMonitors);
 
         // Wait until some things has been loaded otherwise instability may occur
         DebugLogMessage("Waiting to load scripts", false);
         Sleep(Seconds(15));
-        if (Directory::IsExists("sdmc:/mc3ds/scripts"))
-            menu->Callback(PreloadScripts); // Iterates over all scripts under 'sdmc:/mc3ds/scripts'
-        menu->Callback(ScriptingEventHandlerCallback);
-        //OSD::Run(ScriptingNewFrameEventCallback);
-        menu->Callback(ScriptingAsyncHandlerCallback);
+        if (Directory::IsExists("sdmc:/mc3ds/scripts")) {
+            menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'sdmc:/mc3ds/scripts'
+
+            Directory dir;
+            Directory::Open(dir, "sdmc:/mc3ds/scripts");
+            if (dir.IsOpen()) {
+                std::vector<std::string> dirFiles;
+                if (dir.ListFiles(dirFiles, ".lua") > 0) { // Only add core callbacks if any script under directory
+                    menu->Callback(CoreEventHandlerCallback);
+                    OSD::Run(CoreGraphicsDrawFrameCallback);
+                    menu->Callback(CoreAsyncHandlerCallback);
+                    menu->Callback(UpdateLuaStatistics);
+                }
+            }
+        }
 
         // Init our menu entries & folders
         InitMenu(*menu);

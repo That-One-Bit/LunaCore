@@ -12,4 +12,6 @@ void DebugLogMessage(const std::string& msg, bool showOnScreen);
 
 void DebugLogError(const std::string& msg);
 
+void DebugError(const std::string& msg);
+
 int l_register_Debug(lua_State *L);

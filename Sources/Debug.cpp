@@ -1,4 +1,4 @@
-#include "Gamepad.hpp"
+#include "Debug.hpp"
 
 #include <string>
 #include <time.h>
@@ -53,8 +53,13 @@ void DebugLogMessage(const std::string& msg, bool showOnScreen)
 
 void DebugLogError(const std::string& msg)
 {
-    CTRPluginFramework::OSD::Notify(msg, CTRPluginFramework::Color::Red, CTRPluginFramework::Color::Black);
+    DebugError(msg);
     DebugWriteLog(std::string("[ERROR] ")+msg);
+}
+
+void DebugError(const std::string& msg)
+{
+    CTRPluginFramework::OSD::Notify(msg, CTRPluginFramework::Color::Red, CTRPluginFramework::Color::Black);
 }
 
 //!include Sources/Modules.cpp
@@ -111,7 +116,7 @@ int l_Debug_logerror(lua_State *L)
 int l_Debug_error(lua_State *L)
 {
     const char *msg = luaL_checkstring(L, 1);
-    CTRPluginFramework::OSD::Notify(msg, CTRPluginFramework::Color::Red, CTRPluginFramework::Color::Black);
+    DebugError(msg);
     return 0;
 }
 
