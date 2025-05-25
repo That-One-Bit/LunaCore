@@ -4,7 +4,11 @@
 
 typedef uint32_t u32;
 
+// ----------------------------------------------------------------------------
+
 //$Bits
+
+// ----------------------------------------------------------------------------
 
 /*
 ## a: integer
@@ -93,8 +97,10 @@ static const luaL_Reg bits_functions[] =
     {NULL, NULL}
 };
 
-int luaopen_Bits(lua_State *L)
+// ----------------------------------------------------------------------------
+
+bool Core::RegisterBitsModule(lua_State *L)
 {
 	luaC_register_global(L, bits_functions, "Bits");
-    return 0;
+    return true;
 }

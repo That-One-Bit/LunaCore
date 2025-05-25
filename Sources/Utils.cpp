@@ -2,7 +2,7 @@
 
 #include "Debug.hpp"
 
-int l_register_Utils(lua_State *L)
+bool Core::RegisterUtilsModule(lua_State *L)
 {
     const char *lua_Code = R"(
         function readOnlyTable(tbl, tblName)
@@ -14,16 +14,16 @@ int l_register_Utils(lua_State *L)
     )";
     if (luaL_dostring(L, lua_Code))
     {
-        DebugLogMessage("Engine Async module failed load: " + std::string(lua_tostring(L, -1)), true);
+        Core::Debug::LogError("Core Utils module failed load: " + std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
+        return false;
     }
-    return 0;
+    return true;
 }
 
-int l_unregister_Utils(lua_State *L)
+void Core::UnregisterUtilsModule(lua_State *L)
 {
     lua_pushnil(L);
     lua_setglobal(L, "readOnlyTable");
     lua_gc(L, LUA_GCCOLLECT, 0);
-    return 0;
 }

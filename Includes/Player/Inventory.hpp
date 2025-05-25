@@ -2,4 +2,10 @@
 
 #include "lua_common.h"
 
-int l_register_Player_Inventory(lua_State *L);
+namespace Core {
+    namespace Game {
+        namespace LocalPlayer {
+            bool RegisterInventoryModule(lua_State *L);
+        }
+    }
+}

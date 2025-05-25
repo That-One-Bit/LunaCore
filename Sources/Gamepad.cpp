@@ -5,6 +5,8 @@
 
 namespace CTRPF = CTRPluginFramework;
 
+// ----------------------------------------------------------------------------
+
 //$Game.Gamepad
 //@KeyCode: integer
 
@@ -16,7 +18,7 @@ namespace CTRPF = CTRPluginFramework;
 ## return: boolean
 ### Game.Gamepad.isPressed
 */
-int l_Gamepad_isPressed(lua_State *L)
+static int l_Gamepad_isPressed(lua_State *L)
 {
     CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyPressed(keycode));
@@ -29,7 +31,7 @@ int l_Gamepad_isPressed(lua_State *L)
 ## return: boolean
 ### Game.Gamepad.isDown
 */
-int l_Gamepad_isDown(lua_State *L)
+static int l_Gamepad_isDown(lua_State *L)
 {
     CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyDown(keycode));
@@ -42,7 +44,7 @@ int l_Gamepad_isDown(lua_State *L)
 ## return: boolean
 ### Game.Gamepad.isReleased
 */
-int l_Gamepad_isReleased(lua_State *L)
+static int l_Gamepad_isReleased(lua_State *L)
 {
     CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyReleased(keycode));
@@ -54,7 +56,7 @@ int l_Gamepad_isReleased(lua_State *L)
 ## keycode: KeyCode
 ### Game.Gamepad.pressButton
 */
-int l_Gamepad_pressButton(lua_State *L)
+static int l_Gamepad_pressButton(lua_State *L)
 {
     CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
     CTRPF::Controller::InjectKey(keycode);
@@ -67,7 +69,7 @@ int l_Gamepad_pressButton(lua_State *L)
 ## return: number
 ### Game.Gamepad.getTouch
 */
-int l_Gamepad_getTouch(lua_State *L)
+static int l_Gamepad_getTouch(lua_State *L)
 {
     touchPosition touch;
     hidTouchRead(&touch);
@@ -88,7 +90,7 @@ static const luaL_Reg gamepad_functions[] =
 
 // ----------------------------------------------------------------------------
 
-int l_register_Gamepad(lua_State *L)
+bool Core::Game::RegisterGamepadModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     lua_newtable(L); // Gamepad
@@ -151,12 +153,12 @@ int l_register_Gamepad(lua_State *L)
     //=Game.Gamepad.KeyCodes.RIGHT = 268435472
     luaC_setfield_integer(L, (KEY_DRIGHT | KEY_CPAD_RIGHT), "RIGHT");
     //=Game.Gamepad.KeyCodes.CPAD = 2952790016
-    luaC_setfield_integer(L, (KEY_CPAD_DOWN|KEY_CPAD_LEFT | KEY_CPAD_RIGHT|KEY_CPAD_UP), "CPAD");
+    luaC_setfield_integer(L, (KEY_CPAD_DOWN | KEY_CPAD_LEFT | KEY_CPAD_RIGHT | KEY_CPAD_UP), "CPAD");
     //=Game.Gamepad.KeyCodes.CSTICK = 184549376
-    luaC_setfield_integer(L, (KEY_CSTICK_DOWN|KEY_CSTICK_LEFT | KEY_CSTICK_RIGHT|KEY_CSTICK_UP), "CSTICK");
+    luaC_setfield_integer(L, (KEY_CSTICK_DOWN | KEY_CSTICK_LEFT | KEY_CSTICK_RIGHT | KEY_CSTICK_UP), "CSTICK");
     lua_setfield(L, -2, "KeyCodes");
 
     lua_setfield(L, -2, "Gamepad");
     lua_pop(L, 1);
-    return 0;
+    return true;
 }

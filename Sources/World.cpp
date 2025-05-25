@@ -11,6 +11,8 @@ enum world_offsets : u32
     cloudsHeight = 0x100000 + 0x2C5398
 };
 
+// ----------------------------------------------------------------------------
+
 //$Game.World
 
 // ----------------------------------------------------------------------------
@@ -18,7 +20,7 @@ enum world_offsets : u32
 /*
 =Game.World.CloudsHeight = 0.0
 */
-int l_World_index(lua_State *L)
+static int l_World_index(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return 0;
@@ -44,7 +46,7 @@ int l_World_index(lua_State *L)
         return 0;
 }
 
-int l_World_newindex(lua_State *L)
+static int l_World_newindex(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return luaL_error(L, "Attempt to set unknown member of World");
@@ -70,7 +72,7 @@ int l_World_newindex(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-int l_register_World(lua_State *L)
+bool Core::Game::RegisterWorldModule(lua_State *L)
 {
     luaL_newmetatable(L, "WorldMetatable");
     lua_pushcfunction(L, l_World_index);
@@ -84,5 +86,5 @@ int l_register_World(lua_State *L)
     luaC_setmetatable(L, "WorldMetatable");
     lua_setfield(L, -2, "World");
     lua_pop(L, 1);
-    return 0;
+    return true;
 }

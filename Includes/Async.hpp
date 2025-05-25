@@ -2,6 +2,8 @@
 
 #include "lua_common.h"
 
-void CoreAsyncHandlerCallback();
+namespace Core {
+    void AsyncHandlerCallback();
 
-int luaopen_Async(lua_State *L);
+    bool RegisterAsyncModule(lua_State *L);
+}

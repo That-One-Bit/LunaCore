@@ -11,6 +11,11 @@ namespace CTRPF = CTRPluginFramework;
 
 // ----------------------------------------------------------------------------
 
+//$Game.LocalPlayer.Inventory
+//$Game.LocalPlayer.Inventory.Slots
+
+// ----------------------------------------------------------------------------
+
 /*
 @@InventorySlot
 =InventorySlot.Slot = 0
@@ -18,12 +23,9 @@ namespace CTRPF = CTRPluginFramework;
 =InventorySlot.ItemCount = 0
 =InventorySlot.ItemData = 0
 =InventorySlot.ItemName = ""
-
-$Game.LocalPlayer.Inventory
-$Game.LocalPlayer.Inventory.Slots
 */
 
-int l_Inventory_Slots_index(lua_State *L)
+static int l_Inventory_Slots_index(lua_State *L)
 {
     if (lua_type(L, 2) == LUA_TNUMBER) {
         double num = lua_tonumber(L, 2);
@@ -70,7 +72,7 @@ int l_Inventory_Slots_index(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-int l_Inventory_Slot_class_index(lua_State *L)
+static int l_Inventory_Slot_class_index(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return 0;
@@ -128,7 +130,7 @@ int l_Inventory_Slot_class_index(lua_State *L)
         return 0;
 }
 
-int l_Inventory_Slot_class_newindex(lua_State *L)
+static int l_Inventory_Slot_class_newindex(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return luaL_error(L, "Attempt to set unknown member of slot");
@@ -171,7 +173,7 @@ int l_Inventory_Slot_class_newindex(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-int l_register_Player_Inventory_metatables(lua_State *L)
+static inline void RegisterInventoryMetatables(lua_State *L)
 {
     luaL_newmetatable(L, "InventorySlotsMetatable");
     lua_pushcfunction(L, l_Inventory_Slots_index);
@@ -186,18 +188,17 @@ int l_register_Player_Inventory_metatables(lua_State *L)
     lua_pushcfunction(L, l_Inventory_Slot_class_newindex);
     lua_setfield(L, -2, "__newindex");
     lua_pop(L, 1);
-    return 0;
 }
 
-int l_register_Player_Inventory(lua_State *L)
+// Required to be called inside LocalPlayer definition
+bool Core::Game::LocalPlayer::RegisterInventoryModule(lua_State *L)
 {
-    // Required to be called inside table definition
-    l_register_Player_Inventory_metatables(L);
+    RegisterInventoryMetatables(L);
 
     lua_newtable(L); // LocalPlayer.Inventory
     lua_newtable(L); // LocalPlayer.Inventory.Slots
     luaC_setmetatable(L, "InventorySlotsMetatable");
     lua_setfield(L, -2, "Slots");
     lua_setfield(L, -2, "Inventory");
-    return 0;
+    return true;
 }

@@ -11,7 +11,13 @@ std::queue<DrawCommandInfo> drawQueueBottom;
 std::mutex drawQueueMutexTop;
 std::mutex drawQueueMutexBottom;
 
-void CoreGraphicsPushCommand(const DrawCommandInfo &cmd)
+// ----------------------------------------------------------------------------
+
+//$Game.Graphics
+
+// ----------------------------------------------------------------------------
+
+void Core::Graphics::PushCommand(const DrawCommandInfo &cmd)
 {
     if (cmd.topScreen) {
         std::lock_guard<std::mutex> lock(drawQueueMutexTop);
@@ -23,7 +29,7 @@ void CoreGraphicsPushCommand(const DrawCommandInfo &cmd)
     }
 }
 
-bool CoreGraphicsDrawFrameCallback(const CTRPF::Screen &screen) {
+bool Core::GraphicsHandlerCallback(const CTRPF::Screen &screen) {
     std::queue<DrawCommandInfo> localQueue;
 
     if (screen.IsTop) {
@@ -55,7 +61,9 @@ bool CoreGraphicsDrawFrameCallback(const CTRPF::Screen &screen) {
     return true;
 }
 
-bool CoreRegisterGraphicsModule(lua_State *L)
+// ----------------------------------------------------------------------------
+
+bool Core::Game::RegisterGraphicsModule(lua_State *L)
 {
     return true;
 }

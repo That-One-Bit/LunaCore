@@ -7,13 +7,13 @@
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
 
-void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
+static void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
 {
     if (timeoutAsynClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)))
         luaL_error(L, "Async coroutine exceeded execution time (5000 ms)");
 }
 
-void CoreAsyncHandlerCallback()
+void Core::AsyncHandlerCallback()
 {
     lua_State *L = Lua_global;
 
@@ -26,7 +26,7 @@ void CoreAsyncHandlerCallback()
     {
         if (lua_pcall(L, 0, 0, 0))
         {
-            DebugLogError("Core error: " + std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Core error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
     }
@@ -35,7 +35,18 @@ void CoreAsyncHandlerCallback()
     lua_pop(L, 1);
 }
 
-int l_Async_create(lua_State *L)
+// ----------------------------------------------------------------------------
+
+//$Async
+
+// ----------------------------------------------------------------------------
+
+/*
+- Adds the function to the queue that will run apart from the game until the functions ends
+## func: function
+### Async.create
+*/
+static int l_Async_create(lua_State *L)
 {
     luaL_checktype(L, 1, LUA_TFUNCTION);
 
@@ -57,7 +68,7 @@ int l_Async_create(lua_State *L)
     return 0;
 }
 
-int l_Async_tick(lua_State *L)
+static int l_Async_tick(lua_State *L)
 {
     lua_getglobal(L, "Async");
     lua_getfield(L, -1, "scripts");
@@ -86,21 +97,28 @@ int l_Async_tick(lua_State *L)
         if (call_result != 0 && call_result != LUA_YIELD) {
             const char *errMsg = lua_tostring(co, -1);
             
-            // TODO: Improve this code to not use temporal globals
+            lua_getglobal(L, "debug");
+            lua_getfield(L, -1, "traceback");
+            lua_remove(L, -2);
             lua_pushvalue(L, coIdx);
-            lua_setglobal(L, "__THREAD_TEMP");
-            lua_pop(L, 1); // Remove co
-
             lua_pushstring(L, errMsg);
-            lua_setglobal(L, "__ERRMSG_TEMP");
 
-            if (luaL_dostring(L, "Game.Debug.logerror(debug.traceback(__THREAD_TEMP, __ERRMSG_TEMP):gsub('\\t', '    '))")) {
-                DebugLogError("Core error: "+std::string(lua_tostring(L, -1)));
+            if (lua_pcall(L, 2, 1, 0)) {
+                Core::Debug::LogError("Core error: "+std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
-            }
+            } else {
+                const char *traceback = lua_tostring(L, -1);
+                lua_pop(L, 1);
 
-            lua_pushnil(L); lua_setglobal(L, "__THREAD_TEMP");
-            lua_pushnil(L); lua_setglobal(L, "__ERRMSG_TEMP");
+                std::string newErrMsg(traceback);
+                size_t pos = 0;
+                while ((pos = newErrMsg.find("\t", pos)) != std::string::npos) {
+                    newErrMsg.replace(pos, 1, "    ");
+                    pos += 4;
+                }
+                Core::Debug::LogError(newErrMsg);
+            }
+            lua_pop(L, 1); // Remove co
 
             lua_pushnil(L);
             lua_rawseti(L, scriptsTableIdx, i);
@@ -113,24 +131,27 @@ int l_Async_tick(lua_State *L)
     return 0;
 }
 
+// ----------------------------------------------------------------------------
+
 /*
-$Async
-
-- Adds the function to the queue that will run apart from the game until the functions ends
-## func: function
-### Async.create
-
 - Yeilds the current task until time has passed. Always returns true
 ## seconds: number?
 ## return: boolean
 ### Async.wait
 */
-int luaopen_Async(lua_State *L)
-{
-    const char *luaCode = R"(
-        Async = {}
-        Async.scripts = {}
 
+bool Core::RegisterAsyncModule(lua_State *L)
+{
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "scripts");
+    lua_pushcfunction(L, l_Async_create);
+    lua_setfield(L, -2, "create");
+    lua_pushcfunction(L, l_Async_tick);
+    lua_setfield(L, -2, "tick");
+    lua_setglobal(L, "Async");
+
+    const char *luaCode = R"(
         function Async.wait(seconds)
             if seconds == nil then
                 coroutine.yield()
@@ -142,17 +163,14 @@ int luaopen_Async(lua_State *L)
             end
             return true
         end
+
+        Async = readOnlyTable(Async, "Async")
     )";
     if (luaL_dostring(L, luaCode))
     {
-        DebugLogMessage("Engine Async module failed load: " + std::string(lua_tostring(L, -1)), true);
+        Core::Debug::LogError("Core Async module failed load: " + std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
+        return false;
     }
-    lua_getglobal(L, "Async");
-    lua_pushcfunction(L, l_Async_create);
-    lua_setfield(L, -2, "create");
-    lua_pushcfunction(L, l_Async_tick);
-    lua_setfield(L, -2, "tick");
-    lua_pop(L, 1);
-    return 0;
+    return true;
 }

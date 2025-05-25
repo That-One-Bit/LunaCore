@@ -2,4 +2,8 @@
 
 #include "lua_common.h"
 
-int l_register_Gamepad(lua_State *L);
+namespace Core {
+    namespace Game {
+        bool RegisterGamepadModule(lua_State *L);
+    }
+}

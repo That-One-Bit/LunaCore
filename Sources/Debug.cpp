@@ -8,7 +8,7 @@ namespace CTRPF = CTRPluginFramework;
 
 CTRPF::File logFile;
 
-bool DebugOpenLogFile(const char *filepath)
+bool Core::Debug::OpenLogFile(const char *filepath)
 {
     if (!CTRPF::File::Exists(filepath))
         CTRPF::File::Create(filepath);
@@ -18,13 +18,13 @@ bool DebugOpenLogFile(const char *filepath)
     return logFile.IsOpen();
 }
 
-void DebugCloseLogFile()
+void Core::Debug::CloseLogFile()
 {
     if (logFile.IsOpen())
         logFile.Close();
 }
 
-void DebugWriteLog(const std::string& msg)
+static void DebugWriteLog(const std::string& msg)
 {
     if (logFile.IsOpen()) {
         time_t rawTime = time(NULL);
@@ -44,23 +44,30 @@ void DebugWriteLog(const std::string& msg)
     }
 }
 
-void DebugLogMessage(const std::string& msg, bool showOnScreen)
+void Core::Debug::LogMessage(const std::string& msg, bool showOnScreen)
 {
     if (showOnScreen)
-        CTRPluginFramework::OSD::Notify(msg);
+        CTRPF::OSD::Notify(msg);
     DebugWriteLog(msg);
 }
 
-void DebugLogError(const std::string& msg)
+void Core::Debug::LogError(const std::string& msg)
 {
-    DebugError(msg);
+    Core::Debug::Error(msg);
     DebugWriteLog(std::string("[ERROR] ")+msg);
 }
 
-void DebugError(const std::string& msg)
+void Core::Debug::Message(const std::string& msg)
 {
-    CTRPluginFramework::OSD::Notify(msg, CTRPluginFramework::Color::Red, CTRPluginFramework::Color::Black);
+    CTRPF::OSD::Notify(msg);
 }
+
+void Core::Debug::Error(const std::string& msg)
+{
+    CTRPF::OSD::Notify(msg, CTRPF::Color::Red, CTRPF::Color::Black);
+}
+
+// ----------------------------------------------------------------------------
 
 //!include Sources/Modules.cpp
 //$Game.Debug
@@ -72,11 +79,11 @@ void DebugError(const std::string& msg)
 ## msg: string
 ### Game.Debug.message
 */
-int l_Debug_message(lua_State *L)
+static int l_Debug_message(lua_State *L)
 {
     const char *msg = lua_tostring(L, 1);
 
-    CTRPluginFramework::OSD::Notify(msg);
+    CTRPF::OSD::Notify(msg);
     return 0;
 }
 
@@ -86,13 +93,13 @@ int l_Debug_message(lua_State *L)
 ## showOnScreen: boolean
 ### Game.Debug.log
 */
-int l_Debug_log(lua_State *L)
+static int l_Debug_log(lua_State *L)
 {
     const char *msg = luaL_checkstring(L, 1);
     bool showOnScreen = false;
     if (lua_type(L, 2) == LUA_TBOOLEAN)
         showOnScreen = lua_toboolean(L, 2);
-    DebugLogMessage(msg, showOnScreen);
+    Core::Debug::LogMessage(msg, showOnScreen);
     return 0;
 }
 
@@ -101,10 +108,10 @@ int l_Debug_log(lua_State *L)
 ## msg: string
 ### Game.Debug.logerror
 */
-int l_Debug_logerror(lua_State *L)
+static int l_Debug_logerror(lua_State *L)
 {
     const char *msg = luaL_checkstring(L, 1);
-    DebugLogError(msg);
+    Core::Debug::LogError(msg);
     return 0;
 }
 
@@ -113,10 +120,10 @@ int l_Debug_logerror(lua_State *L)
 ## msg: string
 ### Game.Debug.error
 */
-int l_Debug_error(lua_State *L)
+static int l_Debug_error(lua_State *L)
 {
     const char *msg = luaL_checkstring(L, 1);
-    DebugError(msg);
+    Core::Debug::Error(msg);
     return 0;
 }
 
@@ -131,10 +138,10 @@ static const luaL_Reg debug_functions[] =
 
 // ----------------------------------------------------------------------------
 
-int l_register_Debug(lua_State *L)
+bool Core::Game::RegisterDebugModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     luaC_register_field(L, debug_functions, "Debug");
     lua_pop(L, 1);
-    return 0;
+    return true;
 }

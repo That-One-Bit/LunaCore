@@ -2,4 +2,6 @@
 
 #include "lua_common.h"
 
-void loadScriptingModules(lua_State *L);
+namespace Core {
+    void LoadModules(lua_State *L);
+}

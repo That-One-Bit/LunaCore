@@ -19,8 +19,14 @@ typedef struct {
     bool topScreen;
 } DrawCommandInfo;
 
-void CoreGraphicsPushCommand(const DrawCommandInfo &cmd);
+namespace Core {
+    namespace Graphics {
+        void PushCommand(const DrawCommandInfo &cmd);
+    }
 
-bool CoreGraphicsDrawFrameCallback(const CTRPluginFramework::Screen &screen);
+    bool GraphicsHandlerCallback(const CTRPluginFramework::Screen &screen);
 
-bool CoreRegisterGraphicsModule(lua_State *L);
+    namespace Game {
+        bool RegisterGraphicsModule(lua_State *L);
+    }
+}

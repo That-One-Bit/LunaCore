@@ -2,4 +2,6 @@
 
 #include "lua_common.h"
 
-int luaopen_Bits(lua_State *L);
+namespace Core {
+    bool RegisterBitsModule(lua_State *L);
+}

@@ -14,6 +14,8 @@ enum player_offsets : u32 {
     playerSwimSpeed = 0x100000 + 0x3EA090,
 };
 
+// ----------------------------------------------------------------------------
+
 //$Game.LocalPlayer
 
 // ----------------------------------------------------------------------------
@@ -27,7 +29,7 @@ enum player_offsets : u32 {
 ## return: number
 ### Game.LocalPlayer.Position.get
 */
-int l_Player_Position_get(lua_State *L) 
+static int l_Player_Position_get(lua_State *L)
 {
     float x, y, z;
     Minecraft::GetPlayerPosition(x, y, z);
@@ -44,7 +46,7 @@ int l_Player_Position_get(lua_State *L)
 ## z: number
 ### Game.LocalPlayer.Position.set
 */
-int l_Player_Position_set(lua_State *L) 
+static int l_Player_Position_set(lua_State *L)
 {
     float x = luaL_checknumber(L, 1);
     float y = luaL_checknumber(L, 2);
@@ -87,7 +89,7 @@ static const luaL_Reg player_position_methods[] =
 =Game.LocalPlayer.ReachDistance = 0.0
 =Game.LocalPlayer.SprintDelay = 0.0
 */
-int l_LocalPlayer_index(lua_State *L)
+static int l_LocalPlayer_index(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return 0;
@@ -182,7 +184,7 @@ int l_LocalPlayer_index(lua_State *L)
         return 0;
 }
 
-int l_LocalPlayer_newindex(lua_State *L)
+static int l_LocalPlayer_newindex(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return luaL_error(L, "Attempt to set unknown member of LocalPlayer");
@@ -273,7 +275,7 @@ int l_LocalPlayer_newindex(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-int l_register_LocalPlayer(lua_State *L)
+static inline void RegisterLocalPlayerMetatables(lua_State *L)
 {
     luaL_newmetatable(L, "LocalPlayerMetatable");
     lua_pushcfunction(L, l_LocalPlayer_index);
@@ -281,16 +283,21 @@ int l_register_LocalPlayer(lua_State *L)
     lua_pushcfunction(L, l_LocalPlayer_newindex);
     lua_setfield(L, -2, "__newindex");
     lua_pop(L, 1);
+}
+
+bool Core::Game::RegisterLocalPlayerModule(lua_State *L)
+{
+    RegisterLocalPlayerMetatables(L);
 
     lua_getglobal(L, "Game");
     lua_newtable(L); // LocalPlayer
 
     luaC_register_field(L, player_position_methods, "Position");
-    l_register_Player_Camera(L);
-    l_register_Player_Inventory(L);
+    Core::Game::LocalPlayer::RegisterCameraModule(L);
+    Core::Game::LocalPlayer::RegisterInventoryModule(L);
     
     luaC_setmetatable(L, "LocalPlayerMetatable"); // Set metatable at the end otherwise setfield doesn't work
     lua_setfield(L, -2, "LocalPlayer");
     lua_pop(L, 1);
-    return 0;
+    return true;
 }

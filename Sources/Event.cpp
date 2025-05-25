@@ -17,7 +17,7 @@ void TimeoutEventHook(lua_State *L, lua_Debug *ar)
         luaL_error(L, "Event listener exceeded execution time (5000 ms)");
 }
 
-void CoreEventHandlerCallback()
+void Core::EventHandlerCallback()
 {
     lua_State *L = Lua_global;
 
@@ -35,12 +35,12 @@ void CoreEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Core error. Event module error in OnKeyPressed: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core error. Event module error in OnKeyPressed: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Core error. Unexpected type for Event.OnKeyPressed:Trigger");
+            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyPressed:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -59,12 +59,12 @@ void CoreEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Core error. Event module error in OnKeyDown: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core error. Event module error in OnKeyDown: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Core error. Unexpected type for Event.OnKeyDown:Trigger");
+            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyDown:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -83,17 +83,23 @@ void CoreEventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                DebugLogError("Core error. Event module error in OnKeyReleased: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core error. Event module error in OnKeyReleased: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            DebugLogError("Core error. Unexpected type for Event.OnKeyReleased:Trigger");
+            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyReleased:Trigger");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
     }
 }
+
+// ----------------------------------------------------------------------------
+
+//$Game.Event
+
+// ----------------------------------------------------------------------------
 
 //@@EventClass
 
@@ -173,7 +179,7 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
                 pos += 4;
             }
 
-            DebugLogError(newErrMsg);
+            Core::Debug::LogError(newErrMsg);
 
             lua_pushnil(L);
             lua_rawseti(L, listenersIdx, i);
@@ -188,11 +194,12 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
     return 0;
 }
 
-bool CoreRegisterEventModule(lua_State *L)
+// ----------------------------------------------------------------------------
+
+bool Core::Game::RegisterEventModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
-    //$Game.Event
-    lua_newtable(L);
+    lua_newtable(L); // Game.Event
 
     //$@@@Game.Event.BaseEvent: EventClass
     lua_newtable(L);
@@ -255,8 +262,9 @@ bool CoreRegisterEventModule(lua_State *L)
     )";
     if (luaL_dostring(L, lua_Code))
     {
-        DebugLogError("Core error. Unable to set 'Game.Event.BaseEvent' read-only: "+std::string(lua_tostring(L, -1)));
+        Core::Debug::LogError("Core error. Unable to set 'Game.Event.BaseEvent' read-only: "+std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
+        return false;
     }
-    return 0;
+    return true;
 }

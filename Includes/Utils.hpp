@@ -2,6 +2,8 @@
 
 #include "lua_common.h"
 
-int l_register_Utils(lua_State *L);
+namespace Core {
+    bool RegisterUtilsModule(lua_State *L);
 
-int l_unregister_Utils(lua_State *L);
+    void UnregisterUtilsModule(lua_State *L);
+}

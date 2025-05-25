@@ -2,7 +2,7 @@
 
 #include <CTRPluginFramework.hpp>
 
-const char *json_lua_code = R"(
+static const char *json_lua_code = R"(
 local json = { _version = "0.1.2" }
 local encode
 local escape_char_map = {
@@ -292,11 +292,12 @@ int luaopen_json(lua_State *L)
     return 1;
 }
 
-void register_lua_json_module(lua_State *L)
+bool Core::PreloadJsonModule(lua_State *L)
 {
     lua_getglobal(L, "package");
     lua_getfield(L, -1, "preload");
     lua_pushcfunction(L, luaopen_json);
     lua_setfield(L, -2, "json");
     lua_pop(L, 2);
+    return true;
 }

@@ -13,14 +13,18 @@ enum player_camera_offsets : u32 {
 
 // ----------------------------------------------------------------------------
 
+//!include Sources/Player/Player.cpp
+//$Game.LocalPlayer.Camera
+
+// ----------------------------------------------------------------------------
+
 /*
-!include Sources/Player/Player.cpp
-$Game.LocalPlayer.Camera
 =Game.LocalPlayer.Camera.FOV = 0.0
 =Game.LocalPlayer.Camera.Yaw = 0.0
 =Game.LocalPlayer.Camera.Pitch = 0.0
 */
-int l_Camera_index(lua_State *L)
+
+static int l_Camera_index(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return 0;
@@ -52,7 +56,7 @@ int l_Camera_index(lua_State *L)
         return 0;
 }
 
-int l_Camera_newindex(lua_State *L)
+static int l_Camera_newindex(lua_State *L)
 {
     if (lua_type(L, 2) != LUA_TSTRING)
         return luaL_error(L, "Attempt to set unknown member of object");
@@ -83,7 +87,7 @@ int l_Camera_newindex(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-int l_register_Player_Camera_metatables(lua_State *L)
+static inline void RegisterCameraMetatables(lua_State *L)
 {
     luaL_newmetatable(L, "CameraMetatable");
     lua_pushcfunction(L, l_Camera_index);
@@ -91,16 +95,15 @@ int l_register_Player_Camera_metatables(lua_State *L)
     lua_pushcfunction(L, l_Camera_newindex);
     lua_setfield(L, -2, "__newindex");
     lua_pop(L, 1);
-    return 0;
 }
 
-int l_register_Player_Camera(lua_State *L)
+// Required to be called inside LocalPlayer definition
+bool Core::Game::LocalPlayer::RegisterCameraModule(lua_State *L)
 {
-    // Required to be called inside table definition
-    l_register_Player_Camera_metatables(L);
+    RegisterCameraMetatables(L);
 
     lua_newtable(L); // LocalPlayer.Camera
     luaC_setmetatable(L, "PlayerCameraMetatable");
     lua_setfield(L, -2, "Camera");
-    return 0;
+    return true;
 }

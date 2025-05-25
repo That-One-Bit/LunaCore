@@ -2,6 +2,10 @@
 
 #include "lua_common.h"
 
-void CoreEventHandlerCallback();
+namespace Core {
+    void EventHandlerCallback();
 
-bool CoreRegisterEventModule(lua_State *L);
+    namespace Game {
+        bool RegisterEventModule(lua_State *L);
+    }
+}

@@ -2,4 +2,6 @@
 
 #include "lua_common.h"
 
-int luaopen_System(lua_State *L);
+namespace Core {
+    bool RegisterSystemModule(lua_State *L);
+}

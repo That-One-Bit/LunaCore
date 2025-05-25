@@ -2,6 +2,8 @@
 
 #include <time.h>
 
+// ----------------------------------------------------------------------------
+
 //$System
 
 // ----------------------------------------------------------------------------
@@ -11,7 +13,7 @@
 ## return: number
 ### System.getTime
 */
-int l_System_getTime(lua_State *L)
+static int l_System_getTime(lua_State *L)
 {
     lua_pushnumber(L, time(NULL));
     return 1;
@@ -25,10 +27,8 @@ static const luaL_Reg system_functions[] =
 
 // ----------------------------------------------------------------------------
 
-int luaopen_System(lua_State *L)
+bool Core::RegisterSystemModule(lua_State *L)
 {
-    lua_newtable(L);
-    luaL_register(L, NULL, system_functions);
-    lua_setglobal(L, "System");
-    return 0;
+    luaC_register_global(L, system_functions, "System");
+    return true;
 }

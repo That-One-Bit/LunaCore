@@ -4,14 +4,22 @@
 
 #include "lua_common.h"
 
-bool DebugOpenLogFile(const char *filepath);
+namespace Core {
+    namespace Debug {
+        bool OpenLogFile(const char *filepath);
 
-void DebugCloseLogFile();
+        void CloseLogFile();
 
-void DebugLogMessage(const std::string& msg, bool showOnScreen);
+        void LogMessage(const std::string& msg, bool showOnScreen);
 
-void DebugLogError(const std::string& msg);
+        void LogError(const std::string& msg);
 
-void DebugError(const std::string& msg);
+        void Message(const std::string& msg);
 
-int l_register_Debug(lua_State *L);
+        void Error(const std::string& msg);
+    }
+
+    namespace Game {
+        bool RegisterDebugModule(lua_State *L);
+    }
+}

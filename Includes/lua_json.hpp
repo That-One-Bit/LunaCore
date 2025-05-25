@@ -2,4 +2,6 @@
 
 #include "lua_common.h"
 
-void register_lua_json_module(lua_State *L);
+namespace Core {
+    bool PreloadJsonModule(lua_State *L);
+}

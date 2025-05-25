@@ -116,7 +116,7 @@ namespace CTRPluginFramework
         File::Open(scriptFO, fp, File::Mode::READ);
         if (!scriptFO.IsOpen())
         {
-            DebugLogMessage("Failed to open file"+fp, false);
+            Core::Debug::LogMessage("Failed to open file"+fp, false);
             return false;
         }
         scriptFO.Seek(0, File::SeekPos::END);
@@ -144,7 +144,7 @@ namespace CTRPluginFramework
             int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp.c_str());
             if (status_code)
             {
-                DebugLogError(std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError(std::string(lua_tostring(L, -1)));
                 lua_pop(L, 2);
                 success = false;
             }
@@ -158,7 +158,7 @@ namespace CTRPluginFramework
                 timeoutLoadClock.Restart();
                 if (lua_pcall(L, 0, 0, 0))
                 {
-                    DebugLogError("\""+fp+"\""+": " + std::string(lua_tostring(L, -1)));
+                    Core::Debug::LogError("\""+fp+"\""+": " + std::string(lua_tostring(L, -1)));
                     lua_pop(L, 2);
                     success = false;
                 }
@@ -216,7 +216,7 @@ namespace CTRPluginFramework
             lua_pushboolean(L, screen.IsTop);
             if (lua_pcall(L, 2, 0, 0))
             {
-                DebugLogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
+                Core::Debug::LogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
                 lua_pop(L, 1);
             }
         }
@@ -245,7 +245,7 @@ namespace CTRPluginFramework
             return;
         }
         std::string fullPath("sdmc:" + dir.GetFullName() + "/" + files[readFiles]);
-        DebugLogMessage("Loading script '"+fullPath+"'", false);
+        Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
         if (LoadScript(Lua_global, fullPath.c_str()))
             scriptsLoadedCount++;
         readFiles++;
@@ -276,20 +276,20 @@ namespace CTRPluginFramework
 
         if (!Directory::IsExists("sdmc:/mc3ds"))
             Directory::Create("sdmc:/mc3ds");
-        if (!DebugOpenLogFile(LOG_FILE))
+        if (!Core::Debug::OpenLogFile(LOG_FILE))
             OSD::Notify("Failed to open log file");
 
-        DebugLogMessage("Starting plugin", false);
-        DebugLogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
+        Core::Debug::LogMessage("Starting plugin", false);
+        Core::Debug::LogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
 
         menu = new PluginMenu("Script Engine", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
             "Allows to execute Lua scripts.");
 
-        DebugLogMessage("Loading Lua environment", false);
+        Core::Debug::LogMessage("Loading Lua environment", false);
         Lua_global = luaL_newstate();
         luaL_openlibs(Lua_global);
-        DebugLogMessage("Loading scripting modules", false);
-        loadScriptingModules(Lua_global);
+        Core::Debug::LogMessage("Loading scripting modules", false);
+        Core::LoadModules(Lua_global);
 
         // Set Lua path
         lua_getglobal(Lua_global, "package");
@@ -299,23 +299,23 @@ namespace CTRPluginFramework
         lua_pushfstring(Lua_global, "%s;sdmc:/mc3ds/scripts/?.lua;sdmc:/mc3ds/scripts/?/init.lua", current_path);
         lua_setfield(Lua_global, -2, "path");
         lua_pop(Lua_global, 1);
-        DebugLogMessage("Lua environment loaded", false);
+        Core::Debug::LogMessage("Lua environment loaded", false);
 
         // Synnchronize the menu with frame event
         menu->SynchronizeWithFrame(true);
         menu->ShowWelcomeMessage(false);
 
-        DebugLogMessage("Script core loaded", true);
+        Core::Debug::LogMessage("Script core loaded", true);
         u16 gameVersion = Process::GetVersion();
         if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
-            DebugLogMessage("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features", false);
+            Core::Debug::LogMessage("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features", false);
         else
-            DebugLogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
+            Core::Debug::LogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
 
         OSD::Run(DrawMonitors);
 
         // Wait until some things has been loaded otherwise instability may occur
-        DebugLogMessage("Waiting to load scripts", false);
+        Core::Debug::LogMessage("Waiting to load scripts", false);
         Sleep(Seconds(15));
         if (Directory::IsExists("sdmc:/mc3ds/scripts")) {
             menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'sdmc:/mc3ds/scripts'
@@ -325,10 +325,17 @@ namespace CTRPluginFramework
             if (dir.IsOpen()) {
                 std::vector<std::string> dirFiles;
                 if (dir.ListFiles(dirFiles, ".lua") > 0) { // Only add core callbacks if any script under directory
-                    menu->Callback(CoreEventHandlerCallback);
-                    OSD::Run(CoreGraphicsDrawFrameCallback);
-                    menu->Callback(CoreAsyncHandlerCallback);
-                    menu->Callback(UpdateLuaStatistics);
+                    int luaFiles = 0;
+                    for (auto file : dirFiles) {
+                        if (strcmp(file.c_str() + file.size() - 4, ".lua") == 0)
+                            luaFiles++;
+                    }
+                    if (luaFiles > 0) {
+                        menu->Callback(Core::EventHandlerCallback);
+                        OSD::Run(Core::GraphicsHandlerCallback);
+                        menu->Callback(Core::AsyncHandlerCallback);
+                        menu->Callback(UpdateLuaStatistics);
+                    }
                 }
             }
         }
@@ -337,9 +344,9 @@ namespace CTRPluginFramework
         InitMenu(*menu);
 
         // Launch menu and mainloop
-        DebugLogMessage("Starting plugin mainloop", false);
+        Core::Debug::LogMessage("Starting plugin mainloop", false);
         menu->Run();
-        DebugCloseLogFile();
+        Core::Debug::CloseLogFile();
 
         delete menu;
 

@@ -2,4 +2,8 @@
 
 #include "lua_common.h"
 
-int l_register_World(lua_State *L);
+namespace Core {
+    namespace Game {
+        bool RegisterWorldModule(lua_State *L);
+    }
+}
