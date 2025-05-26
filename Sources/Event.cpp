@@ -5,6 +5,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Debug.hpp"
+#include "Utils.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
@@ -168,18 +169,11 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
         timeoutEventClock.Restart();
         
         if (lua_pcall(L, argc, 0, errfunc - (argc + 1))) {
-            const char *errMsg = lua_tostring(L, -1);
+            std::string errMsg(lua_tostring(L, -1));
+            Core::Utils::Replace(errMsg, "\t", "    ");
+            Core::Debug::LogError(errMsg);
             lua_pop(L, 1);
             lua_remove(L, errfunc - (argc + 1));
-
-            std::string newErrMsg(errMsg);
-            size_t pos = 0;
-            while ((pos = newErrMsg.find("\t", pos)) != std::string::npos) {
-                newErrMsg.replace(pos, 1, "    ");
-                pos += 4;
-            }
-
-            Core::Debug::LogError(newErrMsg);
 
             lua_pushnil(L);
             lua_rawseti(L, listenersIdx, i);

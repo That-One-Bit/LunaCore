@@ -3,6 +3,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Debug.hpp"
+#include "Utils.hpp"
 
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
@@ -107,16 +108,10 @@ static int l_Async_tick(lua_State *L)
                 Core::Debug::LogError("Core error: "+std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             } else {
-                const char *traceback = lua_tostring(L, -1);
+                std::string traceback(lua_tostring(L, -1));
+                Core::Utils::Replace(traceback, "\t", "    ");
+                Core::Debug::LogError(traceback);
                 lua_pop(L, 1);
-
-                std::string newErrMsg(traceback);
-                size_t pos = 0;
-                while ((pos = newErrMsg.find("\t", pos)) != std::string::npos) {
-                    newErrMsg.replace(pos, 1, "    ");
-                    pos += 4;
-                }
-                Core::Debug::LogError(newErrMsg);
             }
             lua_pop(L, 1); // Remove co
 

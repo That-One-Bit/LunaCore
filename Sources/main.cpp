@@ -18,6 +18,7 @@
 #include "Event.hpp"
 #include "Async.hpp"
 #include "Graphics.hpp"
+#include "Utils.hpp"
 
 #define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
 #define EMULATOR_VERSION(version) ((version) == 9216)
@@ -112,74 +113,63 @@ namespace CTRPluginFramework
     bool LoadScript(lua_State *L, const std::string& fp)
     {
         bool success = true;
-        File scriptFO;
-        File::Open(scriptFO, fp, File::Mode::READ);
-        if (!scriptFO.IsOpen())
+        std::string fileContent = Core::Utils::LoadFile(fp);
+        if (fileContent.empty())
         {
             Core::Debug::LogMessage("Failed to open file"+fp, false);
             return false;
         }
-        scriptFO.Seek(0, File::SeekPos::END);
-        long fileSize = scriptFO.Tell();
-        scriptFO.Seek(0, File::SeekPos::SET);
-        char *fileContent = (char *)malloc(fileSize + 1);
-        if (fileContent != NULL)
+        lua_newtable(L);
+        lua_newtable(L);
+        lua_getglobal(L, "_G");
+        lua_setfield(L, -2, "__index");
+        lua_getglobal(L, "_G");
+        lua_getmetatable(L, -1);
+        lua_getfield(L, -1, "__newindex");
+        int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        lua_pop(L, 2);
+        lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+        lua_setfield(L, -2, "__newindex");
+        lua_setmetatable(L, -2);
+
+        int status_code = luaL_loadbuffer(L, fileContent.c_str(), fileContent.size(), fp.c_str());
+        if (status_code)
         {
-            scriptFO.Read(fileContent, fileSize);
-            fileContent[fileSize] = '\0';
-
-            lua_newtable(L);
-            lua_newtable(L);
-            lua_getglobal(L, "_G");
-            lua_setfield(L, -2, "__index");
-            lua_getglobal(L, "_G");
-            lua_getmetatable(L, -1);
-            lua_getfield(L, -1, "__newindex");
-            int ref = luaL_ref(L, LUA_REGISTRYINDEX);
+            Core::Debug::LogError(std::string(lua_tostring(L, -1)));
             lua_pop(L, 2);
-            lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-            lua_setfield(L, -2, "__newindex");
-            lua_setmetatable(L, -2);
+            success = false;
+        }
+        else
+        {
+            // Execute script on a private env
+            lua_pushvalue(L, -2);
+            lua_setfenv(L, -2);
 
-            int status_code = luaL_loadbuffer(L, fileContent, fileSize, fp.c_str());
-            if (status_code)
+            lua_sethook(L, TimeoutLoadHook, LUA_MASKCOUNT, 100);
+            timeoutLoadClock.Restart();
+            if (lua_pcall(L, 0, 0, 0))
             {
-                Core::Debug::LogError(std::string(lua_tostring(L, -1)));
+                std::string error_msg(lua_tostring(L, -1));
+                Core::Utils::Replace(error_msg, "\t", "    ");
+                Core::Debug::LogError(error_msg);
                 lua_pop(L, 2);
                 success = false;
             }
             else
             {
-                // Execute script on a private env
-                lua_pushvalue(L, -2);
-                lua_setfenv(L, -2);
-
-                lua_sethook(L, TimeoutLoadHook, LUA_MASKCOUNT, 100);
-                timeoutLoadClock.Restart();
-                if (lua_pcall(L, 0, 0, 0))
+                // If success copy state to global env
+                lua_getglobal(L, "_G");
+                lua_pushnil(L);
+                while (lua_next(L, -3))
                 {
-                    Core::Debug::LogError("\""+fp+"\""+": " + std::string(lua_tostring(L, -1)));
-                    lua_pop(L, 2);
-                    success = false;
+                    lua_pushvalue(L, -2);
+                    lua_insert(L, -2);
+                    lua_settable(L, -4);
                 }
-                else
-                {
-                    // If success copy state to global env
-                    lua_getglobal(L, "_G");
-                    lua_pushnil(L);
-                    while (lua_next(L, -3))
-                    {
-                        lua_pushvalue(L, -2);
-                        lua_insert(L, -2);
-                        lua_settable(L, -4);
-                    }
-                    lua_pop(L, 2);
-                }
-                lua_sethook(L, nullptr, 0, 0);
+                lua_pop(L, 2);
             }
+            lua_sethook(L, nullptr, 0, 0);
         }
-        scriptFO.Close();
-        free(fileContent);
         return success;
     }
 
@@ -288,7 +278,7 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Loading Lua environment", false);
         Lua_global = luaL_newstate();
         luaL_openlibs(Lua_global);
-        Core::Debug::LogMessage("Loading scripting modules", false);
+        Core::Debug::LogMessage("Loading core modules", false);
         Core::LoadModules(Lua_global);
 
         // Set Lua path

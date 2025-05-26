@@ -4,6 +4,8 @@
 
 #include "lua_json.hpp"
 
+#include "FileLoader.hpp"
+
 #include "Bits.hpp"
 #include "System.hpp"
 #include "Async.hpp"
@@ -61,6 +63,7 @@ namespace Core {
 
 void Core::LoadModules(lua_State *L)
 {
+    Core::RegisterCustomFileLoader(L);
     Core::PreloadJsonModule(L);
 
     Core::RegisterUtilsModule(L);

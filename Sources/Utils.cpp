@@ -1,6 +1,41 @@
 #include "Utils.hpp"
 
+#include <cstdlib>
+
+#include <CTRPluginFramework.hpp>
+
 #include "Debug.hpp"
+
+namespace CTRPF = CTRPluginFramework;
+
+std::string Core::Utils::LoadFile(const std::string &filepath)
+{
+    std::string content;
+    CTRPF::File file_ptr;
+    CTRPF::File::Open(file_ptr, filepath, CTRPF::File::READ);
+    if (!file_ptr.IsOpen())
+        return content;
+    file_ptr.Seek(0, CTRPF::File::SeekPos::END);
+    size_t fileSize = file_ptr.Tell();
+    file_ptr.Seek(0, CTRPF::File::SeekPos::SET);
+    char *fileContent = (char *)malloc(fileSize + 1);
+    if (fileContent == NULL) 
+        return content;
+    file_ptr.Read(fileContent, fileSize);
+    fileContent[fileSize] = '\0';
+    content = std::string(fileContent);
+    free(fileContent);
+    return content;
+}
+
+void Core::Utils::Replace(std::string &str, const std::string &pattern, const std::string &repl)
+{
+    size_t pos = 0;
+    while ((pos = str.find(pattern, pos)) != std::string::npos) {
+        str.replace(pos, pattern.size(), repl);
+        pos += repl.size();
+    }
+}
 
 bool Core::RegisterUtilsModule(lua_State *L)
 {
