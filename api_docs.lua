@@ -63,6 +63,8 @@ function Game.Debug.logerror(msg) end
 ---@param msg string
 function Game.Debug.error(msg) end
 
+Game.Event = {}
+
 ---@class EventClass
 local EventClass = {}
 
@@ -72,8 +74,6 @@ function EventClass:Connect(func) end
 
 ---Fire this event
 function EventClass:Trigger() end
-
-Game.Event = {}
 
 ---@class BaseEvent: EventClass
 Game.Event.BaseEvent = {}
@@ -178,6 +178,24 @@ Game.Gamepad.KeyCodes.CPAD = 2952790016
 
 Game.Gamepad.KeyCodes.CSTICK = 184549376
 
+Game.Graphics = {}
+
+---Draws a rect on screen
+---@param x integer
+---@param y integer
+---@param width integer
+---@param height integer
+---@param color integer
+function Game.Graphics.drawRect(x, y, width, height, color) end
+
+---Draws a solid rect on screen
+---@param x integer
+---@param y integer
+---@param width integer
+---@param height integer
+---@param color integer
+function Game.Graphics.drawRectFill(x, y, width, height, color) end
+
 Game.LocalPlayer = {}
 
 Game.LocalPlayer.Position = {}
@@ -248,6 +266,10 @@ Game.LocalPlayer.Camera.Yaw = 0.0
 
 Game.LocalPlayer.Camera.Pitch = 0.0
 
+Game.LocalPlayer.Inventory = {}
+
+Game.LocalPlayer.Inventory.Slots = {}
+
 ---@class InventorySlot
 local InventorySlot = {}
 
@@ -260,10 +282,6 @@ InventorySlot.ItemCount = 0
 InventorySlot.ItemData = 0
 
 InventorySlot.ItemName = ""
-
-Game.LocalPlayer.Inventory = {}
-
-Game.LocalPlayer.Inventory.Slots = {}
 
 System = {}
 

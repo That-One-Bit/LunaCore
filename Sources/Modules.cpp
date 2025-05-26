@@ -14,6 +14,7 @@
 #include "World.hpp"
 #include "Player/Player.hpp"
 #include "Event.hpp"
+#include "Graphics.hpp"
 
 #include "Utils.hpp"
 
@@ -29,6 +30,7 @@ namespace Core {
         Core::Game::RegisterWorldModule(L);
         Core::Game::RegisterLocalPlayerModule(L);
         Core::Game::RegisterEventModule(L);
+        Core::Game::RegisterGraphicsModule(L);
 
         const char *lua_Code = R"(
             local realGame = readOnlyTable(Game, "Game")

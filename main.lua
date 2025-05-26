@@ -4,6 +4,12 @@ local Gamepad = Game.Gamepad
 
 MiGlobal = 34
 
+Game.Event.OnNewFrame:Connect(function (screen)
+    if screen == "top" then
+        Game.Graphics.drawRectFill(10, 10, 40, 20, 0)
+    end
+end)
+
 -- Test input and LocalPlayer Inventory
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Gamepad.KeyCodes.DPADDOWN) then

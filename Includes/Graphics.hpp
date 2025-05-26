@@ -6,6 +6,7 @@
 
 typedef enum DrawCommandID : u8 {
     DRAWCMD_RECT,
+    DRAWCMD_RECTFILL,
     DRAWCMD_PRINT,
 } DrawCommandID;
 
@@ -15,7 +16,6 @@ typedef struct {
     int x, y, width, height;
     u32 color1;
     u32 color2;
-    bool filled;
     bool topScreen;
 } DrawCommandInfo;
 

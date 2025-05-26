@@ -96,6 +96,7 @@ namespace CTRPluginFramework
     {
         if (!IS_TARGET_ID(Process::GetTitleID()))
             return;
+        settings.UseGameHidMemory = true;
         ToggleTouchscreenForceOn();
         u16 gameVersion = Process::GetVersion();
         if (IS_VERSION_COMPATIBLE(gameVersion) || EMULATOR_VERSION(gameVersion))
@@ -190,32 +191,6 @@ namespace CTRPluginFramework
         return false;
     }
 
-    bool ScriptingNewFrameEventCallback(const Screen &screen)
-    {
-        // TODO: Cannot access to lua state
-        lua_State *L = Lua_global;
-
-        lua_getglobal(L, "Game");
-        lua_getfield(L, -1, "Event");
-        lua_getfield(L, -1, "OnNewFrame");
-        lua_getfield(L, -1, "Trigger");
-
-        if (lua_isfunction(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            lua_pushboolean(L, screen.IsTop);
-            if (lua_pcall(L, 2, 0, 0))
-            {
-                Core::Debug::LogMessage("Script error: " + std::string(lua_tostring(L, -1)), true);
-                lua_pop(L, 1);
-            }
-        }
-        else
-            lua_pop(L, 1);
-        lua_pop(L, 3);
-        return true;
-    }
-
     void PreloadScripts()
     {
         static int readFiles = 0;
@@ -228,6 +203,7 @@ namespace CTRPluginFramework
         std::vector<std::string> files;
         if (readFiles >= dir.ListFiles(files, ".lua")) {
             *menu -= PreloadScripts;
+            lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
             return;
         }
         if (strcmp(files[readFiles].c_str() + files[readFiles].size() - 4, ".lua") != 0) { // Double check to skip not .lua files
@@ -302,6 +278,7 @@ namespace CTRPluginFramework
         else
             Core::Debug::LogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
 
+        UpdateLuaStatistics();
         OSD::Run(DrawMonitors);
 
         // Wait until some things has been loaded otherwise instability may occur

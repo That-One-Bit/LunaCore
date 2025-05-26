@@ -1,6 +1,7 @@
 #include "Event.hpp"
 
 #include <string>
+#include <atomic>
 
 #include <CTRPluginFramework.hpp>
 
@@ -11,6 +12,7 @@ namespace CTRPF = CTRPluginFramework;
 
 extern lua_State *Lua_global;
 CTRPF::Clock timeoutEventClock;
+extern std::atomic<bool> graphicsIsTop;
 
 void TimeoutEventHook(lua_State *L, lua_Debug *ar)
 {
@@ -94,6 +96,37 @@ void Core::EventHandlerCallback()
         }
         lua_pop(L, 3);
     }
+
+    lua_getglobal(L, "Game");
+    lua_getfield(L, -1, "Event");
+    lua_getfield(L, -1, "OnNewFrame");
+    lua_getfield(L, -1, "Trigger");
+
+    if (lua_isfunction(L, -1))
+    {
+        lua_pushvalue(L, -2);
+        lua_pushstring(L, "top");
+        graphicsIsTop.store(true);
+        if (lua_pcall(L, 2, 0, 0))
+        {
+            Core::Debug::LogError("Core error. Event module error in OnNewFrame(top): " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+        lua_getfield(L, -1, "Trigger");
+        lua_pushvalue(L, -2);
+        lua_pushstring(L, "bottom");
+        graphicsIsTop.store(false);
+        if (lua_pcall(L, 2, 0, 0))
+        {
+            Core::Debug::LogError("Core error. Event module error in OnNewFrame(bottom): " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+    }
+    else {
+        Core::Debug::LogError("Core error. Unexpected type for Event.OnNewFrame:Trigger");
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 3);
 }
 
 // ----------------------------------------------------------------------------
