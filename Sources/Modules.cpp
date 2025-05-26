@@ -2,9 +2,8 @@
 
 #include <string>
 
-#include "lua_json.hpp"
-
-#include "FileLoader.hpp"
+#include "Utils/lua_json.hpp"
+#include "Utils/FileLoader.hpp"
 
 #include "Bits.hpp"
 #include "System.hpp"
@@ -16,7 +15,7 @@
 #include "Event.hpp"
 #include "Graphics.hpp"
 
-#include "Utils.hpp"
+#include "Utils/Utils.hpp"
 
 namespace Core {
     bool RegisterGameModule(lua_State *L)
@@ -30,7 +29,9 @@ namespace Core {
         Core::Game::RegisterWorldModule(L);
         Core::Game::RegisterLocalPlayerModule(L);
         Core::Game::RegisterEventModule(L);
+        #ifdef EXPERIMENTAL
         Core::Game::RegisterGraphicsModule(L);
+        #endif
 
         const char *lua_Code = R"(
             local realGame = readOnlyTable(Game, "Game")

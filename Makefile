@@ -14,7 +14,7 @@ PLGINFO 	:= 	CTRPluginFramework.plgInfo
 
 BUILD		:= 	Build
 INCLUDES	:= 	Includes
-SOURCES 	:= 	Sources Sources/Player
+SOURCES 	:= 	Sources Sources/Player Sources/Utils
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -25,6 +25,10 @@ CFLAGS		:=	$(ARCH) -Os -mword-relocations \
 				-fomit-frame-pointer -ffunction-sections -fno-strict-aliasing
 
 CFLAGS		+=	$(INCLUDE) -D__3DS__ -I $(PORTLIBS)/include/lua5.1
+
+ifeq ($(EXPERIMENTAL), 1)
+	CFLAGS		+=	-DEXPERIMENTAL
+endif
 
 CXXFLAGS	:= $(CFLAGS) -g -fno-rtti -fno-exceptions -std=gnu++20
 

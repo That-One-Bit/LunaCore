@@ -289,6 +289,12 @@ System = {}
 ---@return number
 function System.getTime() end
 
+---Pauses the process
+function System.pause() end
+
+---Resume the process
+function System.resume() end
+
 Game.World = {}
 
 Game.World.CloudsHeight = 0.0

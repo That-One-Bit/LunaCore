@@ -18,7 +18,7 @@
 #include "Event.hpp"
 #include "Async.hpp"
 #include "Graphics.hpp"
-#include "Utils.hpp"
+#include "Utils/Utils.hpp"
 
 #define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
 #define EMULATOR_VERSION(version) ((version) == 9216)
@@ -285,8 +285,6 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Waiting to load scripts", false);
         Sleep(Seconds(15));
         if (Directory::IsExists("sdmc:/mc3ds/scripts")) {
-            menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'sdmc:/mc3ds/scripts'
-
             Directory dir;
             Directory::Open(dir, "sdmc:/mc3ds/scripts");
             if (dir.IsOpen()) {
@@ -298,10 +296,11 @@ namespace CTRPluginFramework
                             luaFiles++;
                     }
                     if (luaFiles > 0) {
+                        menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'sdmc:/mc3ds/scripts'
                         menu->Callback(Core::EventHandlerCallback);
-                        OSD::Run(Core::GraphicsHandlerCallback);
                         menu->Callback(Core::AsyncHandlerCallback);
                         menu->Callback(UpdateLuaStatistics);
+                        OSD::Run(Core::GraphicsHandlerCallback);
                     }
                 }
             }

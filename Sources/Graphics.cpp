@@ -85,7 +85,7 @@ static int l_Graphics_drawRect(lua_State *L)
 
     if (x < 0 || y < 0)
         return luaL_error(L, "position must be greater than 0");
-    if ((x > width || y > height))
+    if ((width < 0 || height < 0))
         return luaL_error(L, "size must be greater than position");
 
     DrawCommandInfo cmd;
@@ -118,9 +118,9 @@ static int l_Graphics_drawRectFill(lua_State *L)
     u32 color = luaL_checkinteger(L, 5);
 
     if (x < 0 || y < 0)
-        return luaL_error(L, "position must be greater than 0");
-    if ((x > width || y > height))
-        return luaL_error(L, "size must be greater than position");
+        return luaL_error(L, "x and y must be greater than 0");
+    if ((width < 0 || height < 0))
+        return luaL_error(L, "width and height must be greater than 0");
 
     DrawCommandInfo cmd;
     cmd.id = DrawCommandID::DRAWCMD_RECTFILL;

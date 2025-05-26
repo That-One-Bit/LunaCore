@@ -1,4 +1,4 @@
-#include "lua_json.hpp"
+#include "Utils/lua_json.hpp"
 
 #include <CTRPluginFramework.hpp>
 

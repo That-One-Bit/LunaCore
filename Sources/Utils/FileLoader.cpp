@@ -1,9 +1,9 @@
-#include "FileLoader.hpp"
+#include "Utils/FileLoader.hpp"
 
 #include <string>
 #include <algorithm>
 
-#include "Utils.hpp"
+#include "Utils/Utils.hpp"
 
 static int l_custom_loadfile(lua_State *L)
 {

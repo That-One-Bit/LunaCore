@@ -3,7 +3,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Debug.hpp"
-#include "Utils.hpp"
+#include "Utils/Utils.hpp"
 
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;

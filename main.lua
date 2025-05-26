@@ -1,11 +1,24 @@
 local activated = false
 local localPlayer = Game.LocalPlayer
 local Gamepad = Game.Gamepad
+local paused = false
 
 MiGlobal = 34
 
+Game.Event.OnKeyPressed:Connect(function ()
+    if Gamepad.isDown(Gamepad.KeyCodes.START) then
+        if paused then
+            System.resume()
+            paused = false
+        else
+            System.pause()
+            paused = true
+        end
+    end
+end)
+
 Game.Event.OnNewFrame:Connect(function (screen)
-    if screen == "top" then
+    if screen == "top" and paused then
         Game.Graphics.drawRectFill(10, 10, 40, 20, 0)
     end
 end)
