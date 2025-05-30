@@ -25,7 +25,7 @@
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
 #define PLUGIN_VERSION_MAJOR 0
-#define PLUGIN_VERSION_MINOR 7 // TODO: Add config interface
+#define PLUGIN_VERSION_MINOR 7
 #define PLUGIN_VERSION_PATCH 0
 #define PLUGIN_FOLDER "sdmc:/mc3ds/"
 #define LOG_FILE PLUGIN_FOLDER"log.txt"
@@ -39,6 +39,7 @@ int scriptsLoadedCount = 0;
 CTRPF::Clock timeoutLoadClock;
 std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
+std::unordered_map<std::string, std::string> config;
 
 bool ReplaceStringWithPointer(u32 offset, u32 insAddr, u32 strAddr, u32 ptrAddr, u8 reg) {
     u32 baseIns = (0xe5bf << 16)|((reg & 0xF) << 12);
@@ -353,7 +354,7 @@ namespace CTRPluginFramework
         readFiles++;
     }
 
-    void    InitMenu(PluginMenu &menu)
+    void InitMenu(PluginMenu &menu)
     {
         // Create your entries here, or elsewhere
         // You can create your entries whenever/wherever you feel like it
@@ -368,6 +369,46 @@ namespace CTRPluginFramework
             MessageBox("UA", body)();
         });*/
         auto optionsFolder = new MenuFolder("Options");
+        optionsFolder->Append(new MenuEntry("Toggle Script Loader", nullptr, [](MenuEntry *entry)
+        {
+            bool changed = false;
+            if (config["enable_scripts"] == "true") {
+                if (MessageBox("Do you want to DISABLE script loader?", DialogType::DialogYesNo)()) {
+                    config["enable_scripts"] = "false";
+                    changed = true;
+                }
+            } else {
+                if (MessageBox("Do you want to ENABLE script loader?", DialogType::DialogYesNo)()) {
+                    config["enable_scripts"] = "true";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                MessageBox("Restart the game to apply the changes")();
+                if (!saveConfig(CONFIG_FILE, config))
+                    Core::Debug::LogMessage("Failed to save configs", true);
+            }
+        }));
+        optionsFolder->Append(new MenuEntry("Toggle Menu Layout", nullptr, [](MenuEntry *entry)
+        {
+            bool changed = false;
+            if (config["custom_game_menu_layout"] == "true") {
+                if (MessageBox("Do you want to DISABLE custom menu layout?", DialogType::DialogYesNo)()) {
+                    config["custom_game_menu_layout"] = "false";
+                    changed = true;
+                }
+            } else {
+                if (MessageBox("Do you want to ENABLE custom menu layout?", DialogType::DialogYesNo)()) {
+                    config["custom_game_menu_layout"] = "true";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                MessageBox("Restart the game to apply the changes")();
+                if (!saveConfig(CONFIG_FILE, config))
+                    Core::Debug::LogMessage("Failed to save configs", true);
+            }
+        }));
         menu.Append(optionsFolder);
     }
 
@@ -386,7 +427,7 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH), false);
 
         Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
-        std::unordered_map<std::string, std::string> config = loadConfig(CONFIG_FILE);
+        config = loadConfig(CONFIG_FILE);
 
         bool loadMenuLayout = getConfigBoolValue(config, "custom_game_menu_layout", true);
         bool loadScripts = getConfigBoolValue(config, "enable_scripts", true);
