@@ -8,6 +8,21 @@
 
 namespace CTRPF = CTRPluginFramework;
 
+std::string Core::Utils::strip(const std::string &str) {
+    if (str.empty())
+        return "";
+    size_t startPos = 0;
+    size_t endPos = str.size();
+    while (str[startPos] == ' ' && startPos < str.size())
+        startPos++;
+    while (str[endPos - 1] == ' ' && endPos > startPos)
+        endPos--;
+    if (startPos == endPos)
+        return "";
+    std::string newStr = str.substr(startPos, endPos - startPos);
+    return newStr;
+}
+
 std::string Core::Utils::LoadFile(const std::string &filepath)
 {
     std::string content;

@@ -30,7 +30,7 @@ namespace Core {
         Core::Game::RegisterLocalPlayerModule(L);
         Core::Game::RegisterEventModule(L);
         #ifdef EXPERIMENTAL
-        Core::Game::RegisterGraphicsModule(L);
+        Core::Game::RegisterGraphicsModule(L); // Draw to screen can cause crashes
         #endif
 
         const char *lua_Code = R"(

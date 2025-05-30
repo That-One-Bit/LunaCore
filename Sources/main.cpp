@@ -2,13 +2,10 @@
 #include "csvc.h"
 #include <CTRPluginFramework.hpp>
 
-#include <vector>
 #include <string>
-#include <sstream>
 #include <unordered_map>
 #include <atomic>
 
-#include <cstdlib>
 #include <cstring>
 
 #include "lua_common.h"
@@ -20,24 +17,117 @@
 #include "Graphics.hpp"
 #include "Utils/Utils.hpp"
 
-#define IS_VERSION_COMPATIBLE(version) ((version) == 9408) // 1.9.19
-#define EMULATOR_VERSION(version) ((version) == 9216)
-#define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL)
+#include "Game/Utils/game_functions.hpp"
+
+#define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
+#define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
+#define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
+#define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
 #define PLUGIN_VERSION_MAJOR 0
-#define PLUGIN_VERSION_MINOR 1
+#define PLUGIN_VERSION_MINOR 7 // TODO: Add config interface
 #define PLUGIN_VERSION_PATCH 0
-#define LOG_FILE "sdmc:/mc3ds/log.txt"
+#define PLUGIN_FOLDER "sdmc:/mc3ds/"
+#define LOG_FILE PLUGIN_FOLDER"log.txt"
+#define CONFIG_FILE PLUGIN_FOLDER"config.txt"
+#define BASE_OFF 0x100000
+
+namespace CTRPF = CTRPluginFramework;
 
 lua_State *Lua_global;
 int scriptsLoadedCount = 0;
-CTRPluginFramework::Clock timeoutLoadClock;
+CTRPF::Clock timeoutLoadClock;
 std::atomic<int> luaMemoryUsage = 0;
+bool enabledPatching = true;
+
+bool ReplaceStringWithPointer(u32 offset, u32 insAddr, u32 strAddr, u32 ptrAddr, u8 reg) {
+    u32 baseIns = (0xe5bf << 16)|((reg & 0xF) << 12);
+    u32 addrsOffset = strAddr - insAddr - 8;
+    if (addrsOffset & 0xFFF != addrsOffset)
+        return false;
+    if (!CTRPF::Process::Write32(insAddr + offset, baseIns|addrsOffset)) return false; // Patch instruction
+    return CTRPF::Process::Write32(strAddr + offset, ptrAddr); // Write pointer to offset
+}
+
+bool ReplaceConstString(u32 offset, u32 insAddr, u32 strAddr, u8 reg, const std::string& text) {
+    char *textPtr = (char*)GameCalloc(text.size() + 1); // Allocate string space in game memory
+    if (textPtr == NULL) return false;
+    if (!CTRPF::Process::WriteString((u32)textPtr, text.c_str(), text.size() + 1)) return false; // Copy string
+    return ReplaceStringWithPointer(offset, insAddr, strAddr, (u32)textPtr, reg);
+}
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutLoadClock.HasTimePassed(CTRPluginFramework::Milliseconds(2000)))
+    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(2000)))
         luaL_error(L, "Script load exceeded execution time (2000 ms)");
+}
+
+std::unordered_map<std::string, std::string> loadConfig(const std::string &filepath) {
+    std::unordered_map<std::string, std::string> config;
+    if (!File::Exists(filepath)) {
+        Core::Debug::LogMessage("Config file not found. Using defaults", false);
+        return config;
+    }
+    std::string fileContent = Core::Utils::LoadFile(filepath);
+    std::string line;
+    size_t pos = 0, newLinePos = 0;
+    const char *fileContentPtr = fileContent.c_str();
+
+    while (pos < fileContent.size()) {
+        while (*fileContentPtr != '\n' && *fileContentPtr != '\0') {
+            fileContentPtr++;
+            newLinePos++;
+        }
+        line = fileContent.substr(pos, newLinePos - pos);
+        size_t delPos = line.find('=');
+        if (delPos != std::string::npos) {
+            std::string key = Core::Utils::strip(line.substr(0, delPos));
+            std::string value = Core::Utils::strip(line.substr(delPos + 1));
+            if (!key.empty() && !value.empty()) {
+                config[key] = value;
+                OSD::Notify(CTRPF::Utils::Format("Key: '%s', value: '%s'", key.c_str(), value.c_str()));
+            }
+        }
+        fileContentPtr++;
+        newLinePos++;
+        pos = newLinePos;
+    }
+    return config;
+}
+
+bool saveConfig(const std::string &filePath, std::unordered_map<std::string, std::string> &config) {
+    CTRPF::File configFile;
+    CTRPF::File::Open(configFile, filePath, CTRPF::File::WRITE);
+    if (!configFile.IsOpen()) {
+        if (!File::Exists(filePath)) {
+            File::Create(filePath);
+            File::Open(configFile, filePath);
+            if (!configFile.IsOpen())
+                return false;
+        } else
+            return false;
+    }
+    configFile.Clear();
+    for (auto key : config) {
+        std::string writeContent = CTRPF::Utils::Format("%s = %s\n", key.first.c_str(), key.second.c_str());
+        configFile.Write(writeContent.c_str(), writeContent.size());
+    }
+    return true;
+}
+
+bool getConfigBoolValue(std::unordered_map<std::string, std::string> &config, const std::string &field, bool def) {
+    bool value = false;
+    if (config.find(field) != config.end()) {
+        if (config[field] == "true")
+            value = true;
+    } else { // Load default
+        value = def;
+        if (def)
+            config[field] = "true";
+    }
+    if (!value)
+        config[field] = "false";
+    return value;
 }
 
 namespace CTRPluginFramework
@@ -90,16 +180,62 @@ namespace CTRPluginFramework
         svcCloseHandle(processHandle);
     }
 
+    void PatchMenuLayout() {
+        ReplaceConstString(BASE_OFF, 0x16edd8, 0x16f170, 9, "      Play"); // menu.play
+        ReplaceConstString(BASE_OFF, 0x16ef24, 0x16f1a0, 0, " "); // menu.multiplayer
+        ReplaceConstString(BASE_OFF, 0x16f078, 0x16f1b8, 0, " "); // menu.options
+        ReplaceConstString(BASE_OFF, 0x16f228, 0x16f600, 0, " "); // menu.skins
+        ReplaceConstString(BASE_OFF, 0x16f37c, 0x16f610, 0, Utils::Format("  LunaCore %d.%d.%d", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH)); // menu.achievements
+        ReplaceConstString(BASE_OFF, 0x16f4c8, 0x16f628, 0, " "); // menu.manual
+        ReplaceConstString(BASE_OFF, 0x16f650, 0x16f884, 0, " "); // menu.store
+
+        Process::Write8(0x16ef0c+BASE_OFF, 0x1d); // Menu buttons width (All but Play)
+        Process::Write8(0x16edc4+BASE_OFF, 116); // Menu buttons width (Only Play)
+
+        Process::Write8(0x16edd4+BASE_OFF, 66); // Menu buttons height (Play)
+        Process::Write8(0x16ef18+BASE_OFF, 0x1c); // Menu buttons height (Multiplayer)
+        Process::Write8(0x16f070+BASE_OFF, 0x1c); // Menu buttons height (Options)
+        Process::Write8(0x16f220+BASE_OFF, 0x1c); // Menu buttons height (Skins)
+        Process::Write8(0x16f364+BASE_OFF, 0x1c); // Menu buttons height (Achievements, Manual, Store)
+
+        Process::Write8(0x16edc0+BASE_OFF, 120); // Menu buttons pos x (Play)
+        Process::Write8(0x16ef1c+BASE_OFF, 255); // Menu buttons pos x (Multiplayer)
+        Process::Write8(0x16f06c+BASE_OFF, 255); // Menu buttons pos x (Options)
+        Process::Write8(0x16f214+BASE_OFF, 15); // Menu buttons pos x (Skins)
+        Process::Write8(0x16f370+BASE_OFF, 15 + 0x1c + 10); // Menu buttons pos x (Achievements)
+        Process::Write8(0x16f4b4+BASE_OFF, 255 - 0x1c - 10); // Menu buttons pos x (Manual)
+        Process::Write8(0x16f640+BASE_OFF, 255); // Menu buttons pos x (Store)
+
+        Process::Write8(0x16eeb0+BASE_OFF, 0); // Menu buttons submenuID (Play)
+        Process::Write8(0x16ef2c+BASE_OFF, 5); // Menu buttons submenuID (Multiplayer)
+        Process::Write8(0x16f060+BASE_OFF, 1); // Menu buttons submenuID (Options)
+        Process::Write8(0x16f374+BASE_OFF, 3); // Menu buttons submenuID (Achievements)
+        Process::Write8(0x16f4c0+BASE_OFF, 4); // Menu buttons submenuID (Manual)
+        Process::Write8(0x16f5f4+BASE_OFF, 6); // Menu buttons submenuID (Store)
+
+        Process::Write8(0x91a168, 75); // Menu buttons pox y (Play)
+        Process::Write8(0x91a16c, 75); // Menu buttons pox y (Multiplayer)
+        Process::Write8(0x91a170, 75 + 0x1c + 10); // Menu buttons pox y (Options)
+        Process::Write8(0x91a174, 206); // Menu buttons pox y (Skins)
+        Process::Write8(0x91a178, 206); // Menu buttons pox y (Achievements)
+        Process::Write8(0x91a17c, 206); // Menu buttons pox y (Manual)
+        Process::Write8(0x91a180, 206); // Menu buttons pox y (Store)
+
+        Process::Write8(0x16edbc+BASE_OFF, 1); // Menu buttons icon scale (Play)
+        Process::Write32(0x16ee04+BASE_OFF, 0xe3a02000);
+    }
+
     // This function is called before main and before the game starts
     // Useful to do code edits safely
     void    PatchProcess(FwkSettings &settings)
     {
-        if (!IS_TARGET_ID(Process::GetTitleID()))
+        u64 titleID = Process::GetTitleID();
+        if (!IS_TARGET_ID(titleID))
             return;
         settings.UseGameHidMemory = true;
         ToggleTouchscreenForceOn();
-        u16 gameVersion = Process::GetVersion();
-        if (IS_VERSION_COMPATIBLE(gameVersion) || EMULATOR_VERSION(gameVersion))
+        u16 gameVer = Process::GetVersion();
+        if (IS_VUSA_COMP(titleID, gameVer) || IS_VEUR_COMP(titleID, gameVer) || IS_VJPN_COMP(titleID, gameVer) || System::IsCitra())
             Minecraft::PatchProcess();
     }
 
@@ -231,24 +367,35 @@ namespace CTRPluginFramework
 
             MessageBox("UA", body)();
         });*/
-        auto developerFolder = new MenuFolder("Developer Tools");
-        menu.Append(developerFolder);
+        auto optionsFolder = new MenuFolder("Options");
+        menu.Append(optionsFolder);
     }
 
     int main()
     {
-        if (!IS_TARGET_ID(Process::GetTitleID()))
+        u64 titleID = Process::GetTitleID();
+        if (!IS_TARGET_ID(titleID))
             return 0;
 
-        if (!Directory::IsExists("sdmc:/mc3ds"))
-            Directory::Create("sdmc:/mc3ds");
+        if (!Directory::IsExists(PLUGIN_FOLDER))
+            Directory::Create(PLUGIN_FOLDER);
         if (!Core::Debug::OpenLogFile(LOG_FILE))
-            OSD::Notify("Failed to open log file");
+            OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
 
         Core::Debug::LogMessage("Starting plugin", false);
-        Core::Debug::LogMessage("Plugin version: "+std::to_string(PLUGIN_VERSION_MAJOR)+"."+std::to_string(PLUGIN_VERSION_MINOR)+"."+std::to_string(PLUGIN_VERSION_PATCH), false);
+        Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH), false);
 
-        menu = new PluginMenu("Script Engine", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
+        Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
+        std::unordered_map<std::string, std::string> config = loadConfig(CONFIG_FILE);
+
+        bool loadMenuLayout = getConfigBoolValue(config, "custom_game_menu_layout", true);
+        bool loadScripts = getConfigBoolValue(config, "enable_scripts", true);
+
+        // Update configs
+        if (!saveConfig(CONFIG_FILE, config))
+            Core::Debug::LogMessage("Failed to save configs", true);
+
+        menu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
             "Allows to execute Lua scripts.");
 
         Core::Debug::LogMessage("Loading Lua environment", false);
@@ -272,18 +419,26 @@ namespace CTRPluginFramework
         menu->ShowWelcomeMessage(false);
 
         Core::Debug::LogMessage("Script core loaded", true);
-        u16 gameVersion = Process::GetVersion();
-        if (EMULATOR_VERSION(gameVersion) || IS_VERSION_COMPATIBLE(gameVersion))
-            Core::Debug::LogMessage("Detected version '"+std::to_string(gameVersion)+"' (1.9.19). Enabled all features", false);
-        else
-            Core::Debug::LogMessage("Incompatible version '"+std::to_string(gameVersion)+"' required 9408 (1.9.19)! Some features may be disabled", true);
+        u16 gameVer = Process::GetVersion();
+        if (System::IsCitra())
+            Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);
+        else if (IS_VUSA_COMP(titleID, gameVer))
+            Core::Debug::LogMessage(Utils::Format("Game USA region version '%hu' (1.9.19) detected", gameVer), false);
+        else if (IS_VEUR_COMP(titleID, gameVer))
+            Core::Debug::LogMessage(Utils::Format("Game EUR region version '%hu' (1.9.19) detected", gameVer), false);
+        else if (IS_VJPN_COMP(titleID, gameVer))
+            Core::Debug::LogMessage(Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
+        else {
+            enabledPatching = false;
+            Core::Debug::LogMessage(Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
+        }
 
         UpdateLuaStatistics();
         OSD::Run(DrawMonitors);
 
         // Wait until some things has been loaded otherwise instability may occur
-        Core::Debug::LogMessage("Waiting to load scripts", false);
-        Sleep(Seconds(15));
+        //Core::Debug::LogMessage("Waiting to load scripts", false);
+        //Sleep(Seconds(8));
         if (Directory::IsExists("sdmc:/mc3ds/scripts")) {
             Directory dir;
             Directory::Open(dir, "sdmc:/mc3ds/scripts");
@@ -308,6 +463,9 @@ namespace CTRPluginFramework
 
         // Init our menu entries & folders
         InitMenu(*menu);
+
+        if (loadMenuLayout && enabledPatching)
+            PatchMenuLayout();
 
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);

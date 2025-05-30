@@ -8,7 +8,7 @@ namespace CTRPF = CTRPluginFramework;
 
 CTRPF::File logFile;
 
-bool Core::Debug::OpenLogFile(const char *filepath)
+bool Core::Debug::OpenLogFile(const std::string &filepath)
 {
     if (!CTRPF::File::Exists(filepath))
         CTRPF::File::Create(filepath);

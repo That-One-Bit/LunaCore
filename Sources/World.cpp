@@ -4,6 +4,8 @@
 
 #include "string_hash.hpp"
 
+#include "Minecraft.hpp"
+
 namespace CTRPF = CTRPluginFramework;
 
 enum world_offsets : u32
@@ -18,6 +20,8 @@ enum world_offsets : u32
 // ----------------------------------------------------------------------------
 
 /*
+=Game.World.Raining = false
+=Game.World.Thunderstorm = false
 =Game.World.CloudsHeight = 0.0
 */
 static int l_World_index(lua_State *L)
@@ -29,6 +33,12 @@ static int l_World_index(lua_State *L)
     bool valid_key = true;
 
     switch (key) {
+        case hash("Raining"):
+            lua_pushboolean(L, Minecraft::IsRaining());
+            break;
+        case hash("Thunderstorm"):
+            lua_pushboolean(L, Minecraft::IsThundering());
+            break;
         case hash("CloudsHeight"): {
             float value;
             CTRPF::Process::ReadFloat(world_offsets::cloudsHeight, value);
@@ -55,6 +65,12 @@ static int l_World_newindex(lua_State *L)
     bool valid_key = true;
 
     switch (key) {
+        case hash("Raining"):
+            Minecraft::SetRain(lua_toboolean(L, 3));
+            break;
+        case hash("Thunderstorm"):
+            Minecraft::SetThunder(lua_toboolean(L, 3));
+            break;
         case hash("CloudsHeight"): {
             CTRPF::Process::WriteFloat(world_offsets::cloudsHeight, luaL_checknumber(L, 3));
             break;

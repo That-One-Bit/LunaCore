@@ -6,7 +6,7 @@
 
 namespace Core {
     namespace Debug {
-        bool OpenLogFile(const char *filepath);
+        bool OpenLogFile(const std::string &filepath);
 
         void CloseLogFile();
 
