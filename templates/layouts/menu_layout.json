@@ -1,0 +1,71 @@
+{
+    "buttons": {
+        "play": {
+            "x": 110,
+            "y": 15,
+            "width": 200,
+            "height": 28,
+            "text": "menu.play",
+            "icon": [224, 128, 16, 16],
+            "bigIcon": false
+        },
+        "multiplayer": {
+            "x": 110,
+            "y": 45,
+            "width": 200,
+            "height": 28,
+            "text": "menu.multiplayer",
+            "icon": [224, 128, 16, 16],
+            "bigIcon": false
+        },
+        "options": {
+            "x": 110,
+            "y": 75,
+            "width": 200,
+            "height": 28,
+            "text": "menu.options",
+            "icon": [224, 144, 16, 16],
+            "bigIcon": false
+        },
+        "skins": {
+            "x": 110,
+            "y": 105,
+            "width": 200,
+            "height": 28,
+            "text": "menu.skins",
+            "icon": [224, 176, 16, 16],
+            "bigIcon": false
+        },
+        "achievements": {
+            "x": 110,
+            "y": 135,
+            "width": 200,
+            "height": 28,
+            "text": "gui.achievements",
+            "icon": [224, 160, 16, 16],
+            "bigIcon": false
+        },
+        "manual": {
+            "x": 110,
+            "y": 165,
+            "width": 200,
+            "height": 28,
+            "text": "menu.manual",
+            "icon": [240, 128, 16, 16],
+            "bigIcon": false
+        },
+        "store": {
+            "x": 110,
+            "y": 195,
+            "width": 200,
+            "height": 28,
+            "text": "menu.store",
+            "icon": [240, 144, 16, 16],
+            "bigIcon": false
+        }
+    },
+    "character": {
+        "x": 5,
+        "y": 5
+    }
+}
