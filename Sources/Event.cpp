@@ -208,8 +208,15 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
             lua_pop(L, 1);
             lua_remove(L, errfunc - (argc + 1));
 
-            lua_pushnil(L);
-            lua_rawseti(L, listenersIdx, i);
+            // Remove listener with table.remove
+            lua_getglobal(L, "table");
+            lua_getfield(L, -1, "remove");
+            lua_remove(L, -2);
+            lua_pushvalue(L, listenersIdx);
+            lua_pushinteger(L, i);
+            if (lua_pcall(L, 2, 1, 0))
+                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+            lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
         } else {
             lua_remove(L, errfunc - (argc + 1));
@@ -217,7 +224,7 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
 
         lua_sethook(L, nullptr, 0, 0); // Disable after use
     }
-    lua_pop(L, 1);
+    lua_pop(L, 1); // Pop listeners
     return 0;
 }
 

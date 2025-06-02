@@ -5,6 +5,8 @@
 #include "Debug.hpp"
 #include "Utils/Utils.hpp"
 
+namespace CTRPF = CTRPluginFramework;
+
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
 
@@ -86,8 +88,15 @@ static int l_Async_tick(lua_State *L)
         int status = lua_status(co);
         if (status != 0 && status != LUA_YIELD) {
             lua_pop(L, 1); // Remove co
-            lua_pushnil(L);
-            lua_rawseti(L, scriptsTableIdx, i);
+            // Remove co from table with table.remove
+            lua_getglobal(L, "table");
+            lua_getfield(L, -1, "remove");
+            lua_remove(L, -2);
+            lua_pushvalue(L, scriptsTableIdx);
+            lua_pushinteger(L, i);
+            if (lua_pcall(L, 2, 1, 0))
+                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+            lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
         }
@@ -115,8 +124,15 @@ static int l_Async_tick(lua_State *L)
             }
             lua_pop(L, 1); // Remove co
 
-            lua_pushnil(L);
-            lua_rawseti(L, scriptsTableIdx, i);
+            // Remove co from table with table.remove
+            lua_getglobal(L, "table");
+            lua_getfield(L, -1, "remove");
+            lua_remove(L, -2);
+            lua_pushvalue(L, scriptsTableIdx);
+            lua_pushinteger(L, i);
+            if (lua_pcall(L, 2, 1, 0))
+                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+            lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
         }
