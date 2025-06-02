@@ -121,9 +121,6 @@ void CreateMenuButtons(int *ptr, std::vector<btn_ctx> &btn_ctxs) {
 }
 
 extern "C" void CreateMenuButtonsCallback(int *ptr) {
-    CTRPF::OSD::Notify("CreateMenuButtons function called");
-    CTRPF::OSD::Notify(CTRPF::Utils::Format("CreateMenuButtons called with pointer: %X", (u32)ptr));
-    
     void (*MaybeRegisterData)(int*, void*) = (void(*)(int*, void*))(0x7f9788+BASE_OFF);
     btn_ctx *(*MaybeUpdateData)(btn_ctx*) = (btn_ctx*(*)(btn_ctx*))(0x7b1c18+BASE_OFF);
     u64 (*InitMenuCharacter)(GameCharacterView* chrPtr,int*,float,float,int,int,int,int) = (u64(*)(GameCharacterView*,int*,float,float,int,int,int,int))(0xec930+BASE_OFF);
