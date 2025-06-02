@@ -1,6 +1,3 @@
 /Build
 *.3gx
 *.elf
-/Sources/Game
-/Includes/Game/*.hpp
-!/Includes/Game/Utils/game_functions.hpp
