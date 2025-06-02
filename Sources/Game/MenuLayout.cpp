@@ -78,7 +78,7 @@ void CreateMenuButtons(int *ptr, std::vector<btn_ctx> &btn_ctxs) {
     GameButton *(*InitMenuButton)(GameButton*ptr1, int* ptr2, MenuButtonID::MenuButtonID submenuID, int posX, int posY, int width, int height, const char *string, int buttonType) = (GameButton*(*)(GameButton*, int*, MenuButtonID::MenuButtonID, int, int, int, int, const char *, int))(0x4d6b58+BASE_OFF);
     void (*LinkButton)(btn_ctx *ptr1, GameButton *btnPtr) = (void(*)(btn_ctx*, GameButton*))(0x7b1bc0+BASE_OFF);
     void (*AddButtonTexUVs)(GameButton* btnPtr, void*, int u, int v, int w, int h, int, uv_vals*, uv_vals*, int, int, int) = (void(*)(GameButton*, void*, int, int, int, int, int, uv_vals*, uv_vals*, int, int, int))(0x4d6a50+BASE_OFF);
-    void (*LinkButtonTexs)(void*, btn_ctx*) = (void(*)(void*, btn_ctx*))(0x7b1c74+BASE_OFF);
+    void (*MaybeLinkButtonTexs)(void*, btn_ctx*) = (void(*)(void*, btn_ctx*))(0x7b1c74+BASE_OFF);
     void (*MaybeRegisterData)(int*, void*) = (void(*)(int*, void*))(0x7f9788+BASE_OFF);
     void (*MaybeAppendButton)(void*) = (void(*)(void*))(0x7b1074+BASE_OFF);
 
@@ -112,12 +112,11 @@ void CreateMenuButtons(int *ptr, std::vector<btn_ctx> &btn_ctxs) {
         AddButtonTexUVs(btn_ctxs[i].btnPtr,(void*)0xabfd74,MenuLayoutBtns[i].iconU,
                         MenuLayoutBtns[i].iconV,MenuLayoutBtns[i].iconW,MenuLayoutBtns[i].iconH,
                         0,&uv2,&uv1,2,2,0);
-        struct ctx_info local_var2;
-        LinkButtonTexs(&local_var2, &btn_ctxs[i]);
-        MaybeRegisterData(ptr + 7, &local_var2);
-        MaybeAppendButton(&local_var2);
-    }
-    
+        struct ctx_info tex_ctx;
+        MaybeLinkButtonTexs(&tex_ctx, &btn_ctxs[i]);
+        MaybeRegisterData(ptr + 7, &tex_ctx);
+        MaybeAppendButton(&tex_ctx);
+    }   
 }
 
 extern "C" void CreateMenuButtonsCallback(int *ptr) {
