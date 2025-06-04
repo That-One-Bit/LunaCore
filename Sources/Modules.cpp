@@ -2,11 +2,14 @@
 
 #include <string>
 
+#include <CTRPluginFramework.hpp>
+
 #include "Utils/lua_json.hpp"
 #include "Utils/FileLoader.hpp"
 
 #include "Bits.hpp"
 #include "System.hpp"
+#include "Keyboard.hpp"
 #include "Async.hpp"
 #include "Debug.hpp"
 #include "Gamepad.hpp"
@@ -73,6 +76,7 @@ void Core::LoadModules(lua_State *L)
     
     Core::RegisterBitsModule(L);
     Core::RegisterSystemModule(L);
+    Core::RegisterKeyboardModule(L);
     Core::RegisterAsyncModule(L);
     Core::RegisterGameModule(L);
 

@@ -196,6 +196,28 @@ function Game.Graphics.drawRect(x, y, width, height, color) end
 ---@param color integer
 function Game.Graphics.drawRectFill(x, y, width, height, color) end
 
+Keyboard = {}
+
+---Opens the keyboard and returns the user input as string
+---@param message string?
+---@return string
+function Keyboard.getString(message) end
+
+---Opens the keyboard and returns the user input as number
+---@param message string?
+---@return number
+function Keyboard.getNumber(message) end
+
+---Opens the keyboard and returns the user input as unsigned integer
+---@param message string?
+---@return integer
+function Keyboard.getInteger(message) end
+
+---Opens the keyboard and returns the user input as hexadecimal
+---@param message string?
+---@return integer
+function Keyboard.getHex(message) end
+
 Game.LocalPlayer = {}
 
 Game.LocalPlayer.Position = {}

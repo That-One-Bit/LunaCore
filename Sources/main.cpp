@@ -125,7 +125,6 @@ namespace CTRPluginFramework
     // Useful to save settings, undo patchs or clean up things
     void    OnProcessExit(void)
     {
-        lua_close(Lua_global);
         ToggleTouchscreenForceOn();
     }
 
@@ -405,6 +404,7 @@ namespace CTRPluginFramework
         Core::Debug::CloseLogFile();
 
         delete menu;
+        lua_close(Lua_global);
 
         // Exit plugin
         return 0;
