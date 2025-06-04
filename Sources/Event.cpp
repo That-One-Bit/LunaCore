@@ -38,12 +38,12 @@ void Core::EventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                Core::Debug::LogError("Core error. Event module error in OnKeyPressed: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core::Event::OnKeyPressed error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyPressed:Trigger");
+            Core::Debug::LogError("Core::Event::OnKeyPressed::Trigger error. Unexpected type");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -62,12 +62,12 @@ void Core::EventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                Core::Debug::LogError("Core error. Event module error in OnKeyDown: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core::Event::OnKeyDown error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyDown:Trigger");
+            Core::Debug::LogError("Core::Event::OnKeyDown::Trigger error. Unexpected type");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -86,12 +86,12 @@ void Core::EventHandlerCallback()
             lua_pushvalue(L, -2);
             if (lua_pcall(L, 1, 0, 0))
             {
-                Core::Debug::LogError("Core error. Event module error in OnKeyReleased: " + std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core::Event::OnKeyReleased error: " + std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             }
         }
         else {
-            Core::Debug::LogError("Core error. Unexpected type for Event.OnKeyReleased:Trigger");
+            Core::Debug::LogError("Core::Event::OnKeyReleased::Trigger error. Unexpected type");
             lua_pop(L, 1);
         }
         lua_pop(L, 3);
@@ -109,7 +109,7 @@ void Core::EventHandlerCallback()
         graphicsIsTop.store(true);
         if (lua_pcall(L, 2, 0, 0))
         {
-            Core::Debug::LogError("Core error. Event module error in OnNewFrame(top): " + std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Core::Event::OnNewFrame(top) error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
         lua_getfield(L, -1, "Trigger");
@@ -118,12 +118,12 @@ void Core::EventHandlerCallback()
         graphicsIsTop.store(false);
         if (lua_pcall(L, 2, 0, 0))
         {
-            Core::Debug::LogError("Core error. Event module error in OnNewFrame(bottom): " + std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Core::Event::OnNewFrame(bottom) error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
     }
     else {
-        Core::Debug::LogError("Core error. Unexpected type for Event.OnNewFrame:Trigger");
+        Core::Debug::LogError("Core::Event::OnNewFrame::Trigger error. Unexpected type");
         lua_pop(L, 1);
     }
     lua_pop(L, 3);
@@ -204,7 +204,7 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
         if (lua_pcall(L, argc, 0, errfunc - (argc + 1))) {
             std::string errMsg(lua_tostring(L, -1));
             Core::Utils::Replace(errMsg, "\t", "    ");
-            Core::Debug::LogError(errMsg);
+            Core::Debug::LogError("Event error: "+errMsg);
             lua_pop(L, 1);
             lua_remove(L, errfunc - (argc + 1));
 
@@ -215,7 +215,7 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
             lua_pushvalue(L, listenersIdx);
             lua_pushinteger(L, i);
             if (lua_pcall(L, 2, 1, 0))
-                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+                Core::Debug::LogError(CTRPF::Utils::Format("Core::Event::BaseEvent::Trigger error: %s", lua_tostring(L, -1)));
             lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
         } else {
@@ -296,7 +296,7 @@ bool Core::Game::RegisterEventModule(lua_State *L)
     )";
     if (luaL_dostring(L, lua_Code))
     {
-        Core::Debug::LogError("Core error. Unable to set 'Game.Event.BaseEvent' read-only: "+std::string(lua_tostring(L, -1)));
+        Core::Debug::LogError("Core::Event::Load error: "+std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
         return false;
     }

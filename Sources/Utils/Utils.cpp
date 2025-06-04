@@ -64,7 +64,7 @@ bool Core::RegisterUtilsModule(lua_State *L)
     )";
     if (luaL_dostring(L, lua_Code))
     {
-        Core::Debug::LogError("Core Utils module failed load: " + std::string(lua_tostring(L, -1)));
+        Core::Debug::LogError("Core::Utils::Load error: " + std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
         return false;
     }

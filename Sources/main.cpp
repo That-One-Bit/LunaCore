@@ -18,7 +18,9 @@
 #include "Utils/Utils.hpp"
 #include "Config.hpp"
 
-#include "Game/MenuLayout.hpp"
+#include "Game/GameState.hpp"
+#include "Game/MainMenuLayoutLoad.hpp"
+#include "Game/LoadingWorldScreenMessage.hpp"
 
 #define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
 #define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
@@ -27,7 +29,7 @@
 
 #define PLUGIN_VERSION_MAJOR 0
 #define PLUGIN_VERSION_MINOR 7
-#define PLUGIN_VERSION_PATCH 2
+#define PLUGIN_VERSION_PATCH 3
 #define PLUGIN_FOLDER "sdmc:/Minecraft 3DS"
 #define LOG_FILE PLUGIN_FOLDER"/log.txt"
 #define CONFIG_FILE PLUGIN_FOLDER"/config.txt"
@@ -41,6 +43,7 @@ CTRPF::Clock timeoutLoadClock;
 std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
+GameState_s GameState;
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
@@ -110,6 +113,9 @@ namespace CTRPluginFramework
         u16 gameVer = Process::GetVersion();
         if (IS_VUSA_COMP(titleID, gameVer) || IS_VEUR_COMP(titleID, gameVer) || IS_VJPN_COMP(titleID, gameVer) || System::IsCitra()) {
             Minecraft::PatchProcess();
+            SetMainMenuLayoutLoadCallback();
+            SetLoadingWorldScreenMessageCallback();
+            SetLeaveLevelPromptCallback();
         } else {
             enabledPatching = false;
         }
@@ -148,7 +154,7 @@ namespace CTRPluginFramework
         int status_code = luaL_loadbuffer(L, fileContent.c_str(), fileContent.size(), fp.c_str());
         if (status_code)
         {
-            Core::Debug::LogError(std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Script load error: "+std::string(lua_tostring(L, -1)));
             lua_pop(L, 2);
             success = false;
         }
@@ -164,7 +170,7 @@ namespace CTRPluginFramework
             {
                 std::string error_msg(lua_tostring(L, -1));
                 Core::Utils::Replace(error_msg, "\t", "    ");
-                Core::Debug::LogError(error_msg);
+                Core::Debug::LogError("Script load error: "+error_msg);
                 lua_pop(L, 2);
                 success = false;
             }
@@ -315,7 +321,7 @@ namespace CTRPluginFramework
             if (File::Exists(PLUGIN_FOLDER"/layouts/menu_layout.json") && LoadGameMenuLayout(PLUGIN_FOLDER"/layouts/menu_layout.json"))
                 PatchGameMenuLayoutFunction();
             else
-                PatchMenuLayoutCustomDefault(PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH);
+                PatchMenuCustomLayoutDefault(PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH);
         }
 
         menu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,

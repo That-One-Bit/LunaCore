@@ -1,4 +1,4 @@
-#include "Game/MenuLayout.hpp"
+#include "Game/MainMenuLayoutLoad.hpp"
 
 #include <vector>
 
@@ -11,12 +11,15 @@
 using json = nlohmann::json;
 
 #include "Game/Utils/game_functions.hpp"
+#include "Game/GameState.hpp"
 #include "Debug.hpp"
 #include "Utils/Utils.hpp"
 
 #define BASE_OFF 0x100000
 
 namespace CTRPF = CTRPluginFramework;
+
+extern GameState_s GameState;
 
 namespace MenuButtonID {
     typedef enum {
@@ -56,8 +59,6 @@ typedef struct uv_vals_struct {
 } uv_vals;
 
 typedef void (*code2Func)(int *);
-
-#define NOP_INS 0xe320f000
 
 typedef struct {
     int x = 0, y = 0, width = 0, height = 0;
@@ -119,7 +120,7 @@ void CreateMenuButtons(int *ptr, std::vector<btn_ctx> &btn_ctxs) {
     }   
 }
 
-extern "C" void CreateMenuButtonsCallback(int *ptr) {
+void CreateMainMenuCustomLayout(int *ptr) {
     void (*MaybeRegisterData)(int*, void*) = (void(*)(int*, void*))(0x7f9788+BASE_OFF);
     btn_ctx *(*MaybeUpdateData)(btn_ctx*) = (btn_ctx*(*)(btn_ctx*))(0x7b1c18+BASE_OFF);
     u64 (*InitMenuCharacter)(GameCharacterView* chrPtr,int*,float,float,int,int,int,int) = (u64(*)(GameCharacterView*,int*,float,float,int,int,int,int))(0xec930+BASE_OFF);
@@ -162,11 +163,27 @@ extern "C" void CreateMenuButtonsCallback(int *ptr) {
     
     for (auto &i : btnsOrder)
         MaybeUpdateData(&btn_ctxs[i]);
+    
+    GameState.MainMenuLoaded.store(true);
     return;
 }
 
+// Note: If a layout is loaded this will overwrite callback
+// So always do the same as the callback in CreateMainMenuCustomLayout
 void PatchGameMenuLayoutFunction() {
-    CTRPF::Process::Write32(0x8ab4a4 + BASE_OFF, (u32)CreateMenuButtonsCallback); // Patch only reference to CreateMenuButtons
+    CTRPF::Process::Write32(0x8ab4a4 + BASE_OFF, (u32)CreateMainMenuCustomLayout); // Patch only reference to CreateMenuButtons
+}
+
+void MainMenuLayoutLoadCallback(int *ptr) {
+    void (*MainMenuLoadOriginal)(int*) = (void(*)(int*))(0x16eda4+BASE_OFF);
+    MainMenuLoadOriginal(ptr);
+
+    GameState.MainMenuLoaded.store(true);
+    return;
+}
+
+void SetMainMenuLayoutLoadCallback() {
+    CTRPF::Process::Write32(0x8ab4a4 + BASE_OFF, (u32)MainMenuLayoutLoadCallback); // Patch only reference to CreateMenuButtons
 }
 
 void LoadButtonData(json &btnJData, MenuBtnData &btnData, const std::string &btnName) {
@@ -252,7 +269,7 @@ static bool ReplaceConstString(u32 offset, u32 insAddr, u32 strAddr, u8 reg, con
     return ReplaceStringWithPointer(offset, insAddr, strAddr, (u32)textPtr, reg);
 }
 
-void PatchMenuLayoutCustomDefault(int plg_maj, int plg_min, int plg_patch) {
+void PatchMenuCustomLayoutDefault(int plg_maj, int plg_min, int plg_patch) {
     ReplaceConstString(BASE_OFF, 0x16edd8, 0x16f170, 9, "      Play"); // menu.play
     ReplaceConstString(BASE_OFF, 0x16ef24, 0x16f1a0, 0, " "); // menu.multiplayer
     ReplaceConstString(BASE_OFF, 0x16f078, 0x16f1b8, 0, " "); // menu.options

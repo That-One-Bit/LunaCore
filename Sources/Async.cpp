@@ -29,7 +29,7 @@ void Core::AsyncHandlerCallback()
     {
         if (lua_pcall(L, 0, 0, 0))
         {
-            Core::Debug::LogError("Core error: " + std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Core::Async::handler error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
     }
@@ -95,7 +95,7 @@ static int l_Async_tick(lua_State *L)
             lua_pushvalue(L, scriptsTableIdx);
             lua_pushinteger(L, i);
             if (lua_pcall(L, 2, 1, 0))
-                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+                Core::Debug::LogError(CTRPF::Utils::Format("Core::Async::tick error: %s", lua_tostring(L, -1)));
             lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
@@ -114,12 +114,12 @@ static int l_Async_tick(lua_State *L)
             lua_pushstring(L, errMsg);
 
             if (lua_pcall(L, 2, 1, 0)) {
-                Core::Debug::LogError("Core error: "+std::string(lua_tostring(L, -1)));
+                Core::Debug::LogError("Core::Async::tick error: "+std::string(lua_tostring(L, -1)));
                 lua_pop(L, 1);
             } else {
                 std::string traceback(lua_tostring(L, -1));
                 Core::Utils::Replace(traceback, "\t", "    ");
-                Core::Debug::LogError(traceback);
+                Core::Debug::LogError("Async task error: "+traceback);
                 lua_pop(L, 1);
             }
             lua_pop(L, 1); // Remove co
@@ -131,7 +131,7 @@ static int l_Async_tick(lua_State *L)
             lua_pushvalue(L, scriptsTableIdx);
             lua_pushinteger(L, i);
             if (lua_pcall(L, 2, 1, 0))
-                Core::Debug::LogError(CTRPF::Utils::Format("Core error: %s", lua_tostring(L, -1)));
+                Core::Debug::LogError(CTRPF::Utils::Format("Core::Async::tick error: %s", lua_tostring(L, -1)));
             lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
@@ -179,7 +179,7 @@ bool Core::RegisterAsyncModule(lua_State *L)
     )";
     if (luaL_dostring(L, luaCode))
     {
-        Core::Debug::LogError("Core Async module failed load: " + std::string(lua_tostring(L, -1)));
+        Core::Debug::LogError("Core::Async::load error: " + std::string(lua_tostring(L, -1)));
         lua_pop(L, 1);
         return false;
     }

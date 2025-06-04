@@ -56,7 +56,7 @@ namespace Core {
         )";
         if (luaL_dostring(L, lua_Code))
         {
-            Core::Debug::LogError("Core error. Unable to set 'Game' global read-only: "+std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Core::Load error: "+std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
             return false;
         }

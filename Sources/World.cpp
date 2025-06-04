@@ -2,11 +2,15 @@
 
 #include <CTRPluginFramework.hpp>
 
+#include "Game/GameState.hpp"
+
 #include "string_hash.hpp"
 
 #include "Minecraft.hpp"
 
 namespace CTRPF = CTRPluginFramework;
+
+extern GameState_s GameState;
 
 enum world_offsets : u32
 {
@@ -20,6 +24,7 @@ enum world_offsets : u32
 // ----------------------------------------------------------------------------
 
 /*
+=Game.World.Loaded = false
 =Game.World.Raining = false
 =Game.World.Thunderstorm = false
 =Game.World.CloudsHeight = 0.0
@@ -33,6 +38,9 @@ static int l_World_index(lua_State *L)
     bool valid_key = true;
 
     switch (key) {
+        case hash("Loaded"): // Read-only
+            lua_pushboolean(L, GameState.WorldLoaded.load());
+            break;
         case hash("Raining"):
             lua_pushboolean(L, Minecraft::IsRaining());
             break;
