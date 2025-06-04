@@ -212,6 +212,20 @@ function Game.LocalPlayer.Position.get() end
 ---@param z number
 function Game.LocalPlayer.Position.set(x, y, z) end
 
+Game.LocalPlayer.Velocity = {}
+
+---Gets local player velocity
+---@return number
+---@return number
+---@return number
+function Game.LocalPlayer.Velocity.get() end
+
+---Sets player velocity
+---@param x number
+---@param y number
+---@param z number
+function Game.LocalPlayer.Velocity.set(x, y, z) end
+
 Game.LocalPlayer.OnGround = false
 
 Game.LocalPlayer.Sneaking = false

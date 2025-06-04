@@ -64,6 +64,53 @@ static const luaL_Reg player_position_methods[] =
 
 // ----------------------------------------------------------------------------
 
+//$Game.LocalPlayer.Velocity
+
+/*
+- Gets local player velocity
+## return: number
+## return: number
+## return: number
+### Game.LocalPlayer.Velocity.get
+*/
+static int l_Player_Velocity_get(lua_State *L)
+{
+    float x = Minecraft::GetVelocityX();
+    float y = Minecraft::GetVelocityY();
+    float z = Minecraft::GetVelocityZ();
+    lua_pushnumber(L, x);
+    lua_pushnumber(L, y);
+    lua_pushnumber(L, z);
+    return 1;
+}
+
+/*
+- Sets player velocity
+## x: number
+## y: number
+## z: number
+### Game.LocalPlayer.Velocity.set
+*/
+static int l_Player_Velocity_set(lua_State *L)
+{
+    float x = luaL_checknumber(L, 1);
+    float y = luaL_checknumber(L, 2);
+    float z = luaL_checknumber(L, 3);
+    Minecraft::SetVelocityX(x);
+    Minecraft::SetVelocityY(y);
+    Minecraft::SetVelocityZ(z);
+    return 0;
+}
+
+static const luaL_Reg player_velocity_methods[] =
+{
+    {"get", l_Player_Velocity_get},
+    {"set", l_Player_Velocity_set},
+    {NULL, NULL}
+};
+
+// ----------------------------------------------------------------------------
+
 /*
 =Game.LocalPlayer.OnGround = false
 =Game.LocalPlayer.Sneaking = false
@@ -293,6 +340,7 @@ bool Core::Game::RegisterLocalPlayerModule(lua_State *L)
     lua_newtable(L); // LocalPlayer
 
     luaC_register_field(L, player_position_methods, "Position");
+    luaC_register_field(L, player_velocity_methods, "Velocity");
     Core::Game::LocalPlayer::RegisterCameraModule(L);
     Core::Game::LocalPlayer::RegisterInventoryModule(L);
     

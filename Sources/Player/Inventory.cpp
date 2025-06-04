@@ -103,20 +103,14 @@ static int l_Inventory_Slot_class_index(lua_State *L)
             lua_pushinteger(L, Minecraft::GetItemData(slotIndex));
             break;
         case hash("ItemName"): {
-            auto itemsList = Minecraft::GetItemList();
             u32 itemID = Minecraft::GetItemID(slotIndex);
-            u32 currItemID;
-            bool found = false;
-            for (auto item : itemsList) {
-                CTRPF::Process::Read32(item.idAddress, currItemID);
-                if (currItemID == itemID) {
-                    lua_pushstring(L, item.name.c_str());
-                    found = true;
-                    break;
-                }
+            if (itemID == 0) {
+                lua_pushstring(L, "empty_slot");
+            } else {
+                int *itemAddr = (int*)itemID;
+                char *itemNameIDAddr = (char*)*(itemAddr + 6);
+                lua_pushstring(L, itemNameIDAddr);
             }
-            if (!found)
-                lua_pushstring(L, "Unknown Item");
             break;
         }
         default:
