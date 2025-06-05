@@ -44,6 +44,7 @@ std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
+u32 currentCamFOVOffset = 0;
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
@@ -234,6 +235,71 @@ namespace CTRPluginFramework
         readFiles++;
     }
 
+    void searchPlayerCamera(std::vector<u32> &out) {
+        std::vector<u32> firstMatchAddress;
+        u32 startAddr = 0x30000000;
+        u32 endAddr = 0x35F80000;
+
+        float value = 70.0f;
+        if (std::memcmp(&value, (u32*)0x341F313C, 4) == 0) {
+            out.push_back(0x341F313C);
+            return;
+        }
+        u32 actualAddr = startAddr;
+        while (actualAddr < endAddr) {
+            if (std::memcmp(&value, (u32*)actualAddr, 4) == 0) {
+                firstMatchAddress.push_back(actualAddr);
+            }
+            actualAddr += 4;
+        }
+
+        for (auto addr : firstMatchAddress) {
+            u32 offsetAddress = addr - 0x118;
+            std::vector<u32> newAddress;
+            u32 value;
+            int count = 0;
+            actualAddr = startAddr;
+            while (actualAddr < endAddr) {
+                if (std::memcmp(&offsetAddress, (u32*)actualAddr, 4) == 0) {
+                    newAddress.push_back(actualAddr);
+                    count++;
+                }
+                if (count > 10)
+                    break;
+                actualAddr += 4;
+            }
+            if (newAddress.size() == 10) {
+                out.push_back(addr);
+                break;
+            }
+        }
+    }
+
+    void changeCameraFOV(MenuEntry *entry) {
+        std::vector<u32> cameraFOVAddrs;
+        if (currentCamFOVOffset != 0) {
+            Keyboard keyboard("Enter FOV value");
+            float fovval;
+            keyboard.Open(fovval);
+            Process::WriteFloat(currentCamFOVOffset, fovval);
+            return;
+        }
+        if (MessageBox("First use! This can freeze the game for up to 45 seconds", DialogType::DialogOkCancel)()) {
+            searchPlayerCamera(cameraFOVAddrs);
+            if (cameraFOVAddrs.size() == 0) {
+                MessageBox("No matches")();
+            } else {
+                MessageBox("Found a match")();
+                Keyboard keyboard("Enter FOV value");
+                float fovval;
+                keyboard.Open(fovval);
+                u32 fovAddr = cameraFOVAddrs[0];
+                Process::WriteFloat(fovAddr, fovval);
+                currentCamFOVOffset = fovAddr;
+            }
+        }
+    }
+
     void InitMenu(PluginMenu &menu)
     {
         // Create your entries here, or elsewhere
@@ -249,6 +315,7 @@ namespace CTRPluginFramework
             MessageBox("UA", body)();
         });*/
         auto optionsFolder = new MenuFolder("Options");
+        auto devFolder = new MenuFolder("Experiments");
         optionsFolder->Append(new MenuEntry("Toggle Script Loader", nullptr, [](MenuEntry *entry)
         {
             bool changed = false;
@@ -289,7 +356,9 @@ namespace CTRPluginFramework
                     Core::Debug::LogMessage("Failed to save configs", true);
             }
         }));
+        devFolder->Append(new MenuEntry("Change Camera FOV", nullptr, changeCameraFOV));
         menu.Append(optionsFolder);
+        menu.Append(devFolder);
     }
 
     int main()
