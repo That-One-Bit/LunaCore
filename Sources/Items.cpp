@@ -49,6 +49,12 @@ Core::Game::ItemData *Core::Game::Items::SearchItemByID(u16 id) {
 
 // ----------------------------------------------------------------------------
 
+/*
+- Find the item ID using its name
+## name: string
+## return: integer?
+### Game.Items.findItemIDByName
+*/
 static int l_Items_findItemIDByName(lua_State *L) {
     const char *name = luaL_checkstring(L, 1);
     Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByName(name);
@@ -61,13 +67,19 @@ static int l_Items_findItemIDByName(lua_State *L) {
     return 1;
 }
 
+/*
+- Find the item ID using its name
+## itemID: integer
+## return: string?
+### Game.Items.findItemNameByID
+*/
 static int l_Items_findItemNameByID(lua_State *L) {
-    const char *name = luaL_checkstring(L, 1);
-    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByName(name);
+    u16 itemID = luaL_checkinteger(L, 1);
+    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushinteger(L, itemData->itemID);
+        lua_pushstring(L, itemData->idName2);
     }
 
     return 1;

@@ -177,6 +177,16 @@ Game.Gamepad.KeyCodes.CSTICK = 184549376
 
 Game.Items = {}
 
+---Find the item ID using its name
+---@param name string
+---@return integer?
+function Game.Items.findItemIDByName(name) end
+
+---Find the item ID using its name
+---@param itemID integer
+---@return string?
+function Game.Items.findItemNameByID(itemID) end
+
 Keyboard = {}
 
 ---Opens the keyboard and returns the user input as string
