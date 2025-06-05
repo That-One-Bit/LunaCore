@@ -97,6 +97,7 @@ void Core::EventHandlerCallback()
         lua_pop(L, 3);
     }
 
+    #ifdef EXPERIMENTAL
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
     lua_getfield(L, -1, "OnNewFrame");
@@ -127,6 +128,7 @@ void Core::EventHandlerCallback()
         lua_pop(L, 1);
     }
     lua_pop(L, 3);
+    #endif
 }
 
 // ----------------------------------------------------------------------------
@@ -261,12 +263,14 @@ bool Core::Game::RegisterEventModule(lua_State *L)
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
 
-    //$@@@Game.Event.OnNewFrame: EventClass
+    #ifdef EXPERIMENTAL
+    //--$@@@Game.Event.OnNewFrame: EventClass
     lua_newtable(L);
     lua_newtable(L);
     lua_setfield(L, -2, "listeners");
     luaC_setmetatable(L, "EventClass");
     lua_setfield(L, -2, "OnNewFrame");
+    #endif
 
     //$@@@Game.Event.OnKeyPressed: EventClass
     lua_newtable(L);

@@ -103,7 +103,7 @@ bool Core::Game::LocalPlayer::RegisterCameraModule(lua_State *L)
     RegisterCameraMetatables(L);
 
     lua_newtable(L); // LocalPlayer.Camera
-    luaC_setmetatable(L, "PlayerCameraMetatable");
+    luaC_setmetatable(L, "CameraMetatable");
     lua_setfield(L, -2, "Camera");
     return true;
 }

@@ -1,0 +1,90 @@
+#include "Items.hpp"
+
+#include "string_hash.hpp"
+
+#include "Minecraft.hpp"
+
+namespace CTRPF = CTRPluginFramework;
+
+Core::Game::ItemData *GetItemData(u32 addr) {
+    Core::Game::ItemData **itemData = (Core::Game::ItemData **)addr;
+    return *itemData;
+}
+
+Core::Game::ItemData *Core::Game::Items::SearchItemByName(const std::string& name) {
+    u32 *startAddr = (u32 *)0xB0CEF4;
+    u32 *endAddr = (u32 *)0xB0D638;
+    u32 *actualPtr = startAddr;
+
+    while (actualPtr <= endAddr) {
+        Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
+        if (itemData != NULL) {
+            if (name.compare(itemData->idName2))
+                return itemData;
+        }
+        actualPtr++;
+    }
+    return NULL;
+}
+
+Core::Game::ItemData *Core::Game::Items::SearchItemByID(u16 id) {
+    u32 *startAddr = (u32 *)0xB0CEF4;
+    u32 *endAddr = (u32 *)0xB0D638;
+    u32 *actualPtr = startAddr;
+
+    while (actualPtr <= endAddr) {
+        Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
+        if (itemData != NULL) {
+            if (id == itemData->itemID)
+                return itemData;
+        }
+        actualPtr++;
+    }
+    return NULL;
+}
+
+// ----------------------------------------------------------------------------
+
+//$Game.Items
+
+// ----------------------------------------------------------------------------
+
+static int l_Items_findItemIDByName(lua_State *L) {
+    const char *name = luaL_checkstring(L, 1);
+    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByName(name);
+    if (itemData == NULL) {
+        lua_pushnil(L);
+    } else {
+        lua_pushinteger(L, itemData->itemID);
+    }
+
+    return 1;
+}
+
+static int l_Items_findItemNameByID(lua_State *L) {
+    const char *name = luaL_checkstring(L, 1);
+    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByName(name);
+    if (itemData == NULL) {
+        lua_pushnil(L);
+    } else {
+        lua_pushinteger(L, itemData->itemID);
+    }
+
+    return 1;
+}
+
+static const luaL_Reg items_functions[] = {
+    {"findItemIDByName", l_Items_findItemIDByName},
+    {"findItemNameByID", l_Items_findItemNameByID},
+    {NULL, NULL}
+};
+
+// ----------------------------------------------------------------------------
+
+bool Core::Game::RegisterItemsModule(lua_State *L)
+{
+    lua_getglobal(L, "Game");
+    luaC_register_field(L, items_functions, "Items");
+    lua_pop(L, 1);
+    return true;
+}

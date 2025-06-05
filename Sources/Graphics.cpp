@@ -62,18 +62,18 @@ bool Core::GraphicsHandlerCallback(const CTRPF::Screen &screen) {
 
 // ----------------------------------------------------------------------------
 
-//$Game.Graphics
+//--$Game.Graphics
 
 // ----------------------------------------------------------------------------
 
 /*
 - Draws a rect on screen
-## x: integer
-## y: integer
-## width: integer
-## height: integer
-## color: integer
-### Game.Graphics.drawRect
+--## x: integer
+--## y: integer
+--## width: integer
+--## height: integer
+--## color: integer
+--### Game.Graphics.drawRect
 */
 static int l_Graphics_drawRect(lua_State *L)
 {
@@ -102,12 +102,12 @@ static int l_Graphics_drawRect(lua_State *L)
 
 /*
 - Draws a solid rect on screen
-## x: integer
-## y: integer
-## width: integer
-## height: integer
-## color: integer
-### Game.Graphics.drawRectFill
+--## x: integer
+--## y: integer
+--## width: integer
+--## height: integer
+--## color: integer
+--### Game.Graphics.drawRectFill
 */
 static int l_Graphics_drawRectFill(lua_State *L)
 {

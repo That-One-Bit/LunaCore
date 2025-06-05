@@ -3,7 +3,6 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Game/GameState.hpp"
-
 #include "string_hash.hpp"
 
 #include "Minecraft.hpp"

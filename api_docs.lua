@@ -78,9 +78,6 @@ function EventClass:Trigger() end
 ---@class BaseEvent: EventClass
 Game.Event.BaseEvent = {}
 
----@class OnNewFrame: EventClass
-Game.Event.OnNewFrame = {}
-
 ---@class OnKeyPressed: EventClass
 Game.Event.OnKeyPressed = {}
 
@@ -178,23 +175,7 @@ Game.Gamepad.KeyCodes.CPAD = 2952790016
 
 Game.Gamepad.KeyCodes.CSTICK = 184549376
 
-Game.Graphics = {}
-
----Draws a rect on screen
----@param x integer
----@param y integer
----@param width integer
----@param height integer
----@param color integer
-function Game.Graphics.drawRect(x, y, width, height, color) end
-
----Draws a solid rect on screen
----@param x integer
----@param y integer
----@param width integer
----@param height integer
----@param color integer
-function Game.Graphics.drawRectFill(x, y, width, height, color) end
+Game.Items = {}
 
 Keyboard = {}
 

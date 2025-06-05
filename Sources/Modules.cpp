@@ -15,6 +15,7 @@
 #include "Gamepad.hpp"
 #include "World.hpp"
 #include "Player/Player.hpp"
+#include "Items.hpp"
 #include "Event.hpp"
 #include "Graphics.hpp"
 
@@ -31,6 +32,7 @@ namespace Core {
         Core::Game::RegisterGamepadModule(L);
         Core::Game::RegisterWorldModule(L);
         Core::Game::RegisterLocalPlayerModule(L);
+        Core::Game::RegisterItemsModule(L);
         Core::Game::RegisterEventModule(L);
         #ifdef EXPERIMENTAL
         Core::Game::RegisterGraphicsModule(L); // Draw to screen can cause crashes

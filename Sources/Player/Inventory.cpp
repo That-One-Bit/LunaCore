@@ -7,6 +7,8 @@
 #include "string_hash.hpp"
 #include "Minecraft.hpp"
 
+#include "Items.hpp"
+
 namespace CTRPF = CTRPluginFramework;
 
 // ----------------------------------------------------------------------------
@@ -93,9 +95,16 @@ static int l_Inventory_Slot_class_index(lua_State *L)
         return luaL_error(L, "Slot index out of range");
 
     switch (key) {
-        case hash("ItemID"):
-            lua_pushinteger(L, Minecraft::GetItemID(slotIndex));
+        case hash("ItemID"): {
+            u32 itemAddr = Minecraft::GetItemID(slotIndex);
+            if (itemAddr == 0)
+                lua_pushinteger(L, 0);
+            else {
+                Core::Game::ItemData *itemData = (Core::Game::ItemData*)itemAddr;
+                lua_pushinteger(L, itemData->itemID);
+            }
             break;
+        }
         case hash("ItemCount"):
             lua_pushinteger(L, Minecraft::GetItemCount(slotIndex));
             break;
@@ -103,13 +112,12 @@ static int l_Inventory_Slot_class_index(lua_State *L)
             lua_pushinteger(L, Minecraft::GetItemData(slotIndex));
             break;
         case hash("ItemName"): {
-            u32 itemID = Minecraft::GetItemID(slotIndex);
-            if (itemID == 0) {
+            u32 itemAddr = Minecraft::GetItemID(slotIndex);
+            if (itemAddr == 0) {
                 lua_pushstring(L, "empty_slot");
             } else {
-                int *itemAddr = (int*)itemID;
-                char *itemNameIDAddr = (char*)*(itemAddr + 6);
-                lua_pushstring(L, itemNameIDAddr);
+                Core::Game::ItemData *itemData = (Core::Game::ItemData*)itemAddr;
+                lua_pushstring(L, itemData->idName2);
             }
             break;
         }
