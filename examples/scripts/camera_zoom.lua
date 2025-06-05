@@ -1,6 +1,6 @@
 local playerCamera = Game.LocalPlayer.Camera
 local Gamepad = Game.Gamepad
-local originalFOV = playerCamera.FOV
+local originalFOV = 70
 local isZoom = false
 
 Game.Event.OnKeyPressed:Connect(function ()

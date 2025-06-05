@@ -1,5 +1,6 @@
 #include "Items.hpp"
 
+#include <cstring>
 #include "string_hash.hpp"
 
 #include "Minecraft.hpp"
@@ -19,7 +20,7 @@ Core::Game::ItemData *Core::Game::Items::SearchItemByName(const std::string& nam
     while (actualPtr <= endAddr) {
         Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
         if (itemData != NULL) {
-            if (name.compare(itemData->idName2))
+            if (std::strcmp(name.c_str(), itemData->idName2) == 0)
                 return itemData;
         }
         actualPtr++;
