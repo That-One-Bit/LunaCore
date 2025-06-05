@@ -8,7 +8,8 @@
 namespace CTRPF = CTRPluginFramework;
 
 enum player_camera_offsets : u32 {
-    cameraFOV = 0x100000 + 0x2CEE80,
+    itemCameraFOV = 0x100000 + 0x2CEE80,
+    playerCameraFOV = 0x341F313C,
 };
 
 // ----------------------------------------------------------------------------
@@ -35,7 +36,7 @@ static int l_Camera_index(lua_State *L)
     switch (key) {
         case hash("FOV"): {
             float fov;
-            CTRPF::Process::ReadFloat(player_camera_offsets::cameraFOV, fov);
+            CTRPF::Process::ReadFloat(player_camera_offsets::playerCameraFOV, fov);
             lua_pushnumber(L, fov);
             break;
         }
@@ -66,7 +67,8 @@ static int l_Camera_newindex(lua_State *L)
 
     switch (key) {
         case hash("FOV"):
-            CTRPF::Process::WriteFloat(player_camera_offsets::cameraFOV, luaL_checknumber(L, 3));
+            CTRPF::Process::WriteFloat(player_camera_offsets::playerCameraFOV, luaL_checknumber(L, 3));
+            CTRPF::Process::WriteFloat(player_camera_offsets::itemCameraFOV, lua_tonumber(L, 3));
             break;
         case hash("Yaw"):
             Minecraft::SetYaw(luaL_checknumber(L, 3));
