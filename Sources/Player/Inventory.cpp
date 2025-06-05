@@ -153,9 +153,15 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
         return luaL_error(L, "Slot index out of range");
 
     switch (key) {
-        case hash("ItemID"):
-            Minecraft::SetItemID(slotIndex, lua_tointeger(L, 3));
+        case hash("ItemID"): {
+            u16 itemID = luaL_checkinteger(L, 3);
+            Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
+            if (itemData != NULL)
+                Minecraft::SetItemID(slotIndex, (u32)itemData);
+            else
+                return luaL_error(L, "Unknown ID '%u'", itemID);
             break;
+        }
         case hash("ItemCount"):
             Minecraft::SetItemCount(slotIndex, lua_tointeger(L, 3));
             break;
