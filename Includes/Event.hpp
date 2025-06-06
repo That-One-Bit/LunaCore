@@ -5,6 +5,12 @@
 namespace Core {
     void EventHandlerCallback();
 
+    namespace Event {
+        void TriggerOnPlayerJoinWorld(lua_State *L);
+
+        void TriggerOnPlayerLeaveWorld(lua_State *L);
+    }
+
     namespace Game {
         bool RegisterEventModule(lua_State *L);
     }

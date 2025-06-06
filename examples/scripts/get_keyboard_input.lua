@@ -1,5 +1,7 @@
 local Gamepad = Game.Gamepad
 local Keycodes = Gamepad.KeyCodes
+local Keyboard = Core.Keyboard
+local Debug = Core.Debug
 
 -- This will open a keyboard on number mode
 -- If no input it will return -1
@@ -7,7 +9,7 @@ local Keycodes = Gamepad.KeyCodes
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Keycodes.ZL) and Gamepad.isDown(Keycodes.ZR) then
         local input = Keyboard.getNumber("Enter a number: ")
-        Game.Debug.message(tostring(input))
+        Debug.message(tostring(input))
     end
 end)
 
@@ -17,7 +19,7 @@ end)
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Keycodes.L) then
         local input = Keyboard.getString("Enter your message: ")
-        Game.Debug.message(input)
+        Debug.message(input)
     end
 end)
 
@@ -27,6 +29,6 @@ end)
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Keycodes.R) then
         local input = Keyboard.getHex()
-        Game.Debug.message(tostring(string.format("%X", input)))
+        Debug.message(tostring(string.format("%X", input)))
     end
 end)

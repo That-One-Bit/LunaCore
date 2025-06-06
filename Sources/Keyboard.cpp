@@ -6,7 +6,7 @@ namespace CTRPF = CTRPluginFramework;
 
 // ----------------------------------------------------------------------------
 
-//$Keyboard
+//$Core.Keyboard
 
 // ----------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ namespace CTRPF = CTRPluginFramework;
 - Opens the keyboard and returns the user input as string
 ## message: string?
 ## return: string
-### Keyboard.getString
+### Core.Keyboard.getString
 */
 static int l_Keyboard_getString(lua_State *L) {
     CTRPF::Keyboard keyboard;
@@ -36,7 +36,7 @@ static int l_Keyboard_getString(lua_State *L) {
 - Opens the keyboard and returns the user input as number
 ## message: string?
 ## return: number
-### Keyboard.getNumber
+### Core.Keyboard.getNumber
 */
 static int l_Keyboard_getNumber(lua_State *L) {
     CTRPF::Keyboard keyboard;
@@ -58,7 +58,7 @@ static int l_Keyboard_getNumber(lua_State *L) {
 - Opens the keyboard and returns the user input as unsigned integer
 ## message: string?
 ## return: integer
-### Keyboard.getInteger
+### Core.Keyboard.getInteger
 */
 static int l_Keyboard_getInteger(lua_State *L) {
     CTRPF::Keyboard keyboard;
@@ -80,7 +80,7 @@ static int l_Keyboard_getInteger(lua_State *L) {
 - Opens the keyboard and returns the user input as hexadecimal
 ## message: string?
 ## return: integer
-### Keyboard.getHex
+### Core.Keyboard.getHex
 */
 static int l_Keyboard_getHex(lua_State *L) {
     CTRPF::Keyboard keyboard;
@@ -110,7 +110,9 @@ static const luaL_Reg keyboard_functions[] =
 
 // ----------------------------------------------------------------------------
 
-bool Core::RegisterKeyboardModule(lua_State *L) {
-    luaC_register_global(L, keyboard_functions, "Keyboard");
+bool Core::Module::RegisterKeyboardModule(lua_State *L) {
+    lua_getglobal(L, "Core");
+    luaC_register_field(L, keyboard_functions, "Keyboard");
+    lua_pop(L, 1);
     return true;
 }

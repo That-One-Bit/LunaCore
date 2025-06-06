@@ -6,6 +6,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Debug.hpp"
+#include "Gamepad.hpp"
 #include "Utils/Utils.hpp"
 
 namespace CTRPF = CTRPluginFramework;
@@ -26,6 +27,9 @@ void Core::EventHandlerCallback()
 
     // KeyPressed Event
     u32 pressedKeys = CTRPF::Controller::GetKeysPressed();
+    u32 downKeys = CTRPF::Controller::GetKeysDown();
+    u32 releasedKeys = CTRPF::Controller::GetKeysReleased();
+    //Core::Gamepad::BlockKey((u32)CTRPF::Key::DPadLeft | (u32)CTRPF::Key::DPadRight);
     if (pressedKeys > 0)
     {
         lua_getglobal(L, "Game");
@@ -49,7 +53,6 @@ void Core::EventHandlerCallback()
         lua_pop(L, 3);
     }
 
-    u32 downKeys = CTRPF::Controller::GetKeysDown();
     if (downKeys > 0)
     {
         lua_getglobal(L, "Game");
@@ -73,7 +76,6 @@ void Core::EventHandlerCallback()
         lua_pop(L, 3);
     }
 
-    u32 releasedKeys = CTRPF::Controller::GetKeysReleased();
     if (releasedKeys > 0)
     {
         lua_getglobal(L, "Game");
@@ -129,6 +131,50 @@ void Core::EventHandlerCallback()
     }
     lua_pop(L, 3);
     #endif
+}
+
+void Core::Event::TriggerOnPlayerJoinWorld(lua_State *L) {
+    lua_getglobal(L, "Game");
+    lua_getfield(L, -1, "Event");
+    lua_getfield(L, -1, "OnPlayerJoinWorld");
+    lua_getfield(L, -1, "Trigger");
+
+    if (lua_isfunction(L, -1))
+    {
+        lua_pushvalue(L, -2);
+        if (lua_pcall(L, 1, 0, 0))
+        {
+            Core::Debug::LogError("Core::Event::OnPlayerJoinWorld error: " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+    }
+    else {
+        Core::Debug::LogError("Core::Event::OnPlayerJoinWorld::Trigger error. Unexpected type");
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 3);
+}
+
+void Core::Event::TriggerOnPlayerLeaveWorld(lua_State *L) {
+    lua_getglobal(L, "Game");
+    lua_getfield(L, -1, "Event");
+    lua_getfield(L, -1, "OnPlayerLeaveWorld");
+    lua_getfield(L, -1, "Trigger");
+
+    if (lua_isfunction(L, -1))
+    {
+        lua_pushvalue(L, -2);
+        if (lua_pcall(L, 1, 0, 0))
+        {
+            Core::Debug::LogError("Core::Event::OnPlayerLeaveWorld error: " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+    }
+    else {
+        Core::Debug::LogError("Core::Event::OnPlayerLeaveWorld::Trigger error. Unexpected type");
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 3);
 }
 
 // ----------------------------------------------------------------------------
@@ -292,6 +338,20 @@ bool Core::Game::RegisterEventModule(lua_State *L)
     lua_setfield(L, -2, "listeners");
     luaC_setmetatable(L, "EventClass");
     lua_setfield(L, -2, "OnKeyReleased");
+
+    //$@@@Game.Event.OnPlayerJoinWorld: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnPlayerJoinWorld");
+
+    //$@@@Game.Event.OnPlayerLeaveWorld: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnPlayerLeaveWorld");
 
     lua_pop(L, 2);
 

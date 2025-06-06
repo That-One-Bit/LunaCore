@@ -28,7 +28,6 @@ namespace Core {
         //$Game
         lua_newtable(L);
         lua_setglobal(L, "Game");
-        Core::Game::RegisterDebugModule(L); // Maybe move to System or to a global idk
         Core::Game::RegisterGamepadModule(L);
         Core::Game::RegisterWorldModule(L);
         Core::Game::RegisterLocalPlayerModule(L);
@@ -67,6 +66,17 @@ namespace Core {
         }
         return true;
     }
+
+    bool RegisterCoreModule(lua_State *L) {
+        //Use global Core as entry point related to functions that are external to the game
+        //$Core
+        lua_newtable(L);
+        lua_setglobal(L, "Core");
+        Core::Module::RegisterDebugModule(L);
+        Core::Module::RegisterSystemModule(L);
+        Core::Module::RegisterKeyboardModule(L);
+        return true;
+    }
 }
 
 void Core::LoadModules(lua_State *L)
@@ -77,9 +87,8 @@ void Core::LoadModules(lua_State *L)
     Core::RegisterUtilsModule(L);
     
     Core::RegisterBitsModule(L);
-    Core::RegisterSystemModule(L);
-    Core::RegisterKeyboardModule(L);
     Core::RegisterAsyncModule(L);
+    Core::RegisterCoreModule(L);
     Core::RegisterGameModule(L);
 
     Core::UnregisterUtilsModule(L);

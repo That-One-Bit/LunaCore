@@ -3,5 +3,7 @@
 #include "lua_common.h"
 
 namespace Core {
-    bool RegisterKeyboardModule(lua_State *L);
+    namespace Module {
+        bool RegisterKeyboardModule(lua_State *L);
+    }
 }

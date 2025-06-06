@@ -1,5 +1,5 @@
 local Gamepad = Game.Gamepad
-local Debug = Game.Debug
+local Debug = Core.Debug
 
 -- You need to call Slots["hand"] everytime you want to check hand slot as it wont 
 -- update any reference you saved previously

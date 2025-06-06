@@ -1,7 +1,17 @@
 local World = Game.World
-local Debug = Game.Debug
+local Debug = Core.Debug
 local lastWorldLoaded = World.Loaded
 
+-- Method 1
+Game.Event.OnPlayerJoinWorld:Connect(function ()
+    Debug.message("Player joined a world")
+end)
+
+Game.Event.OnPlayerLeaveWorld:Connect(function ()
+    Debug.message("Player leaved a world")
+end)
+
+-- Method 2
 Async.create(function ()
     while Async.wait() do
         if lastWorldLoaded ~= World.Loaded then

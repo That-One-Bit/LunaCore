@@ -70,14 +70,14 @@ void Core::Debug::Error(const std::string& msg)
 // ----------------------------------------------------------------------------
 
 //!include Sources/Modules.cpp
-//$Game.Debug
+//$Core.Debug
 
 // ----------------------------------------------------------------------------
 
 /*
 - Displays a notification on screen
 ## msg: string
-### Game.Debug.message
+### Core.Debug.message
 */
 static int l_Debug_message(lua_State *L)
 {
@@ -91,7 +91,7 @@ static int l_Debug_message(lua_State *L)
 - Appends the message to log file. Optionally shows the message on screen
 ## msg: string
 ## showOnScreen: boolean
-### Game.Debug.log
+### Core.Debug.log
 */
 static int l_Debug_log(lua_State *L)
 {
@@ -106,7 +106,7 @@ static int l_Debug_log(lua_State *L)
 /*
 - Appends the error message to log file and shows it on screen
 ## msg: string
-### Game.Debug.logerror
+### Core.Debug.logerror
 */
 static int l_Debug_logerror(lua_State *L)
 {
@@ -118,7 +118,7 @@ static int l_Debug_logerror(lua_State *L)
 /*
 - Show error on screen
 ## msg: string
-### Game.Debug.error
+### Core.Debug.error
 */
 static int l_Debug_error(lua_State *L)
 {
@@ -138,9 +138,9 @@ static const luaL_Reg debug_functions[] =
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterDebugModule(lua_State *L)
+bool Core::Module::RegisterDebugModule(lua_State *L)
 {
-    lua_getglobal(L, "Game");
+    lua_getglobal(L, "Core");
     luaC_register_field(L, debug_functions, "Debug");
     lua_pop(L, 1);
     return true;

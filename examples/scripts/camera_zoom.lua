@@ -4,7 +4,7 @@ local originalFOV = 70
 local isZoom = false
 
 Game.Event.OnKeyPressed:Connect(function ()
-    if Gamepad.isPressed(Gamepad.KeyCodes.ZL) and Gamepad.isPressed(Gamepad.KeyCodes.ZR) then
+    if Gamepad.isDown(Gamepad.KeyCodes.ZL) and Gamepad.isDown(Gamepad.KeyCodes.ZR) then
         if Game.World.Loaded then
             local playerHand = Game.LocalPlayer.Inventory.Slots["hand"]
             if playerHand.ItemName == "diamond" then

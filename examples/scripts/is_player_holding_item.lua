@@ -1,5 +1,5 @@
 local Gamepad = Game.Gamepad
-local Debug = Game.Debug
+local Debug = Core.Debug
 
 -- Checks if player is holding a diamond
 Game.Event.OnKeyPressed:Connect(function ()

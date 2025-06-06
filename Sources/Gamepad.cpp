@@ -5,6 +5,15 @@
 
 namespace CTRPF = CTRPluginFramework;
 
+extern "C" vu32* hidSharedMem;
+
+void Core::Gamepad::BlockKey(u32 keyCode) {
+    for (int i = 0; i < 8; i++) {
+        int j = 10 + i * 4;
+        *(u32*)(&hidSharedMem[j]) = (*(u32*)(&hidSharedMem[j]) & (~keyCode));
+    }
+}
+
 // ----------------------------------------------------------------------------
 
 //$Game.Gamepad

@@ -19,7 +19,7 @@ namespace Core {
         void Error(const std::string& msg);
     }
 
-    namespace Game {
+    namespace Module {
         bool RegisterDebugModule(lua_State *L);
     }
 }

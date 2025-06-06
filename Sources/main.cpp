@@ -111,12 +111,26 @@ namespace CTRPluginFramework
             return;
         settings.UseGameHidMemory = true;
         ToggleTouchscreenForceOn();
+
+        if (!Directory::IsExists(PLUGIN_FOLDER))
+            Directory::Create(PLUGIN_FOLDER);
+        if (!Core::Debug::OpenLogFile(LOG_FILE))
+            OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
+        Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
+        config = Core::Config::LoadConfig(CONFIG_FILE);
+
+        bool disableZRandZL = Core::Config::GetBoolValue(config, "disable_zl_and_zr", false);
+
         u16 gameVer = Process::GetVersion();
         if (IS_VUSA_COMP(titleID, gameVer) || IS_VEUR_COMP(titleID, gameVer) || IS_VJPN_COMP(titleID, gameVer) || System::IsCitra()) {
             Minecraft::PatchProcess();
             SetMainMenuLayoutLoadCallback();
             SetLoadingWorldScreenMessageCallback();
             SetLeaveLevelPromptCallback();
+            if (disableZRandZL) {
+                Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
+                Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
+            }
         } else {
             enabledPatching = false;
         }
@@ -356,6 +370,26 @@ namespace CTRPluginFramework
                     Core::Debug::LogMessage("Failed to save configs", true);
             }
         }));
+        optionsFolder->Append(new MenuEntry("Toggle Block ZL and ZR keys", nullptr, [](MenuEntry *entry)
+        {
+            bool changed = false;
+            if (config["disable_zl_and_zr"] == "true") {
+                if (MessageBox("Do you want to ENABLE ZL and ZR keys?", DialogType::DialogYesNo)()) {
+                    config["disable_zl_and_zr"] = "false";
+                    changed = true;
+                }
+            } else {
+                if (MessageBox("Do you want to DISABLE ZL and ZR keys (only scripts will be able to use them)?", DialogType::DialogYesNo)()) {
+                    config["disable_zl_and_zr"] = "true";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                MessageBox("Restart the game to apply the changes")();
+                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
+                    Core::Debug::LogMessage("Failed to save configs", true);
+            }
+        }));
         devFolder->Append(new MenuEntry("Change Camera FOV", nullptr, changeCameraFOV));
         menu.Append(optionsFolder);
         menu.Append(devFolder);
@@ -367,16 +401,13 @@ namespace CTRPluginFramework
         if (!IS_TARGET_ID(titleID))
             return 0;
 
-        if (!Directory::IsExists(PLUGIN_FOLDER))
-            Directory::Create(PLUGIN_FOLDER);
-        if (!Core::Debug::OpenLogFile(LOG_FILE))
-            OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
+        if (!Directory::IsExists(PLUGIN_FOLDER"/layouts"))
+            Directory::Create(PLUGIN_FOLDER"/layouts");
+        if (!Directory::IsExists(PLUGIN_FOLDER"/scripts"))
+            Directory::Create(PLUGIN_FOLDER"/scripts");
 
         Core::Debug::LogMessage("Starting plugin", false);
         Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH), false);
-
-        Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
-        config = Core::Config::LoadConfig(CONFIG_FILE);
 
         bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
         bool loadScripts = Core::Config::GetBoolValue(config, "enable_scripts", true);
@@ -394,6 +425,8 @@ namespace CTRPluginFramework
 
         menu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
             "Allows to execute Lua scripts.");
+        std::string &title = menu->Title();
+        title.assign("LunaCore Plugin Menu");
 
         if (!loadScripts) {
             Core::Debug::LogMessage("Scripts disabled", false);
@@ -441,24 +474,22 @@ namespace CTRPluginFramework
             UpdateLuaStatistics();
             OSD::Run(DrawMonitors);
 
-            if (Directory::IsExists(PLUGIN_FOLDER"/scripts")) {
-                Directory dir;
-                Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-                if (dir.IsOpen()) {
-                    std::vector<std::string> dirFiles;
-                    if (dir.ListFiles(dirFiles, ".lua") > 0) { // Only add core callbacks if any script under directory
-                        int luaFiles = 0;
-                        for (auto file : dirFiles) {
-                            if (strcmp(file.c_str() + file.size() - 4, ".lua") == 0)
-                                luaFiles++;
-                        }
-                        if (luaFiles > 0) {
-                            menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
-                            menu->Callback(Core::EventHandlerCallback);
-                            menu->Callback(Core::AsyncHandlerCallback);
-                            menu->Callback(UpdateLuaStatistics);
-                            OSD::Run(Core::GraphicsHandlerCallback);
-                        }
+            Directory dir;
+            Directory::Open(dir, PLUGIN_FOLDER"/scripts");
+            if (dir.IsOpen()) {
+                std::vector<std::string> dirFiles;
+                if (dir.ListFiles(dirFiles, ".lua") > 0) { // Only add core callbacks if any script under directory
+                    int luaFiles = 0;
+                    for (auto file : dirFiles) {
+                        if (strcmp(file.c_str() + file.size() - 4, ".lua") == 0)
+                            luaFiles++;
+                    }
+                    if (luaFiles > 0) {
+                        menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
+                        menu->Callback(Core::EventHandlerCallback);
+                        menu->Callback(Core::AsyncHandlerCallback);
+                        menu->Callback(UpdateLuaStatistics);
+                        OSD::Run(Core::GraphicsHandlerCallback);
                     }
                 }
             }

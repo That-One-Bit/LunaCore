@@ -4,14 +4,14 @@
 
 // ----------------------------------------------------------------------------
 
-//$System
+//$Core.System
 
 // ----------------------------------------------------------------------------
 
 /*
 - Returns UNIX time
 ## return: number
-### System.getTime
+### Core.System.getTime
 */
 static int l_System_getTime(lua_State *L)
 {
@@ -27,8 +27,10 @@ static const luaL_Reg system_functions[] =
 
 // ----------------------------------------------------------------------------
 
-bool Core::RegisterSystemModule(lua_State *L)
+bool Core::Module::RegisterSystemModule(lua_State *L)
 {
-    luaC_register_global(L, system_functions, "System");
+    lua_getglobal(L, "Core");
+    luaC_register_field(L, system_functions, "System");
+    lua_pop(L, 1);
     return true;
 }

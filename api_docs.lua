@@ -44,24 +44,26 @@ function Bits.bnot(a) end
 
 Game = {}
 
-Game.Debug = {}
+Core = {}
+
+Core.Debug = {}
 
 ---Displays a notification on screen
 ---@param msg string
-function Game.Debug.message(msg) end
+function Core.Debug.message(msg) end
 
 ---Appends the message to log file. Optionally shows the message on screen
 ---@param msg string
 ---@param showOnScreen boolean
-function Game.Debug.log(msg, showOnScreen) end
+function Core.Debug.log(msg, showOnScreen) end
 
 ---Appends the error message to log file and shows it on screen
 ---@param msg string
-function Game.Debug.logerror(msg) end
+function Core.Debug.logerror(msg) end
 
 ---Show error on screen
 ---@param msg string
-function Game.Debug.error(msg) end
+function Core.Debug.error(msg) end
 
 Game.Event = {}
 
@@ -86,6 +88,12 @@ Game.Event.OnKeyDown = {}
 
 ---@class OnKeyReleased: EventClass
 Game.Event.OnKeyReleased = {}
+
+---@class OnPlayerJoinWorld: EventClass
+Game.Event.OnPlayerJoinWorld = {}
+
+---@class OnPlayerLeaveWorld: EventClass
+Game.Event.OnPlayerLeaveWorld = {}
 
 Game.Gamepad = {}
 
@@ -187,27 +195,27 @@ function Game.Items.findItemIDByName(name) end
 ---@return string?
 function Game.Items.findItemNameByID(itemID) end
 
-Keyboard = {}
+Core.Keyboard = {}
 
 ---Opens the keyboard and returns the user input as string
 ---@param message string?
 ---@return string
-function Keyboard.getString(message) end
+function Core.Keyboard.getString(message) end
 
 ---Opens the keyboard and returns the user input as number
 ---@param message string?
 ---@return number
-function Keyboard.getNumber(message) end
+function Core.Keyboard.getNumber(message) end
 
 ---Opens the keyboard and returns the user input as unsigned integer
 ---@param message string?
 ---@return integer
-function Keyboard.getInteger(message) end
+function Core.Keyboard.getInteger(message) end
 
 ---Opens the keyboard and returns the user input as hexadecimal
 ---@param message string?
 ---@return integer
-function Keyboard.getHex(message) end
+function Core.Keyboard.getHex(message) end
 
 Game.LocalPlayer = {}
 
@@ -310,11 +318,11 @@ InventorySlot.ItemData = 0
 
 InventorySlot.ItemName = ""
 
-System = {}
+Core.System = {}
 
 ---Returns UNIX time
 ---@return number
-function System.getTime() end
+function Core.System.getTime() end
 
 Game.World = {}
 
