@@ -156,8 +156,14 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
         case hash("ItemID"): {
             u16 itemID = luaL_checkinteger(L, 3);
             Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
-            if (itemData != NULL)
-                Minecraft::SetItemID(slotIndex, (u32)itemData);
+            if (itemData != NULL) {
+                Core::Game::InventorySlot* slotAddr = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+                u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
+                if (slotAddr) {
+                    slotAddr->itemData = itemData;
+                    //slotAddr->renderID = renderID;
+                }
+            }
             else
                 return luaL_error(L, "Unknown ID '%u'", itemID);
             break;

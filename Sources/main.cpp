@@ -18,6 +18,7 @@
 #include "Utils/Utils.hpp"
 #include "Config.hpp"
 
+#include "Game/GameHooks.hpp"
 #include "Game/GameState.hpp"
 #include "Game/MainMenuLayoutLoad.hpp"
 #include "Game/LoadingWorldScreenMessage.hpp"
@@ -131,6 +132,7 @@ namespace CTRPluginFramework
                 Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
                 Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
             }
+            //hookSomeFunctions();
         } else {
             enabledPatching = false;
         }
@@ -376,11 +378,15 @@ namespace CTRPluginFramework
             if (config["disable_zl_and_zr"] == "true") {
                 if (MessageBox("Do you want to ENABLE ZL and ZR keys?", DialogType::DialogYesNo)()) {
                     config["disable_zl_and_zr"] = "false";
+                    Process::Write32(0x819530+BASE_OFF, KEY_ZL); // Pos keycode for ZL
+                    Process::Write32(0x819534+BASE_OFF, KEY_ZR); // Pos keycode for ZR
                     changed = true;
                 }
             } else {
                 if (MessageBox("Do you want to DISABLE ZL and ZR keys (only scripts will be able to use them)?", DialogType::DialogYesNo)()) {
                     config["disable_zl_and_zr"] = "true";
+                    Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
+                    Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
                     changed = true;
                 }
             }

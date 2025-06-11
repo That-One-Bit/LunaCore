@@ -28,6 +28,8 @@ namespace Core {
             Core::Game::ItemData *SearchItemByName(const std::string& name);
 
             Core::Game::ItemData *SearchItemByID(u16 id);
+
+            u32 GetRenderIDByItemID(u16 id);
         }
     }
 }
