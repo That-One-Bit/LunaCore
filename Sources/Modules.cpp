@@ -9,6 +9,7 @@
 
 #include "Core/Utils/Bits.hpp"
 #include "Core/System.hpp"
+#include "Core/Filesystem.hpp"
 #include "Core/Keyboard.hpp"
 #include "Core/Async.hpp"
 #include "Core/Debug.hpp"
@@ -75,6 +76,7 @@ namespace Core {
         Core::Module::RegisterDebugModule(L);
         Core::Module::RegisterSystemModule(L);
         Core::Module::RegisterKeyboardModule(L);
+        Core::Module::RegisterFilesystemModule(L);
         return true;
     }
 }

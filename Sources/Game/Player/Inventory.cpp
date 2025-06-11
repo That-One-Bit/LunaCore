@@ -93,32 +93,32 @@ static int l_Inventory_Slot_class_index(lua_State *L)
 
     if (slotIndex < 1 || slotIndex > 36)
         return luaL_error(L, "Slot index out of range");
+    
+    Core::Game::InventorySlot *slotData = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+    if (slotData == NULL)
+        return 0;
 
     switch (key) {
         case hash("ItemID"): {
-            u32 itemAddr = Minecraft::GetItemID(slotIndex);
-            if (itemAddr == 0)
-                lua_pushinteger(L, 0);
-            else {
-                Core::Game::ItemData *itemData = (Core::Game::ItemData*)itemAddr;
+            Core::Game::ItemData *itemData = slotData->itemData;
+            if (itemData)
                 lua_pushinteger(L, itemData->itemID);
-            }
+            else
+                lua_pushnumber(L, 0);
             break;
         }
         case hash("ItemCount"):
-            lua_pushinteger(L, Minecraft::GetItemCount(slotIndex));
+            lua_pushinteger(L, slotData->itemCount);
             break;
         case hash("ItemData"):
-            lua_pushinteger(L, Minecraft::GetItemData(slotIndex));
+            lua_pushinteger(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
-            u32 itemAddr = Minecraft::GetItemID(slotIndex);
-            if (itemAddr == 0) {
-                lua_pushstring(L, "empty_slot");
-            } else {
-                Core::Game::ItemData *itemData = (Core::Game::ItemData*)itemAddr;
+            Core::Game::ItemData *itemData = slotData->itemData;
+            if (itemData)
                 lua_pushstring(L, itemData->idName2);
-            }
+            else
+                lua_pushstring(L, "empty_slot");
             break;
         }
         default:
@@ -152,27 +152,28 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
     if (slotIndex < 1 || slotIndex > 36)
         return luaL_error(L, "Slot index out of range");
 
+    Core::Game::InventorySlot* slotData = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+    if (slotData == NULL)
+        return 0;
+
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checkinteger(L, 3);
             Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
-                Core::Game::InventorySlot* slotAddr = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
-                if (slotAddr) {
-                    slotAddr->itemData = itemData;
-                    //slotAddr->renderID = renderID;
-                }
+                slotData->itemData = itemData;
+                //slotData->renderID = renderID;
             }
             else
                 return luaL_error(L, "Unknown ID '%u'", itemID);
             break;
         }
         case hash("ItemCount"):
-            Minecraft::SetItemCount(slotIndex, lua_tointeger(L, 3));
+            slotData->itemCount = lua_tointeger(L, 3);
             break;
         case hash("ItemData"):
-            Minecraft::SetItemData(slotIndex, (u16)lua_tointeger(L, 3));
+            slotData->dataValue= lua_tointeger(L, 3);
             break;
         default:
             valid = false;

@@ -3,5 +3,7 @@
 #include "lua_common.h"
 
 namespace Core {
-    bool RegisterFilesystemModule(lua_State *L);
+    namespace Module {
+        bool RegisterFilesystemModule(lua_State *L);
+    }
 }

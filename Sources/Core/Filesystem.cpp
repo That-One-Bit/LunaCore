@@ -155,7 +155,7 @@ static const luaL_Reg filesystem_functions[] = {
     {NULL, NULL}
 };
 
-bool Core::RegisterFilesystemModule(lua_State *L) {
+bool Core::Module::RegisterFilesystemModule(lua_State *L) {
     lua_getglobal(L, "Core");
     luaC_register_field(L, filesystem_functions, "Filesystem");
     lua_pop(L, 1);
