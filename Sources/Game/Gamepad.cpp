@@ -1,4 +1,4 @@
-#include "Gamepad.hpp"
+#include "Game/Gamepad.hpp"
 
 #include <3ds.h>
 #include <CTRPluginFramework.hpp>

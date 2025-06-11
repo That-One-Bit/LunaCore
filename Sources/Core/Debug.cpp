@@ -1,4 +1,4 @@
-#include "Debug.hpp"
+#include "Core/Debug.hpp"
 
 #include <string>
 #include <time.h>

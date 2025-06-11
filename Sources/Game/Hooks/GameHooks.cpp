@@ -1,4 +1,4 @@
-#include "Game/GameHooks.hpp"
+#include "Game/Hooks/GameHooks.hpp"
 
 #include <vector>
 #include <memory>
@@ -7,7 +7,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "lua_common.h"
-#include "Debug.hpp"
+#include "Core/Debug.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

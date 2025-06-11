@@ -1,11 +1,11 @@
-#include "World.hpp"
+#include "Game/World.hpp"
 
 #include <CTRPluginFramework.hpp>
 
-#include "Game/GameState.hpp"
+#include "Core/Utils/GameState.hpp"
 #include "string_hash.hpp"
 
-#include "Minecraft.hpp"
+#include "Game/Minecraft.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

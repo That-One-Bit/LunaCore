@@ -4,22 +4,22 @@
 
 #include <CTRPluginFramework.hpp>
 
-#include "Utils/lua_json.hpp"
-#include "Utils/FileLoader.hpp"
+#include "Core/Utils/lua_json.hpp"
+#include "Core/Utils/FileLoader.hpp"
 
-#include "Bits.hpp"
-#include "System.hpp"
-#include "Keyboard.hpp"
-#include "Async.hpp"
-#include "Debug.hpp"
-#include "Gamepad.hpp"
-#include "World.hpp"
-#include "Player/Player.hpp"
-#include "Items.hpp"
-#include "Event.hpp"
-#include "Graphics.hpp"
+#include "Core/Utils/Bits.hpp"
+#include "Core/System.hpp"
+#include "Core/Keyboard.hpp"
+#include "Core/Async.hpp"
+#include "Core/Debug.hpp"
+#include "Game/Gamepad.hpp"
+#include "Game/World.hpp"
+#include "Game/Player/Player.hpp"
+#include "Game/Items.hpp"
+#include "Core/Event.hpp"
+#include "Core/Graphics.hpp"
 
-#include "Utils/Utils.hpp"
+#include "Core/Utils/Utils.hpp"
 
 namespace Core {
     bool RegisterGameModule(lua_State *L)

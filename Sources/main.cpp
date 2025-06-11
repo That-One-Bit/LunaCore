@@ -9,19 +9,19 @@
 #include <cstring>
 
 #include "lua_common.h"
-#include "Minecraft.hpp"
+#include "Game/Minecraft.hpp"
 #include "Modules.hpp"
-#include "Debug.hpp"
-#include "Event.hpp"
-#include "Async.hpp"
-#include "Graphics.hpp"
-#include "Utils/Utils.hpp"
-#include "Config.hpp"
+#include "Core/Debug.hpp"
+#include "Core/Event.hpp"
+#include "Core/Async.hpp"
+#include "Core/Graphics.hpp"
+#include "Core/Utils/Utils.hpp"
+#include "Core/Config.hpp"
 
-#include "Game/GameHooks.hpp"
-#include "Game/GameState.hpp"
-#include "Game/MainMenuLayoutLoad.hpp"
-#include "Game/LoadingWorldScreenMessage.hpp"
+#include "Game/Hooks/GameHooks.hpp"
+#include "Core/Utils/GameState.hpp"
+#include "Game/Hooks/MainMenuLayoutLoad.hpp"
+#include "Game/Hooks/LoadingWorldScreenMessage.hpp"
 
 #define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
 #define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR

@@ -1,13 +1,13 @@
-#include "Player/Inventory.hpp"
+#include "Game/Player/Inventory.hpp"
 
 #include <vector>
 
 #include <CTRPluginFramework.hpp>
 
 #include "string_hash.hpp"
-#include "Minecraft.hpp"
+#include "Game/Minecraft.hpp"
 
-#include "Items.hpp"
+#include "Game/Items.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

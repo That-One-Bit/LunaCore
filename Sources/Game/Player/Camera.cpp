@@ -1,8 +1,8 @@
-#include "Player/Camera.hpp"
+#include "Game/Player/Camera.hpp"
 
 #include <CTRPluginFramework.hpp>
 
-#include "Minecraft.hpp"
+#include "Game/Minecraft.hpp"
 #include "string_hash.hpp"
 
 namespace CTRPF = CTRPluginFramework;

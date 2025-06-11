@@ -1,4 +1,4 @@
-#include "Game/MainMenuLayoutLoad.hpp"
+#include "Game/Hooks/MainMenuLayoutLoad.hpp"
 
 #include <vector>
 
@@ -11,9 +11,9 @@
 using json = nlohmann::json;
 
 #include "Game/Utils/game_functions.hpp"
-#include "Game/GameState.hpp"
-#include "Debug.hpp"
-#include "Utils/Utils.hpp"
+#include "Core/Utils/GameState.hpp"
+#include "Core/Debug.hpp"
+#include "Core/Utils/Utils.hpp"
 
 #define BASE_OFF 0x100000
 

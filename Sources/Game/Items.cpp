@@ -1,9 +1,9 @@
-#include "Items.hpp"
+#include "Game/Items.hpp"
 
 #include <cstring>
 #include "string_hash.hpp"
 
-#include "Minecraft.hpp"
+#include "Game/Minecraft.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

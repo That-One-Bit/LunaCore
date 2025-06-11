@@ -2,7 +2,7 @@
 
 #include "lua_common.h"
 
-#include "Items.hpp"
+#include "Game/Items.hpp"
 
 namespace Core {
     namespace Game {

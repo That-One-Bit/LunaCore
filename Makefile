@@ -14,7 +14,7 @@ PLGINFO 	:= 	CTRPluginFramework.plgInfo
 
 BUILD		:= 	Build
 INCLUDES	:= 	Includes
-SOURCES 	:= 	Sources Sources/Player Sources/Utils Sources/Game
+SOURCES 	:= 	Sources Sources/Core Sources/Core/Utils Sources/Game Sources/Game/Hooks Sources/Game/Player
 
 #---------------------------------------------------------------------------------
 # options for code generation

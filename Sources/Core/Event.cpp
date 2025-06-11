@@ -1,13 +1,13 @@
-#include "Event.hpp"
+#include "Core/Event.hpp"
 
 #include <string>
 #include <atomic>
 
 #include <CTRPluginFramework.hpp>
 
-#include "Debug.hpp"
-#include "Gamepad.hpp"
-#include "Utils/Utils.hpp"
+#include "Core/Debug.hpp"
+#include "Game/Gamepad.hpp"
+#include "Core/Utils/Utils.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

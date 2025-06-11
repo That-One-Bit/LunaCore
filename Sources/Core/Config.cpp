@@ -1,7 +1,7 @@
-#include "Config.hpp"
+#include "Core/Config.hpp"
 
-#include "Debug.hpp"
-#include "Utils/Utils.hpp"
+#include "Core/Debug.hpp"
+#include "Core/Utils/Utils.hpp"
 
 #include <CTRPluginFramework.hpp>
 

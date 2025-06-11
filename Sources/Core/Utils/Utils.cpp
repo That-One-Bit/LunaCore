@@ -1,10 +1,10 @@
-#include "Utils/Utils.hpp"
+#include "Core/Utils/Utils.hpp"
 
 #include <cstdlib>
 
 #include <CTRPluginFramework.hpp>
 
-#include "Debug.hpp"
+#include "Core/Debug.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

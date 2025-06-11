@@ -1,10 +1,11 @@
+#include "Game/Hooks/LoadingWorldScreenMessage.hpp"
 
 #include <CTRPluginFramework.hpp>
 
-#include "Game/GameState.hpp"
+#include "Core/Utils/GameState.hpp"
 #include "lua_common.h"
 
-#include "Event.hpp"
+#include "Core/Event.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 

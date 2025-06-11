@@ -1,4 +1,4 @@
-#include "Keyboard.hpp"
+#include "Core/Keyboard.hpp"
 
 #include <CTRPluginFramework.hpp>
 
