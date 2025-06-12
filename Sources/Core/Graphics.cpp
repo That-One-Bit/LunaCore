@@ -13,10 +13,23 @@ static int lua_callback = LUA_NOREF;
 static bool graphicsOpen = false;
 static bool shouldGraphicsClose = false;
 static const CTRPF::Screen *currentScreen = NULL;
+static Core::GraphicsFrameCallback graphicsFrameCallback = NULL;
+static Core::GraphicsExitCallback graphicsExitCallback = NULL;
 
-void Core::GraphicsHandlerCallback() {
+static void processEventHandler(CTRPF::Process::Event event) {
+    if (event == CTRPF::Process::Event::SLEEP_ENTER)
+        shouldGraphicsClose = true;
+}
+
+void Core::GraphicsOpen(GraphicsFrameCallback frameCallback, GraphicsExitCallback exitCallback) {
+    graphicsFrameCallback = frameCallback;
+    graphicsExitCallback = exitCallback;
+    gmenu->Callback(Core::GraphicsHandlerMainloop); // Better add it as Callback to avoid script exahustion
+}
+
+void Core::GraphicsHandlerMainloop() {
     CTRPF::Process::Pause();
-    lua_State *L = Lua_global;
+    CTRPF::Process::SetProcessEventCallback(processEventHandler);
 
     graphicsOpen = true;
     bool exit = false;
@@ -29,31 +42,55 @@ void Core::GraphicsHandlerCallback() {
         if (CTRPF::OSD::TryLock())
             continue;
 
-        const CTRPF::Screen& topScreen = CTRPF::OSD::GetTopScreen();
-        currentScreen = &topScreen;
-        lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
-        lua_pushstring(L, "top");
-        if (lua_pcall(L, 1, 0, 0))
-            lua_pop(L, 1);
-
-        const CTRPF::Screen& bottomScreen = CTRPF::OSD::GetBottomScreen();
-        currentScreen = &bottomScreen;
-        lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
-        lua_pushstring(L, "bottom");
-        if (lua_pcall(L, 1, 0, 0))
-            lua_pop(L, 1);
+        if (graphicsFrameCallback == NULL) {
+            exit = true;
+            continue;
+        }
+        
+        graphicsFrameCallback();
         
         CTRPF::OSD::SwapBuffers();
         CTRPF::OSD::Unlock();
 
-        exit = CTRPF::Controller::IsKeyReleased(CTRPF::Key::Select);
+        if (CTRPF::Controller::IsKeyReleased(CTRPF::Key::Select)) {
+            exit = true;
+            gmenu->ForceOpen();
+        }
     }
-    luaL_unref(L, LUA_REGISTRYINDEX, lua_callback);
-    lua_callback = LUA_NOREF;
-    *gmenu -= Core::GraphicsHandlerCallback;
+
+    // Exit Graphics Mainloop
+    if (graphicsExitCallback != NULL)
+        graphicsExitCallback();
+    CTRPF::Process::SetProcessEventCallback(nullptr);
+    *gmenu -= Core::GraphicsHandlerMainloop;
+    graphicsFrameCallback = NULL;
+    graphicsExitCallback = NULL;
     graphicsOpen = false;
     shouldGraphicsClose = false;
     CTRPF::Process::Play();
+}
+
+static void LuaGraphicsFrameCallback() {
+    lua_State *L = Lua_global;
+    const CTRPF::Screen& topScreen = CTRPF::OSD::GetTopScreen();
+    currentScreen = &topScreen;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
+    lua_pushstring(L, "top");
+    if (lua_pcall(L, 1, 0, 0))
+        lua_pop(L, 1);
+
+    const CTRPF::Screen& bottomScreen = CTRPF::OSD::GetBottomScreen();
+    currentScreen = &bottomScreen;
+    lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
+    lua_pushstring(L, "bottom");
+    if (lua_pcall(L, 1, 0, 0))
+        lua_pop(L, 1);
+}
+
+static void LuaGraphicsExitCallback() {
+    lua_State *L = Lua_global;
+    luaL_unref(L, LUA_REGISTRYINDEX, lua_callback);
+    lua_callback = LUA_NOREF;
 }
 
 // ----------------------------------------------------------------------------
@@ -74,10 +111,15 @@ static int l_Graphics_open(lua_State *L) {
     
     if (graphicsOpen)
         return 0;
+
+    if (lua_callback != LUA_NOREF) {
+        luaL_unref(L, LUA_REGISTRYINDEX, lua_callback);
+        lua_callback = LUA_NOREF;
+    }
     
     lua_pushvalue(L, 1);
     lua_callback = luaL_ref(L, LUA_REGISTRYINDEX);
-    gmenu->Callback(Core::GraphicsHandlerCallback); // Better add it as Callback to avoid script exahustion
+    Core::GraphicsOpen(LuaGraphicsFrameCallback, LuaGraphicsExitCallback);
     return 0;
 }
 

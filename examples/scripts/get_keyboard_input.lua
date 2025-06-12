@@ -4,7 +4,7 @@ local Keyboard = Core.Keyboard
 local Debug = Core.Debug
 
 -- This will open a keyboard on number mode
--- If no input it will return -1
+-- If no input it will return nil
 -- It will show the message "Enter a number: " on top screen
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Keycodes.ZL) and Gamepad.isDown(Keycodes.ZR) then
@@ -14,12 +14,14 @@ Game.Event.OnKeyPressed:Connect(function ()
 end)
 
 -- This will open a keyboard on string mode (all alphabetical and special characters)
--- If no input it will return ""
+-- If no input it will return nil
 -- It will show on top screen the message "Enter your message: "
 Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isDown(Keycodes.L) then
         local input = Keyboard.getString("Enter your message: ")
-        Debug.message(input)
+        if input then
+            Debug.message(input)
+        end
     end
 end)
 

@@ -2,6 +2,9 @@
 
 #include <CTRPluginFramework.hpp>
 
+#include "Core/Event.hpp"
+#include "Core/Async.hpp"
+
 namespace CTRPF = CTRPluginFramework;
 
 // ----------------------------------------------------------------------------
@@ -13,7 +16,7 @@ namespace CTRPF = CTRPluginFramework;
 /*
 - Opens the keyboard and returns the user input as string
 ## message: string?
-## return: string
+## return: string?
 ### Core.Keyboard.getString
 */
 static int l_Keyboard_getString(lua_State *L) {
@@ -25,17 +28,22 @@ static int l_Keyboard_getString(lua_State *L) {
         keyboard.DisplayTopScreen = true;
     }
     std::string inputText;
-    if (keyboard.Open(inputText) == 0)
+    if (keyboard.Open(inputText) == 0) {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
         lua_pushstring(L, inputText.c_str());
-    else
-        lua_pushstring(L, "");
+    } else {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
+        lua_pushnil(L);
+    }
     return 1;
 }
 
 /*
 - Opens the keyboard and returns the user input as number
 ## message: string?
-## return: number
+## return: number?
 ### Core.Keyboard.getNumber
 */
 static int l_Keyboard_getNumber(lua_State *L) {
@@ -47,17 +55,22 @@ static int l_Keyboard_getNumber(lua_State *L) {
         keyboard.DisplayTopScreen = true;
     }
     float inputNumber;
-    if (keyboard.Open(inputNumber) == 0)
+    if (keyboard.Open(inputNumber) == 0) {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
         lua_pushnumber(L, inputNumber);
-    else
-        lua_pushnumber(L, -1);
+    } else {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
+        lua_pushnil(L);
+    }
     return 1;
 }
 
 /*
 - Opens the keyboard and returns the user input as unsigned integer
 ## message: string?
-## return: integer
+## return: integer?
 ### Core.Keyboard.getInteger
 */
 static int l_Keyboard_getInteger(lua_State *L) {
@@ -69,17 +82,22 @@ static int l_Keyboard_getInteger(lua_State *L) {
         keyboard.DisplayTopScreen = true;
     }
     u32 inputNumber;
-    if (keyboard.Open(inputNumber) == 0)
+    if (keyboard.Open(inputNumber) == 0) {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
         lua_pushinteger(L, inputNumber);
-    else
-        lua_pushinteger(L, -1);
+    } else {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
+        lua_pushnil(L);
+    }
     return 1;
 }
 
 /*
 - Opens the keyboard and returns the user input as hexadecimal
 ## message: string?
-## return: integer
+## return: integer?
 ### Core.Keyboard.getHex
 */
 static int l_Keyboard_getHex(lua_State *L) {
@@ -92,10 +110,15 @@ static int l_Keyboard_getHex(lua_State *L) {
     }
     u32 inputNumber;
     keyboard.IsHexadecimal(true);
-    if (keyboard.Open(inputNumber) == 0)
+    if (keyboard.Open(inputNumber) == 0) {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
         lua_pushinteger(L, inputNumber);
-    else
-        lua_pushinteger(L, -1);
+    } else {
+        Core::EventRestartClock();
+        Core::AsyncRestartClock();
+        lua_pushnil(L);
+    }
     return 1;
 }
 

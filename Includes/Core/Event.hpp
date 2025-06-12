@@ -3,6 +3,8 @@
 #include "lua_common.h"
 
 namespace Core {
+    void EventRestartClock();
+
     void EventHandlerCallback();
 
     namespace Event {

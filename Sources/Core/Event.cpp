@@ -15,6 +15,10 @@ extern lua_State *Lua_global;
 CTRPF::Clock timeoutEventClock;
 extern std::atomic<bool> graphicsIsTop;
 
+void Core::EventRestartClock() {
+    timeoutEventClock.Restart();
+}
+
 void TimeoutEventHook(lua_State *L, lua_Debug *ar)
 {
     if (timeoutEventClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)))

@@ -1,6 +1,5 @@
 local gamepad = Game.Gamepad
 local keys = gamepad.KeyCodes
-local open = false
 
 local function drawGraphics(screen)
     if screen == "top" then
@@ -14,12 +13,10 @@ end
 -- Every other events and async task will continue execution
 Game.Event.OnKeyReleased:Connect(function ()
     if gamepad.isReleased(keys.START) then
-        if not open then
+        if not Core.Graphics.isOpen() then
             Core.Graphics.open(drawGraphics)
-            open = true
         else
             Core.Graphics.close()
-            open = false
         end
     end
 end)

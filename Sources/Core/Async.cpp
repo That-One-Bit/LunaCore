@@ -10,6 +10,10 @@ namespace CTRPF = CTRPluginFramework;
 extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
 
+void Core::AsyncRestartClock() {
+    timeoutAsynClock.Restart();
+}
+
 static void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
 {
     if (timeoutAsynClock.HasTimePassed(CTRPluginFramework::Milliseconds(5000)))

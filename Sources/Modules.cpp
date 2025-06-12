@@ -92,4 +92,33 @@ void Core::LoadModules(lua_State *L)
     Core::RegisterGameModule(L);
 
     Core::UnregisterUtilsModule(L);
+
+    // Add some other functionalities
+    /*
+    $string
+    - Returns a table with a string splitted
+    ## s: string
+    ## separator: string
+    ## return: table
+    ### string.split
+    */
+    const char *lua_Code = R"(
+        function string.split(s, separator)
+            if separator == nil then
+                separator = "%s"
+            end
+            local escaped_delimiter = separator:gsub('([%.%*%+%?%^%$%[%]%(%)%{%}%|%\\])', '%%%1')
+            local pattern = string.format('([^%s]+)', escaped_delimiter)
+            local result = {}
+            for str in s:gmatch(pattern) do
+                table.insert(result, str)
+            end
+            return result
+        end
+    )";
+    if (luaL_dostring(L, lua_Code))
+    {
+        Core::Debug::LogError("Core::Load error: "+std::string(lua_tostring(L, -1)));
+        lua_pop(L, 1);
+    }
 }

@@ -15,6 +15,14 @@ Game = {}
 
 Core = {}
 
+string = {}
+
+---Returns a table with a string splitted
+---@param s string
+---@param separator string
+---@return table
+function string.split(s, separator) end
+
 Core.Debug = {}
 
 ---Displays a notification on screen
@@ -119,22 +127,22 @@ Core.Keyboard = {}
 
 ---Opens the keyboard and returns the user input as string
 ---@param message string?
----@return string
+---@return string?
 function Core.Keyboard.getString(message) end
 
 ---Opens the keyboard and returns the user input as number
 ---@param message string?
----@return number
+---@return number?
 function Core.Keyboard.getNumber(message) end
 
 ---Opens the keyboard and returns the user input as unsigned integer
 ---@param message string?
----@return integer
+---@return integer?
 function Core.Keyboard.getInteger(message) end
 
 ---Opens the keyboard and returns the user input as hexadecimal
 ---@param message string?
----@return integer
+---@return integer?
 function Core.Keyboard.getHex(message) end
 
 Core.System = {}

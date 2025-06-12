@@ -9,7 +9,7 @@ namespace CTRPF = CTRPluginFramework;
 
 enum player_camera_offsets : u32 {
     itemCameraFOV = 0x100000 + 0x2CEE80,
-    playerCameraFOV = 0x341F313C,
+    playerCameraFOV = 0x341F30F8,
 };
 
 // ----------------------------------------------------------------------------
