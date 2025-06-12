@@ -14,7 +14,7 @@ enum player_camera_offsets : u32 {
 
 // ----------------------------------------------------------------------------
 
-//!include Sources/Player/Player.cpp
+//!include Sources/Game/Player/Player.cpp
 //$Game.LocalPlayer.Camera
 
 // ----------------------------------------------------------------------------

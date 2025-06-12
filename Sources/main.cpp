@@ -29,7 +29,7 @@
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
 #define PLUGIN_VERSION_MAJOR 0
-#define PLUGIN_VERSION_MINOR 9
+#define PLUGIN_VERSION_MINOR 10
 #define PLUGIN_VERSION_PATCH 0
 #define PLUGIN_FOLDER "sdmc:/Minecraft 3DS"
 #define LOG_FILE PLUGIN_FOLDER"/log.txt"
@@ -46,6 +46,7 @@ bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
 u32 currentCamFOVOffset = 0;
+CTRPF::PluginMenu *gmenu;
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
@@ -55,7 +56,6 @@ void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 
 namespace CTRPluginFramework
 {
-    PluginMenu *menu;
     // This patch the NFC disabling the touchscreen when scanning an amiibo, which prevents ctrpf to be used
     static void    ToggleTouchscreenForceOn(void)
     {
@@ -120,7 +120,8 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
         config = Core::Config::LoadConfig(CONFIG_FILE);
 
-        bool disableZRandZL = Core::Config::GetBoolValue(config, "disable_zl_and_zr", false);
+        bool disableZLandZR = Core::Config::GetBoolValue(config, "disable_zl_and_zr", false);
+        bool disableDLandDR = Core::Config::GetBoolValue(config, "disable_dleft_and_dright", false);
 
         u16 gameVer = Process::GetVersion();
         if (IS_VUSA_COMP(titleID, gameVer) || IS_VEUR_COMP(titleID, gameVer) || IS_VJPN_COMP(titleID, gameVer) || System::IsCitra()) {
@@ -128,9 +129,13 @@ namespace CTRPluginFramework
             SetMainMenuLayoutLoadCallback();
             SetLoadingWorldScreenMessageCallback();
             SetLeaveLevelPromptCallback();
-            if (disableZRandZL) {
+            if (disableZLandZR) {
                 Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
                 Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
+            }
+            if (disableDLandDR) {
+                Process::Write32(0x819530-(4*8)+BASE_OFF, 0); // Pos keycode for DPADRIGHT
+                Process::Write32(0x819530-(4*7)+BASE_OFF, 0); // Pos keycode for DPADLEFT
             }
             //hookSomeFunctions();
         } else {
@@ -231,12 +236,12 @@ namespace CTRPluginFramework
         Directory dir;
         Directory::Open(dir, PLUGIN_FOLDER"/scripts");
         if (!dir.IsOpen()) {
-            *menu -= PreloadScripts;
+            *gmenu -= PreloadScripts;
             return;
         }
         std::vector<std::string> files;
         if (readFiles >= dir.ListFiles(files, ".lua")) {
-            *menu -= PreloadScripts;
+            *gmenu -= PreloadScripts;
             lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
             return;
         }
@@ -396,6 +401,26 @@ namespace CTRPluginFramework
                     Core::Debug::LogMessage("Failed to save configs", true);
             }
         }));
+        optionsFolder->Append(new MenuEntry("Toggle Block DPADLEFT and DPADRIGHT keys", nullptr, [](MenuEntry *entry)
+        {
+            bool changed = false;
+            if (config["disable_zl_and_zr"] == "true") {
+                if (MessageBox("Do you want to ENABLE DPADLEFT and DPADRIGHT keys?", DialogType::DialogYesNo)()) {
+                    config["disable_dleft_and_dright"] = "false";
+                    changed = true;
+                }
+            } else {
+                if (MessageBox("Do you want to DISABLE DPADLEFT and DPADRIGHT keys (only scripts will be able to use them)?", DialogType::DialogYesNo)()) {
+                    config["disable_dleft_and_dright"] = "true";
+                    changed = true;
+                }
+            }
+            if (changed) {
+                MessageBox("Restart the game to apply the changes")();
+                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
+                    Core::Debug::LogMessage("Failed to save configs", true);
+            }
+        }));
         devFolder->Append(new MenuEntry("Change Camera FOV", nullptr, changeCameraFOV));
         menu.Append(optionsFolder);
         menu.Append(devFolder);
@@ -429,9 +454,9 @@ namespace CTRPluginFramework
                 PatchMenuCustomLayoutDefault(PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH);
         }
 
-        menu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
+        gmenu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
             "Allows to execute Lua scripts.");
-        std::string &title = menu->Title();
+        std::string &title = gmenu->Title();
         title.assign("LunaCore Plugin Menu");
 
         if (!loadScripts) {
@@ -457,8 +482,8 @@ namespace CTRPluginFramework
         }
 
         // Synnchronize the menu with frame event
-        menu->SynchronizeWithFrame(true);
-        menu->ShowWelcomeMessage(false);
+        gmenu->SynchronizeWithFrame(true);
+        gmenu->ShowWelcomeMessage(false);
 
         Core::Debug::LogMessage("LunaCore loaded", true);
         u16 gameVer = Process::GetVersion();
@@ -491,25 +516,24 @@ namespace CTRPluginFramework
                             luaFiles++;
                     }
                     if (luaFiles > 0) {
-                        menu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
-                        menu->Callback(Core::EventHandlerCallback);
-                        menu->Callback(Core::AsyncHandlerCallback);
-                        menu->Callback(UpdateLuaStatistics);
-                        OSD::Run(Core::GraphicsHandlerCallback);
+                        gmenu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
+                        gmenu->Callback(Core::EventHandlerCallback);
+                        gmenu->Callback(Core::AsyncHandlerCallback);
+                        gmenu->Callback(UpdateLuaStatistics);
                     }
                 }
             }
         }
 
         // Init our menu entries & folders
-        InitMenu(*menu);
+        InitMenu(*gmenu);
 
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);
-        menu->Run();
+        gmenu->Run();
         Core::Debug::CloseLogFile();
 
-        delete menu;
+        delete gmenu;
         lua_close(Lua_global);
 
         // Exit plugin

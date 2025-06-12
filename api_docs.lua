@@ -11,37 +11,6 @@ function Async.create(func) end
 ---@return boolean
 function Async.wait(seconds) end
 
-Bits = {}
-
----@param a integer
----@param b integer
----@return integer
-function Bits.lshift(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.rshift(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.band(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.bor(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.bxor(a, b) end
-
----@param a integer
----@return integer
-function Bits.bnot(a) end
-
 Game = {}
 
 Core = {}
@@ -94,6 +63,116 @@ Game.Event.OnPlayerJoinWorld = {}
 
 ---@class OnPlayerLeaveWorld: EventClass
 Game.Event.OnPlayerLeaveWorld = {}
+
+Core.Graphics = {}
+
+---Stops the game and allows to draw on screen. Until Core.Graphics.close is called the function will be executed every frame
+---Other events and async tasks will continue running
+---@param func function
+function Core.Graphics.open(func) end
+
+---Resumes the game, the callback function will no longer be called and draw functions will not work
+function Core.Graphics.close() end
+
+---Returns if Graphics are open
+function Core.Graphics.isOpen() end
+
+---Draws a rect on screen. Only can be used when Core.Graphics.open was called
+---@param x integer
+---@param y integer
+---@param width integer
+---@param height integer
+---@param color integer
+function Core.Graphics.drawRect(x, y, width, height, color) end
+
+---Draws a solid rect on screen. Only can be used when Core.Graphics.open was called
+---@param x integer
+---@param y integer
+---@param width integer
+---@param height integer
+---@param color integer
+function Core.Graphics.drawRectFill(x, y, width, height, color) end
+
+---Draws a text on screen. Only can be used when Core.Graphics.open was called
+---@param text string
+---@param x integer
+---@param y integer
+---@param color integer
+function Core.Graphics.drawText(text, x, y, color) end
+
+---Returns a color with the r, g, b values
+---@param r integer
+---@param g integer
+---@param b integer
+---@return integer
+function Core.Graphics.colorRGB(r, g, b) end
+
+---Returns a color with the r, g, b, a values
+---@param r integer
+---@param g integer
+---@param b integer
+---@param a integer
+---@return integer
+function Core.Graphics.colorRGBA(r, g, b, a) end
+
+Core.Keyboard = {}
+
+---Opens the keyboard and returns the user input as string
+---@param message string?
+---@return string
+function Core.Keyboard.getString(message) end
+
+---Opens the keyboard and returns the user input as number
+---@param message string?
+---@return number
+function Core.Keyboard.getNumber(message) end
+
+---Opens the keyboard and returns the user input as unsigned integer
+---@param message string?
+---@return integer
+function Core.Keyboard.getInteger(message) end
+
+---Opens the keyboard and returns the user input as hexadecimal
+---@param message string?
+---@return integer
+function Core.Keyboard.getHex(message) end
+
+Core.System = {}
+
+---Returns UNIX time
+---@return number
+function Core.System.getTime() end
+
+Bits = {}
+
+---@param a integer
+---@param b integer
+---@return integer
+function Bits.lshift(a, b) end
+
+---@param a integer
+---@param b integer
+---@return integer
+function Bits.rshift(a, b) end
+
+---@param a integer
+---@param b integer
+---@return integer
+function Bits.band(a, b) end
+
+---@param a integer
+---@param b integer
+---@return integer
+function Bits.bor(a, b) end
+
+---@param a integer
+---@param b integer
+---@return integer
+function Bits.bxor(a, b) end
+
+---@param a integer
+---@return integer
+function Bits.bnot(a) end
 
 Game.Gamepad = {}
 
@@ -195,28 +274,6 @@ function Game.Items.findItemIDByName(name) end
 ---@return string?
 function Game.Items.findItemNameByID(itemID) end
 
-Core.Keyboard = {}
-
----Opens the keyboard and returns the user input as string
----@param message string?
----@return string
-function Core.Keyboard.getString(message) end
-
----Opens the keyboard and returns the user input as number
----@param message string?
----@return number
-function Core.Keyboard.getNumber(message) end
-
----Opens the keyboard and returns the user input as unsigned integer
----@param message string?
----@return integer
-function Core.Keyboard.getInteger(message) end
-
----Opens the keyboard and returns the user input as hexadecimal
----@param message string?
----@return integer
-function Core.Keyboard.getHex(message) end
-
 Game.LocalPlayer = {}
 
 Game.LocalPlayer.Position = {}
@@ -305,6 +362,8 @@ Game.LocalPlayer.Inventory = {}
 
 Game.LocalPlayer.Inventory.Slots = {}
 
+Game.LocalPlayer.Inventory.ArmorSlots = {}
+
 ---@class InventorySlot
 local InventorySlot = {}
 
@@ -318,11 +377,16 @@ InventorySlot.ItemData = 0
 
 InventorySlot.ItemName = ""
 
-Core.System = {}
+---@class InventoryArmorSlot
+local InventoryArmorSlot = {}
 
----Returns UNIX time
----@return number
-function Core.System.getTime() end
+InventoryArmorSlot.Slot = 0
+
+InventoryArmorSlot.ItemID = 0
+
+InventoryArmorSlot.ItemData = 0
+
+InventoryArmorSlot.ItemName = ""
 
 Game.World = {}
 

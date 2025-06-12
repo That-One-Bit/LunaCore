@@ -98,39 +98,6 @@ void Core::EventHandlerCallback()
         }
         lua_pop(L, 3);
     }
-
-    #ifdef EXPERIMENTAL
-    lua_getglobal(L, "Game");
-    lua_getfield(L, -1, "Event");
-    lua_getfield(L, -1, "OnNewFrame");
-    lua_getfield(L, -1, "Trigger");
-
-    if (lua_isfunction(L, -1))
-    {
-        lua_pushvalue(L, -2);
-        lua_pushstring(L, "top");
-        graphicsIsTop.store(true);
-        if (lua_pcall(L, 2, 0, 0))
-        {
-            Core::Debug::LogError("Core::Event::OnNewFrame(top) error: " + std::string(lua_tostring(L, -1)));
-            lua_pop(L, 1);
-        }
-        lua_getfield(L, -1, "Trigger");
-        lua_pushvalue(L, -2);
-        lua_pushstring(L, "bottom");
-        graphicsIsTop.store(false);
-        if (lua_pcall(L, 2, 0, 0))
-        {
-            Core::Debug::LogError("Core::Event::OnNewFrame(bottom) error: " + std::string(lua_tostring(L, -1)));
-            lua_pop(L, 1);
-        }
-    }
-    else {
-        Core::Debug::LogError("Core::Event::OnNewFrame::Trigger error. Unexpected type");
-        lua_pop(L, 1);
-    }
-    lua_pop(L, 3);
-    #endif
 }
 
 void Core::Event::TriggerOnPlayerJoinWorld(lua_State *L) {
@@ -308,15 +275,6 @@ bool Core::Game::RegisterEventModule(lua_State *L)
     
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
-
-    #ifdef EXPERIMENTAL
-    //--$@@@Game.Event.OnNewFrame: EventClass
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_setfield(L, -2, "listeners");
-    luaC_setmetatable(L, "EventClass");
-    lua_setfield(L, -2, "OnNewFrame");
-    #endif
 
     //$@@@Game.Event.OnKeyPressed: EventClass
     lua_newtable(L);

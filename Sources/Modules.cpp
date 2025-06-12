@@ -34,9 +34,6 @@ namespace Core {
         Core::Game::RegisterLocalPlayerModule(L);
         Core::Game::RegisterItemsModule(L);
         Core::Game::RegisterEventModule(L);
-        #ifdef EXPERIMENTAL
-        Core::Game::RegisterGraphicsModule(L); // Draw to screen can cause crashes
-        #endif
 
         const char *lua_Code = R"(
             local realGame = readOnlyTable(Game, "Game")
@@ -77,6 +74,7 @@ namespace Core {
         Core::Module::RegisterSystemModule(L);
         Core::Module::RegisterKeyboardModule(L);
         Core::Module::RegisterFilesystemModule(L);
+        Core::Module::RegisterGraphicsModule(L);
         return true;
     }
 }

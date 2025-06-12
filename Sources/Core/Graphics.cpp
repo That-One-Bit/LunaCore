@@ -1,79 +1,114 @@
 #include "Core/Graphics.hpp"
 
-#include <queue>
-#include <mutex>
 #include <string>
-#include <atomic>
+
+#include "Core/Event.hpp"
+#include "Core/Async.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
-std::queue<DrawCommandInfo> drawQueueTop;
-std::queue<DrawCommandInfo> drawQueueBottom;
-std::mutex drawQueueMutexTop;
-std::mutex drawQueueMutexBottom;
-std::atomic<bool> graphicsIsTop = false;
+extern "C" lua_State *Lua_global;
+extern "C" CTRPF::PluginMenu *gmenu;
+static int lua_callback = LUA_NOREF;
+static bool graphicsOpen = false;
+static bool shouldGraphicsClose = false;
+static const CTRPF::Screen *currentScreen = NULL;
 
-void Core::Graphics::PushCommand(const DrawCommandInfo &cmd)
-{
-    if (cmd.topScreen) {
-        std::lock_guard<std::mutex> lock(drawQueueMutexTop);
-        drawQueueTop.push(cmd);
-    }
-    else {
-        std::lock_guard<std::mutex> lock(drawQueueMutexBottom);
-        drawQueueBottom.push(cmd);
-    }
-}
+void Core::GraphicsHandlerCallback() {
+    CTRPF::Process::Pause();
+    lua_State *L = Lua_global;
 
-bool Core::GraphicsHandlerCallback(const CTRPF::Screen &screen) {
-    std::queue<DrawCommandInfo> localQueue;
+    graphicsOpen = true;
+    bool exit = false;
+    while (!exit && !shouldGraphicsClose) {
+        CTRPF::Controller::Update();
 
-    if (screen.IsTop) {
-        std::lock_guard<std::mutex> lock(drawQueueMutexTop);
-        if (drawQueueTop.empty())
-            return true;
-        std::swap(localQueue, drawQueueTop);
-    }
-    else {
-        std::lock_guard<std::mutex> lock(drawQueueMutexBottom);
-        if (drawQueueBottom.empty())
-            return true;
-        std::swap(localQueue, drawQueueBottom);
-    }
+        Core::EventHandlerCallback();
+        Core::AsyncHandlerCallback();
 
-    while (!localQueue.empty())
-    {
-        const DrawCommandInfo &cmd = localQueue.front();
-        switch (cmd.id) {
-            case DRAWCMD_PRINT:
-                screen.Draw(cmd.text, cmd.x, cmd.y, cmd.color1, cmd.color2);
-                break;
-            case DRAWCMD_RECT:
-                screen.DrawRect(cmd.x, cmd.y, cmd.width, cmd.height, cmd.color1, false);
-                break;
-            case DRAWCMD_RECTFILL:
-                screen.DrawRect(cmd.x, cmd.y, cmd.width, cmd.height, cmd.color1, true);
-                break;
-        }
-        localQueue.pop();
+        if (CTRPF::OSD::TryLock())
+            continue;
+
+        const CTRPF::Screen& topScreen = CTRPF::OSD::GetTopScreen();
+        currentScreen = &topScreen;
+        lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
+        lua_pushstring(L, "top");
+        if (lua_pcall(L, 1, 0, 0))
+            lua_pop(L, 1);
+
+        const CTRPF::Screen& bottomScreen = CTRPF::OSD::GetBottomScreen();
+        currentScreen = &bottomScreen;
+        lua_rawgeti(L, LUA_REGISTRYINDEX, lua_callback);
+        lua_pushstring(L, "bottom");
+        if (lua_pcall(L, 1, 0, 0))
+            lua_pop(L, 1);
+        
+        CTRPF::OSD::SwapBuffers();
+        CTRPF::OSD::Unlock();
+
+        exit = CTRPF::Controller::IsKeyReleased(CTRPF::Key::Select);
     }
-    return true;
+    luaL_unref(L, LUA_REGISTRYINDEX, lua_callback);
+    lua_callback = LUA_NOREF;
+    *gmenu -= Core::GraphicsHandlerCallback;
+    graphicsOpen = false;
+    shouldGraphicsClose = false;
+    CTRPF::Process::Play();
 }
 
 // ----------------------------------------------------------------------------
 
-//--$Game.Graphics
+//$Core.Graphics
 
 // ----------------------------------------------------------------------------
 
 /*
-- Draws a rect on screen
---## x: integer
---## y: integer
---## width: integer
---## height: integer
---## color: integer
---### Game.Graphics.drawRect
+- Stops the game and allows to draw on screen. Until Core.Graphics.close is called the function will be executed every frame
+- Other events and async tasks will continue running
+## func: function
+### Core.Graphics.open
+*/
+static int l_Graphics_open(lua_State *L) {
+    if (!lua_isfunction(L, 1))
+        return luaL_typerror(L, 1, "function");
+    
+    if (graphicsOpen)
+        return 0;
+    
+    lua_pushvalue(L, 1);
+    lua_callback = luaL_ref(L, LUA_REGISTRYINDEX);
+    gmenu->Callback(Core::GraphicsHandlerCallback); // Better add it as Callback to avoid script exahustion
+    return 0;
+}
+
+/*
+- Resumes the game, the callback function will no longer be called and draw functions will not work
+### Core.Graphics.close
+*/
+static int l_Graphics_close(lua_State *L) {
+    if (!graphicsOpen)
+        return 0;
+    shouldGraphicsClose = true;
+    return 0;
+}
+
+/*
+- Returns if Graphics are open
+### Core.Graphics.isOpen
+*/
+static int l_Graphics_isOpen(lua_State *L) {
+    lua_pushboolean(L, graphicsOpen);
+    return 1;
+}
+
+/*
+- Draws a rect on screen. Only can be used when Core.Graphics.open was called
+## x: integer
+## y: integer
+## width: integer
+## height: integer
+## color: integer
+### Core.Graphics.drawRect
 */
 static int l_Graphics_drawRect(lua_State *L)
 {
@@ -83,31 +118,29 @@ static int l_Graphics_drawRect(lua_State *L)
     int height = luaL_checkinteger(L, 4);
     u32 color = luaL_checkinteger(L, 5);
 
-    if (x < 0 || y < 0)
-        return luaL_error(L, "position must be greater than 0");
-    if ((width < 0 || height < 0))
-        return luaL_error(L, "size must be greater than position");
+    if (!graphicsOpen)
+        return 0;
 
-    DrawCommandInfo cmd;
-    cmd.id = DrawCommandID::DRAWCMD_RECT;
-    cmd.x = x;
-    cmd.y = y;
-    cmd.width = width;
-    cmd.height = height;
-    cmd.color1 = color;
-    cmd.topScreen = graphicsIsTop.load();
-    Core::Graphics::PushCommand(cmd);
+    if (x < 0 || y < 0) {
+        return luaL_error(L, "position must be greater than 0");
+    }
+    if (width < 0 || height < 0) {
+        return luaL_error(L, "size must be greater than position");
+    }
+
+    currentScreen->DrawRect(x, y, width, height, color, false);
+    
     return 0;
 }
 
 /*
-- Draws a solid rect on screen
---## x: integer
---## y: integer
---## width: integer
---## height: integer
---## color: integer
---### Game.Graphics.drawRectFill
+- Draws a solid rect on screen. Only can be used when Core.Graphics.open was called
+## x: integer
+## y: integer
+## width: integer
+## height: integer
+## color: integer
+### Core.Graphics.drawRectFill
 */
 static int l_Graphics_drawRectFill(lua_State *L)
 {
@@ -117,35 +150,102 @@ static int l_Graphics_drawRectFill(lua_State *L)
     int height = luaL_checkinteger(L, 4);
     u32 color = luaL_checkinteger(L, 5);
 
+    if (!graphicsOpen)
+        return 0;
+
     if (x < 0 || y < 0)
         return luaL_error(L, "x and y must be greater than 0");
     if ((width < 0 || height < 0))
         return luaL_error(L, "width and height must be greater than 0");
 
-    DrawCommandInfo cmd;
-    cmd.id = DrawCommandID::DRAWCMD_RECTFILL;
-    cmd.x = x;
-    cmd.y = y;
-    cmd.width = width;
-    cmd.height = height;
-    cmd.color1 = color;
-    cmd.topScreen = graphicsIsTop.load();
-    Core::Graphics::PushCommand(cmd);
+    currentScreen->DrawRect(x, y, width, height, color, true);
+    
     return 0;
+}
+
+/*
+- Draws a text on screen. Only can be used when Core.Graphics.open was called
+## text: string
+## x: integer
+## y: integer
+## color: integer
+### Core.Graphics.drawText
+*/
+static int l_Graphics_drawText(lua_State *L)
+{
+    const char *text = luaL_checkstring(L, 1);
+    int x = luaL_checkinteger(L, 2);
+    int y = luaL_checkinteger(L, 3);
+    u32 color = luaL_checkinteger(L, 4);
+
+    if (!graphicsOpen)
+        return 0;
+
+    if (x < 0 || y < 0) {
+        return luaL_error(L, "position must be greater than 0");
+    }
+
+    currentScreen->DrawSysfont(text, x, y, color);
+    
+    return 0;
+}
+
+/*
+- Returns a color with the r, g, b values
+## r: integer
+## g: integer
+## b: integer
+## return: integer
+### Core.Graphics.colorRGB
+*/
+static int l_Graphics_colorRGB(lua_State *L) {
+    u8 r = luaL_checkinteger(L, 1);
+    u8 g = luaL_checkinteger(L, 2);
+    u8 b = luaL_checkinteger(L, 3);
+
+    CTRPF::Color newColor(r, g, b);
+    lua_pushinteger(L, newColor.raw);
+    return 1;
+}
+
+/*
+- Returns a color with the r, g, b, a values
+## r: integer
+## g: integer
+## b: integer
+## a: integer
+## return: integer
+### Core.Graphics.colorRGBA
+*/
+static int l_Graphics_colorRGBA(lua_State *L) {
+    u8 r = luaL_checkinteger(L, 1);
+    u8 g = luaL_checkinteger(L, 2);
+    u8 b = luaL_checkinteger(L, 3);
+    u8 a = luaL_checkinteger(L, 4);
+
+    CTRPF::Color newColor(r, g, b, a);
+    lua_pushinteger(L, newColor.raw);
+    return 1;
 }
 
 static const luaL_Reg graphics_functions[] =
 {
+    {"open", l_Graphics_open},
+    {"close", l_Graphics_close},
+    {"isOpen", l_Graphics_isOpen},
+    {"drawText", l_Graphics_drawText},
     {"drawRect", l_Graphics_drawRect},
     {"drawRectFill", l_Graphics_drawRectFill},
+    {"colorRGB", l_Graphics_colorRGB},
+    {"colorRGBA", l_Graphics_colorRGBA},
     {NULL, NULL}
 };
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterGraphicsModule(lua_State *L)
+bool Core::Module::RegisterGraphicsModule(lua_State *L)
 {
-    lua_getglobal(L, "Game");
+    lua_getglobal(L, "Core");
     luaC_register_field(L, graphics_functions, "Graphics");
     lua_pop(L, 1);
     return true;
