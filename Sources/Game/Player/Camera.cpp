@@ -9,7 +9,8 @@ namespace CTRPF = CTRPluginFramework;
 
 enum player_camera_offsets : u32 {
     itemCameraFOV = 0x100000 + 0x2CEE80,
-    playerCameraFOV = 0x341F30F8,
+    playerCameraFOV1 = 0x341F30F8, // Can change address
+    playerCameraFOV2 = 0x341F313C,
 };
 
 // ----------------------------------------------------------------------------
@@ -36,7 +37,7 @@ static int l_Camera_index(lua_State *L)
     switch (key) {
         case hash("FOV"): {
             float fov;
-            CTRPF::Process::ReadFloat(player_camera_offsets::playerCameraFOV, fov);
+            CTRPF::Process::ReadFloat(player_camera_offsets::playerCameraFOV2, fov);
             lua_pushnumber(L, fov);
             break;
         }
@@ -67,7 +68,7 @@ static int l_Camera_newindex(lua_State *L)
 
     switch (key) {
         case hash("FOV"):
-            CTRPF::Process::WriteFloat(player_camera_offsets::playerCameraFOV, luaL_checknumber(L, 3));
+            CTRPF::Process::WriteFloat(player_camera_offsets::playerCameraFOV2, luaL_checknumber(L, 3));
             CTRPF::Process::WriteFloat(player_camera_offsets::itemCameraFOV, lua_tonumber(L, 3));
             break;
         case hash("Yaw"):
