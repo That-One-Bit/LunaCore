@@ -3,11 +3,13 @@ local keys = gamepad.KeyCodes
 local console = {
     maxlines = 10,
     lines = {},
-    bg = Core.Graphics.colorRGB(46, 46, 46),
+    env = {},
+    bg = Core.Graphics.colorRGB(0, 0, 0),
     fg = Core.Graphics.colorRGB(255, 255, 255),
     frames = 0,
     firstframe = true
 }
+setmetatable(console.env, {__index = _G})
 
 local function printToConsole(text)
     table.insert(console.lines, 1, text)
@@ -16,21 +18,50 @@ local function printToConsole(text)
     end
 end
 
+local function eval_line(input)
+    local chunk, err = loadstring("return "..input)
+    if not chunk then
+        chunk, err = loadstring(input)
+    end
+
+    if not chunk then
+        printToConsole("lua: "..err)
+    else
+        setfenv(chunk, console.env)
+
+        local results = {pcall(chunk)}
+        if not results[1] then
+            printToConsole("lua: "..results[2])
+        else
+            for i = 2, #results do
+                printToConsole(tostring(results[i]))
+            end
+        end
+    end
+end
+
 ---@param command string
 local function processCommand(command)
     local args = command:split(" ")
-    if args[1] == "execute" then
+    if args[1] == "lua" then
         local code = command:sub(#args[1]+2)
-        local func = loadstring(string.format("return %s", code))
-        if func then
-            local success, result = pcall(func)
-            if success then
-                printToConsole(string.format("execute: %s", tostring(result)))
+        eval_line(code)
+    elseif args[1] == "gamemode" then
+        if Game.World.Loaded then
+            if args[2] == 0 or args[2] == "survival" or args[2] == "s" then
+                Game.LocalPlayer.Gamemode = 0
+                printToConsole("gamemode: changed to survival")
+            elseif args[2] == 1 or args[2] == "creative" or args[2] == "c" then
+                Game.LocalPlayer.Gamemode = 1
+                printToConsole("gamemode: changed to creative")
+            elseif args[2] == 2 or args[2] == "adventure" or args[2] == "a" then
+                Game.LocalPlayer.Gamemode = 2
+                printToConsole("gamemode: changed to adventure")
             else
-                printToConsole(string.format("execute: %s", result))
+                printToConsole("gamemode: invalid gamemode")
             end
         else
-            printToConsole("execute: Failed to execute Lua code")
+            printToConsole("gamemode: not in a world")
         end
     elseif args[1] == "exit" then
         Core.Graphics.close()

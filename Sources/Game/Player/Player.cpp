@@ -300,9 +300,13 @@ static int l_LocalPlayer_newindex(lua_State *L)
         case hash("LevelProgress"):
             Minecraft::SetXPBarProgress(luaL_checknumber(L, 3));
             break;
-        case hash("Gamemode"):
-            Minecraft::SetGameMode((u8)luaL_checkinteger(L, 3));
+        case hash("Gamemode"): {
+            u8 gamemode = luaL_checkinteger(L, 3);
+            Minecraft::SetGameMode(gamemode);
+            if (gamemode == 0)
+                Minecraft::SetPlayerFlying(false);
             break;
+        }
         case hash("ReachDistance"):
             CTRPF::Process::WriteFloat(player_offsets::playerReachDistance, luaL_checknumber(L, 3));
             break;
