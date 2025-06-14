@@ -90,7 +90,7 @@ static int l_World_newindex(lua_State *L)
     if (valid_key)
         return 0;
     else
-        return luaL_error(L, "'%s' is not a valid member of World or is a read-only value", key);
+        return luaL_error(L, "'%s' is not a valid member of World or is a read-only value", lua_tostring(L, 2));
 }
 
 // ----------------------------------------------------------------------------

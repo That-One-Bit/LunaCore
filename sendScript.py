@@ -12,9 +12,9 @@ def send_file(filename: str, host: str, port: int):
             data = f.read()
 
 
-        fnameSize = len(("tcp."+Path(filename).name).encode("utf-8"))
+        fnameSize = len(Path(filename).name.encode("utf-8"))
         s.sendall(struct.pack("<I", fnameSize))
-        s.sendall(("tcp."+Path(filename).name).encode("utf-8"))
+        s.sendall(Path(filename).name.encode("utf-8"))
 
         size = len(data)
         s.sendall(struct.pack("<I", size))

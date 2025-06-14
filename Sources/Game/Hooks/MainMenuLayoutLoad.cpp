@@ -269,12 +269,12 @@ static bool ReplaceConstString(u32 offset, u32 insAddr, u32 strAddr, u8 reg, con
     return ReplaceStringWithPointer(offset, insAddr, strAddr, (u32)textPtr, reg);
 }
 
-void PatchMenuCustomLayoutDefault(int plg_maj, int plg_min, int plg_patch) {
+void PatchMenuCustomLayoutDefault() {
     ReplaceConstString(BASE_OFF, 0x16edd8, 0x16f170, 9, "      Play"); // menu.play
     ReplaceConstString(BASE_OFF, 0x16ef24, 0x16f1a0, 0, " "); // menu.multiplayer
     ReplaceConstString(BASE_OFF, 0x16f078, 0x16f1b8, 0, " "); // menu.options
     ReplaceConstString(BASE_OFF, 0x16f228, 0x16f600, 0, " "); // menu.skins
-    ReplaceConstString(BASE_OFF, 0x16f37c, 0x16f610, 0, CTRPF::Utils::Format("  LunaCore %d.%d.%d", plg_maj, plg_min, plg_patch)); // menu.achievements
+    ReplaceConstString(BASE_OFF, 0x16f37c, 0x16f610, 0, CTRPF::Utils::Format("  LunaCore %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT)); // menu.achievements
     ReplaceConstString(BASE_OFF, 0x16f4c8, 0x16f628, 0, " "); // menu.manual
     ReplaceConstString(BASE_OFF, 0x16f650, 0x16f884, 0, " "); // menu.store
 

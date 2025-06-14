@@ -20,7 +20,10 @@
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "PLG_VER_MAJ=0",
+                "PLG_VER_MIN=1",
+                "PLG_VER_PAT=0"
             ],
             "cStandard": "c11",
             "cppStandard": "gnu++17"

@@ -71,6 +71,10 @@ void Core::GraphicsHandlerMainloop() {
 }
 
 static void LuaGraphicsFrameCallback() {
+    if (lua_callback == LUA_NOREF) {
+        shouldGraphicsClose = true;
+        return;
+    }
     lua_State *L = Lua_global;
     const CTRPF::Screen& topScreen = CTRPF::OSD::GetTopScreen();
     currentScreen = &topScreen;

@@ -11,6 +11,9 @@ CTRPFLIB	?=	$(DEVKITPRO)/libctrpf
 
 TARGET		:= 	LunaCore
 PLGINFO 	:= 	CTRPluginFramework.plgInfo
+PLGVERMAJ	:=	0
+PLGVERMIN	:=	11
+PLGVERPAT	:=	0
 
 BUILD		:= 	Build
 INCLUDES	:= 	Includes
@@ -24,7 +27,8 @@ ARCH		:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 CFLAGS		:=	$(ARCH) -Os -mword-relocations \
 				-fomit-frame-pointer -ffunction-sections -fno-strict-aliasing
 
-CFLAGS		+=	$(INCLUDE) -D__3DS__ -I $(PORTLIBS)/include/lua5.1
+CFLAGS		+=	$(INCLUDE) -D__3DS__ -I $(PORTLIBS)/include/lua5.1 \
+				-DPLG_VER_MAJ=$(PLGVERMAJ) -DPLG_VER_MIN=$(PLGVERMIN) -DPLG_VER_PAT=$(PLGVERPAT)
 
 ifeq ($(EXPERIMENTAL), 1)
 	CFLAGS		+=	-DEXPERIMENTAL

@@ -85,7 +85,7 @@ static int l_Camera_newindex(lua_State *L)
     if (valid_key)
         return 0;
     else
-        return luaL_error(L, "'%s' is not a valid member of object or is not and editable value", key);
+        return luaL_error(L, "'%s' is not a valid member of object or is read-only value", lua_tostring(L, 2));
 }
 
 // ----------------------------------------------------------------------------

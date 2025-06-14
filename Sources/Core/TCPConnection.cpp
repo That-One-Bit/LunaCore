@@ -81,8 +81,14 @@ namespace Core {
         }
 
         bool TCPServer::recv(void *buffer, size_t size) {
-            size_t len = read(client_fd, buffer, size);
-            return len == size;
+            size_t bytesRead = 0;
+            while (bytesRead < size) {
+                size_t len = read(client_fd, (char*)buffer + bytesRead, size - bytesRead);
+                if (len <= 0)
+                    return false;
+                bytesRead += len;
+            }
+            return bytesRead == size;
         }
     }
 }

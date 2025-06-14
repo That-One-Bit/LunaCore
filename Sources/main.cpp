@@ -31,9 +31,6 @@
 #define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
-#define PLUGIN_VERSION_MAJOR 0
-#define PLUGIN_VERSION_MINOR 10
-#define PLUGIN_VERSION_PATCH 1
 #define PLUGIN_FOLDER "sdmc:/Minecraft 3DS"
 #define LOG_FILE PLUGIN_FOLDER"/log.txt"
 #define CONFIG_FILE PLUGIN_FOLDER"/config.txt"
@@ -260,26 +257,6 @@ namespace CTRPluginFramework
     void PreloadScripts()
     {
         static int readFiles = 0;
-        Directory dir;
-        Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-        if (!dir.IsOpen()) {
-            *gmenu -= PreloadScripts;
-            return;
-        }
-        std::vector<std::string> files;
-        if (readFiles >= dir.ListFiles(files, ".lua")) {
-            *gmenu -= PreloadScripts;
-            lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
-            return;
-        }
-        if (strcmp(files[readFiles].c_str() + files[readFiles].size() - 4, ".lua") != 0) { // Double check to skip not .lua files
-            readFiles++;
-            return;
-        }
-        std::string fullPath("sdmc:" + dir.GetFullName() + "/" + files[readFiles]);
-        Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
-        if (LoadScript(Lua_global, fullPath.c_str()))
-            scriptsLoadedCount++;
         readFiles++;
     }
 
@@ -466,8 +443,19 @@ namespace CTRPluginFramework
                 return;
             }
 
-            if (LoadBuffer(Lua_global, buffer, size, namebuf)) {
+            if (LoadBuffer(Lua_global, buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
                 MessageBox("Script loaded")();
+                if (MessageBox("Do you want to save this script in the sd card?", DialogType::DialogYesNo)()) {
+                    File scriptOut;
+                    File::Open(scriptOut, PLUGIN_FOLDER "/scripts/"+std::string(namebuf), File::WRITE|File::CREATE);
+                    if (!scriptOut.IsOpen()) {
+                        MessageBox("Failed to write to sd card")();
+                    } else {
+                        scriptOut.Clear();
+                        scriptOut.Write(buffer, size);
+                        scriptOut.Flush();
+                    }
+                }
             } else {
                 MessageBox("Error executing the script")();
             }
@@ -476,10 +464,42 @@ namespace CTRPluginFramework
             delete buffer;
         }));
         devFolder->Append(new MenuEntry("Clean Lua environment", nullptr, [](MenuEntry *entry) {
+            if (!MessageBox("This will unload all loaded scripts. Continue?", DialogType::DialogYesNo)())
+                return;
             Core::Debug::LogMessage("Reloading Lua environment", false);
             lua_close(Lua_global);
             Lua_global = luaL_newstate();
             LoadLuaEnv(Lua_global);
+            scriptsLoadedCount = 0;
+            MessageBox("Lua environment reloaded")();
+        }));
+        devFolder->Append(new MenuEntry("Reload scripts", nullptr, [](MenuEntry *entry) {
+            if (!MessageBox("This will reload stored scripts, not including loaded by network. Continue?", DialogType::DialogYesNo)())
+                return;
+            Core::Debug::LogMessage("Reloading Lua environment", false);
+            lua_close(Lua_global);
+            Lua_global = luaL_newstate();
+            LoadLuaEnv(Lua_global);
+            scriptsLoadedCount = 0;
+            Core::Debug::LogMessage("Loading scripts", false);
+            Directory dir;
+            Directory::Open(dir, PLUGIN_FOLDER"/scripts");
+            if (!dir.IsOpen()) {
+                MessageBox("Failed to reload scripts")();
+                return;
+            }
+            std::vector<std::string> files;
+            dir.ListFiles(files, ".lua");
+            for (auto &file : files) {
+                if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
+                    continue;
+
+                std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
+                Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
+                if (LoadScript(Lua_global, fullPath.c_str()))
+                    scriptsLoadedCount++;
+            }
+            lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
             MessageBox("Lua environment reloaded")();
         }));
         menu.Append(optionsFolder);
@@ -498,7 +518,7 @@ namespace CTRPluginFramework
             Directory::Create(PLUGIN_FOLDER"/scripts");
 
         Core::Debug::LogMessage("Starting plugin", false);
-        Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH), false);
+        Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
 
         bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
         bool loadScripts = Core::Config::GetBoolValue(config, "enable_scripts", true);
@@ -511,11 +531,11 @@ namespace CTRPluginFramework
             if (File::Exists(PLUGIN_FOLDER"/layouts/menu_layout.json") && LoadGameMenuLayout(PLUGIN_FOLDER"/layouts/menu_layout.json"))
                 PatchGameMenuLayoutFunction();
             else
-                PatchMenuCustomLayoutDefault(PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH);
+                PatchMenuCustomLayoutDefault();
         }
 
-        gmenu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
-            "Allows to execute Lua scripts and other features");
+        gmenu = new PluginMenu("LunaCore", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT,
+            "Allows to execute Lua scripts and other features", 2);
         std::string &title = gmenu->Title();
         title.assign("LunaCore Plugin Menu");
 
@@ -540,8 +560,10 @@ namespace CTRPluginFramework
         else
             Core::Debug::LogMessage(Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
         
-        UpdateLuaStatistics();
         OSD::Run(DrawMonitors);
+        gmenu->Callback(UpdateLuaStatistics);
+        gmenu->Callback(Core::EventHandlerCallback);
+        gmenu->Callback(Core::AsyncHandlerCallback);
 
         if (loadScripts) {
             Directory dir;
@@ -556,9 +578,6 @@ namespace CTRPluginFramework
                     }
                     if (luaFiles > 0) {
                         gmenu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
-                        gmenu->Callback(Core::EventHandlerCallback);
-                        gmenu->Callback(Core::AsyncHandlerCallback);
-                        gmenu->Callback(UpdateLuaStatistics);
                     }
                 }
             }
