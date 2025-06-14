@@ -9,10 +9,15 @@
 namespace Core {
     namespace Network {
         class TCPServer {
+            using WaitConnectionCallback = bool(*)(void);
+
             int server_fd = -1;
             int client_fd = -1;
             sockaddr_in addr;
             bool success = true;
+            
+            public:
+                bool aborted = false;
             
             public:
                 TCPServer(int port);
@@ -20,7 +25,7 @@ namespace Core {
 
                 std::string getHostName();
 
-                bool waitConnection();
+                bool waitConnection(WaitConnectionCallback callback = nullptr);
 
                 bool send(void *data, size_t size);
 

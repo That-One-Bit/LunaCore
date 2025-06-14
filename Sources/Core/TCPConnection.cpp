@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cstring>
+#include <fcntl.h>
 
 namespace Core {
     namespace Network {
@@ -41,12 +42,37 @@ namespace Core {
             return std::string(inet_ntoa(host_id));
         }
 
-        bool TCPServer::waitConnection() {
+        bool TCPServer::waitConnection(WaitConnectionCallback callback) {
+            aborted = false;
             if (listen(server_fd, 1) < 0)
                 return false;
-            client_fd = accept(server_fd, nullptr, nullptr);
-            if (client_fd < 0)
-                return false;
+            fd_set set;
+            timeval timeout;
+
+            while (true) {
+                if (callback != nullptr && !callback()) {
+                    aborted = true;
+                    return false;
+                }
+
+                FD_ZERO(&set);
+                FD_SET(server_fd, &set);
+                int waitMs = 100;
+                timeout.tv_sec = waitMs / 1000;
+                timeout.tv_usec = (waitMs % 1000) * 1000;
+
+                int rv = select(server_fd + 1, &set, nullptr, nullptr, &timeout);
+                if (rv == -1)
+                    return false;
+                else if (rv == 0)
+                    continue;
+                else {
+                    client_fd = accept(server_fd, nullptr, nullptr);
+                    if (client_fd < 0)
+                        return false;
+                    break;
+                }
+            }
             return true;
         }
 

@@ -302,6 +302,13 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Lua environment loaded", false);
     }
 
+    bool CancelOperationCallback() {
+        Controller::Update();
+        if (Controller::IsKeyDown(Key::B))
+            return false;
+        return true;
+    }
+
     void InitMenu(PluginMenu &menu)
     {
         // Create your entries here, or elsewhere
@@ -406,14 +413,16 @@ namespace CTRPluginFramework
             initSockets();
             Core::Network::TCPServer tcp(5432);
             std::string host = tcp.getHostName();
-            MessageBox("Connect to host: "+host+":5432")();
             const Screen& topScreen = OSD::GetTopScreen();
-            topScreen.DrawSysfont("Waiting connection...", 50, 200, Color::White);
+            topScreen.DrawSysfont("Connect to host: "+host+":5432", 40, 185, Color::White);
+            topScreen.DrawSysfont("Waiting connection... Press B to cancel", 40, 200, Color::White);
             OSD::SwapBuffers();
-            topScreen.DrawSysfont("Waiting connection...", 50, 200, Color::White);
-            if (!tcp.waitConnection()) {
+            topScreen.DrawSysfont("Connect to host: "+host+":5432", 40, 185, Color::White);
+            topScreen.DrawSysfont("Waiting connection... Press B to cancel", 40, 200, Color::White);
+            if (!tcp.waitConnection(CancelOperationCallback)) {
                 exitSockets();
-                MessageBox("Connection error")();
+                if (!tcp.aborted)
+                    MessageBox("Connection error")();
                 return;
             }
             size_t fnameSize = 0;
@@ -466,7 +475,7 @@ namespace CTRPluginFramework
             delete namebuf;
             delete buffer;
         }));
-        devFolder->Append(new MenuEntry("Reload Lua environment", nullptr, [](MenuEntry *entry) {
+        devFolder->Append(new MenuEntry("Clean Lua environment", nullptr, [](MenuEntry *entry) {
             Core::Debug::LogMessage("Reloading Lua environment", false);
             lua_close(Lua_global);
             Lua_global = luaL_newstate();
