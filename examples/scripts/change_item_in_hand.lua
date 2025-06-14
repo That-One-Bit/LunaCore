@@ -5,7 +5,7 @@ local diamondId = nil
 
 Game.Event.OnPlayerJoinWorld:Connect(function ()
     if coalId == nil then -- You cannot use findItem when the game isn't loaded, wait until World is loaded to prevent nil results
-        coalId = Game.Items.findItemIDByName("tile.cobblestone") -- Make sure to not call this function many times as it can lag the game, use one time and store the value
+        coalId = Game.Items.findItemIDByName("coal") -- Make sure to not call this function many times as it can lag the game, use one time and store the value
         diamondId = Game.Items.findItemIDByName("diamond")
     end
 

@@ -70,7 +70,7 @@ end
 
 local function drawGraphics(screen)
     if screen == "top" then
-        Core.Graphics.drawRectFill(20, 20, 340, 200, console.bg)
+        Core.Graphics.drawRectFill(20, 20, 360, 200, console.bg)
         Core.Graphics.drawText("Command console. Press B to close", 25, 25, console.fg);
         local y = 200
         for index, value in ipairs(console.lines) do
@@ -103,7 +103,7 @@ end
 -- The game will frezee and that allows to avoid artifacts on screen
 -- Every other events and async task will continue execution
 Game.Event.OnKeyReleased:Connect(function ()
-    if gamepad.isReleased(keys.START) then
+    if gamepad.isReleased(keys.START) and Game.World.Loaded then
         if not Core.Graphics.isOpen() then
             console.firstframe = true
             Core.Graphics.open(drawGraphics)

@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 #include <atomic>
+#include <sys/socket.h>
+#include <malloc.h>
 
 #include <cstring>
 
@@ -17,6 +19,7 @@
 #include "Core/Graphics.hpp"
 #include "Core/Utils/Utils.hpp"
 #include "Core/Config.hpp"
+#include "Core/TCPConnection.hpp"
 
 #include "Game/Hooks/GameHooks.hpp"
 #include "Core/Utils/GameState.hpp"
@@ -38,7 +41,7 @@
 
 namespace CTRPF = CTRPluginFramework;
 
-lua_State *Lua_global;
+lua_State *Lua_global = NULL;
 int scriptsLoadedCount = 0;
 CTRPF::Clock timeoutLoadClock;
 std::atomic<int> luaMemoryUsage = 0;
@@ -47,6 +50,25 @@ std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
 u32 currentCamFOVOffset = 0;
 CTRPF::PluginMenu *gmenu;
+
+u32 *socBuffer = NULL;
+
+void initSockets()
+{
+	socBuffer = (u32*)memalign(0x1000, 0x100000);
+	if (!socBuffer)
+		return;
+
+	Result res = socInit(socBuffer, 0x100000);
+	if (R_FAILED(res))
+		return;
+}
+
+void exitSockets()
+{
+	socExit();
+	free(socBuffer);
+}
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
@@ -150,15 +172,8 @@ namespace CTRPluginFramework
         ToggleTouchscreenForceOn();
     }
 
-    bool LoadScript(lua_State *L, const std::string& fp)
-    {
+    bool LoadBuffer(lua_State *L, const char *buffer, size_t size, const char* name) {
         bool success = true;
-        std::string fileContent = Core::Utils::LoadFile(fp);
-        if (fileContent.empty())
-        {
-            Core::Debug::LogMessage("Failed to open file"+fp, false);
-            return false;
-        }
         lua_newtable(L);
         lua_newtable(L);
         lua_getglobal(L, "_G");
@@ -171,8 +186,9 @@ namespace CTRPluginFramework
         lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
         lua_setfield(L, -2, "__newindex");
         lua_setmetatable(L, -2);
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
 
-        int status_code = luaL_loadbuffer(L, fileContent.c_str(), fileContent.size(), fp.c_str());
+        int status_code = luaL_loadbuffer(L, buffer, size, name);
         if (status_code)
         {
             Core::Debug::LogError("Script load error: "+std::string(lua_tostring(L, -1)));
@@ -211,6 +227,17 @@ namespace CTRPluginFramework
             lua_sethook(L, nullptr, 0, 0);
         }
         return success;
+    }
+
+    bool LoadScript(lua_State *L, const std::string& fp)
+    {
+        std::string fileContent = Core::Utils::LoadFile(fp);
+        if (fileContent.empty())
+        {
+            Core::Debug::LogMessage("Failed to open file"+fp, false);
+            return false;
+        }
+        return LoadBuffer(L, fileContent.c_str(), fileContent.size(), fp.c_str());
     }
 
     void UpdateLuaStatistics()
@@ -256,69 +283,23 @@ namespace CTRPluginFramework
         readFiles++;
     }
 
-    void searchPlayerCamera(std::vector<u32> &out) {
-        std::vector<u32> firstMatchAddress;
-        u32 startAddr = 0x30000000;
-        u32 endAddr = 0x35F80000;
+    void LoadLuaEnv(lua_State *L) {
+        Core::Debug::LogMessage("Loading standard libs", false);
+        luaL_openlibs(L);
+        Core::Debug::LogMessage("Loading core modules", false);
+        Core::LoadModules(L);
 
-        float value = 70.0f;
-        if (std::memcmp(&value, (u32*)0x341F313C, 4) == 0) {
-            out.push_back(0x341F313C);
-            return;
-        }
-        u32 actualAddr = startAddr;
-        while (actualAddr < endAddr) {
-            if (std::memcmp(&value, (u32*)actualAddr, 4) == 0) {
-                firstMatchAddress.push_back(actualAddr);
-            }
-            actualAddr += 4;
-        }
-
-        for (auto addr : firstMatchAddress) {
-            u32 offsetAddress = addr - 0x118;
-            std::vector<u32> newAddress;
-            u32 value;
-            int count = 0;
-            actualAddr = startAddr;
-            while (actualAddr < endAddr) {
-                if (std::memcmp(&offsetAddress, (u32*)actualAddr, 4) == 0) {
-                    newAddress.push_back(actualAddr);
-                    count++;
-                }
-                if (count > 10)
-                    break;
-                actualAddr += 4;
-            }
-            if (newAddress.size() == 10) {
-                out.push_back(addr);
-                break;
-            }
-        }
-    }
-
-    void changeCameraFOV(MenuEntry *entry) {
-        std::vector<u32> cameraFOVAddrs;
-        if (currentCamFOVOffset != 0) {
-            Keyboard keyboard("Enter FOV value");
-            float fovval;
-            keyboard.Open(fovval);
-            Process::WriteFloat(currentCamFOVOffset, fovval);
-            return;
-        }
-        if (MessageBox("First use! This can freeze the game for up to 45 seconds", DialogType::DialogOkCancel)()) {
-            searchPlayerCamera(cameraFOVAddrs);
-            if (cameraFOVAddrs.size() == 0) {
-                MessageBox("No matches")();
-            } else {
-                MessageBox("Found a match")();
-                Keyboard keyboard("Enter FOV value");
-                float fovval;
-                keyboard.Open(fovval);
-                u32 fovAddr = cameraFOVAddrs[0];
-                Process::WriteFloat(fovAddr, fovval);
-                currentCamFOVOffset = fovAddr;
-            }
-        }
+        // Set Lua path
+        lua_getglobal(L, "package");
+        lua_getfield(L, -1, "path");
+        const char *current_path = lua_tostring(L, -1);
+        lua_pop(L, 1);
+        std::string newPath(current_path);
+        newPath += ";" PLUGIN_FOLDER "/scripts/?.lua;" PLUGIN_FOLDER "/scripts/?/init.lua";
+        lua_pushstring(L, newPath.c_str());
+        lua_setfield(L, -2, "path");
+        lua_pop(L, 1);
+        Core::Debug::LogMessage("Lua environment loaded", false);
     }
 
     void InitMenu(PluginMenu &menu)
@@ -336,7 +317,7 @@ namespace CTRPluginFramework
             MessageBox("UA", body)();
         });*/
         auto optionsFolder = new MenuFolder("Options");
-        auto devFolder = new MenuFolder("Experiments");
+        auto devFolder = new MenuFolder("Developer");
         optionsFolder->Append(new MenuEntry("Toggle Script Loader", nullptr, [](MenuEntry *entry)
         {
             bool changed = false;
@@ -421,7 +402,77 @@ namespace CTRPluginFramework
                     Core::Debug::LogMessage("Failed to save configs", true);
             }
         }));
-        devFolder->Append(new MenuEntry("Change Camera FOV", nullptr, changeCameraFOV));
+        devFolder->Append(new MenuEntry("Load script from network", nullptr, [](MenuEntry *entry) {
+            initSockets();
+            Core::Network::TCPServer tcp(5432);
+            std::string host = tcp.getHostName();
+            MessageBox("Connect to host: "+host+":5432")();
+            const Screen& topScreen = OSD::GetTopScreen();
+            topScreen.DrawSysfont("Waiting connection...", 50, 200, Color::White);
+            OSD::SwapBuffers();
+            topScreen.DrawSysfont("Waiting connection...", 50, 200, Color::White);
+            if (!tcp.waitConnection()) {
+                exitSockets();
+                MessageBox("Connection error")();
+                return;
+            }
+            size_t fnameSize = 0;
+            if (!tcp.recv(&fnameSize, sizeof(size_t))) {
+                exitSockets();
+                MessageBox("Failed to get filename size")();
+                return;
+            }
+            char *namebuf = new char[fnameSize];
+            if (!namebuf) {
+                exitSockets();
+                MessageBox("Memory error")();
+                return;
+            }
+            if (namebuf == NULL || !tcp.recv(namebuf, fnameSize)) {
+                exitSockets();
+                delete namebuf;
+                MessageBox("Failed to get filename")();
+                return;
+            }
+
+            size_t size = 0;
+            if (!tcp.recv(&size, sizeof(size_t))) {
+                exitSockets();
+                delete namebuf;
+                MessageBox("Failed to get file size")();
+                return;
+            }
+            char *buffer = new char[size];
+            if (!buffer) {
+                exitSockets();
+                delete namebuf;
+                MessageBox("Memory error")();
+                return;
+            }
+            if (!tcp.recv(buffer, size)) {
+                exitSockets();
+                delete namebuf;
+                delete buffer;
+                MessageBox("Failed to get file")();
+                return;
+            }
+
+            if (LoadBuffer(Lua_global, buffer, size, namebuf)) {
+                MessageBox("Script loaded")();
+            } else {
+                MessageBox("Error executing the script")();
+            }
+            exitSockets();
+            delete namebuf;
+            delete buffer;
+        }));
+        devFolder->Append(new MenuEntry("Reload Lua environment", nullptr, [](MenuEntry *entry) {
+            Core::Debug::LogMessage("Reloading Lua environment", false);
+            lua_close(Lua_global);
+            Lua_global = luaL_newstate();
+            LoadLuaEnv(Lua_global);
+            MessageBox("Lua environment reloaded")();
+        }));
         menu.Append(optionsFolder);
         menu.Append(devFolder);
     }
@@ -455,31 +506,13 @@ namespace CTRPluginFramework
         }
 
         gmenu = new PluginMenu("LunaCore", PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH,
-            "Allows to execute Lua scripts.");
+            "Allows to execute Lua scripts and other features");
         std::string &title = gmenu->Title();
         title.assign("LunaCore Plugin Menu");
 
-        if (!loadScripts) {
-            Core::Debug::LogMessage("Scripts disabled", false);
-        } else {
-            Core::Debug::LogMessage("Loading Lua environment", false);
-            Lua_global = luaL_newstate();
-            luaL_openlibs(Lua_global);
-            Core::Debug::LogMessage("Loading core modules", false);
-            Core::LoadModules(Lua_global);
-
-            // Set Lua path
-            lua_getglobal(Lua_global, "package");
-            lua_getfield(Lua_global, -1, "path");
-            const char *current_path = lua_tostring(Lua_global, -1);
-            lua_pop(Lua_global, 1);
-            std::string newPath(current_path);
-            newPath += ";" PLUGIN_FOLDER "/scripts/?.lua;" PLUGIN_FOLDER "/scripts/?/init.lua";
-            lua_pushstring(Lua_global, newPath.c_str());
-            lua_setfield(Lua_global, -2, "path");
-            lua_pop(Lua_global, 1);
-            Core::Debug::LogMessage("Lua environment loaded", false);
-        }
+        Core::Debug::LogMessage("Loading Lua environment", false);
+        Lua_global = luaL_newstate();
+        LoadLuaEnv(Lua_global);
 
         // Synnchronize the menu with frame event
         gmenu->SynchronizeWithFrame(true);
@@ -497,14 +530,11 @@ namespace CTRPluginFramework
             Core::Debug::LogMessage(Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
         else
             Core::Debug::LogMessage(Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
+        
+        UpdateLuaStatistics();
+        OSD::Run(DrawMonitors);
 
-        // Wait until some things has been loaded otherwise instability may occur
-        //Core::Debug::LogMessage("Waiting to load scripts", false);
-        //Sleep(Seconds(8));
         if (loadScripts) {
-            UpdateLuaStatistics();
-            OSD::Run(DrawMonitors);
-
             Directory dir;
             Directory::Open(dir, PLUGIN_FOLDER"/scripts");
             if (dir.IsOpen()) {
@@ -531,6 +561,7 @@ namespace CTRPluginFramework
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);
         gmenu->Run();
+        Core::Debug::LogMessage("Exiting LunaCore", false);
         Core::Debug::CloseLogFile();
 
         delete gmenu;
