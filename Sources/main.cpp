@@ -445,7 +445,7 @@ namespace CTRPluginFramework
 
             if (LoadBuffer(Lua_global, buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
                 MessageBox("Script loaded")();
-                if (MessageBox("Do you want to save this script in the sd card?", DialogType::DialogYesNo)()) {
+                if (MessageBox("Do you want to save this script to the sd card?", DialogType::DialogYesNo)()) {
                     File scriptOut;
                     File::Open(scriptOut, PLUGIN_FOLDER "/scripts/"+std::string(namebuf), File::WRITE|File::CREATE);
                     if (!scriptOut.IsOpen()) {
@@ -474,7 +474,7 @@ namespace CTRPluginFramework
             MessageBox("Lua environment reloaded")();
         }));
         devFolder->Append(new MenuEntry("Reload scripts", nullptr, [](MenuEntry *entry) {
-            if (!MessageBox("This will reload stored scripts, not including loaded by network. Continue?", DialogType::DialogYesNo)())
+            if (!MessageBox("This will reload saved scripts, not including loaded by network (if not saved to sd card). Continue?", DialogType::DialogYesNo)())
                 return;
             Core::Debug::LogMessage("Reloading Lua environment", false);
             lua_close(Lua_global);
