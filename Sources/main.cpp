@@ -1,6 +1,7 @@
 #include <3ds.h>
 #include "csvc.h"
 #include <CTRPluginFramework.hpp>
+#include <FsLib/fslib.hpp>
 
 #include <string>
 #include <unordered_map>
@@ -527,6 +528,33 @@ namespace CTRPluginFramework
         if (!Core::Config::SaveConfig(CONFIG_FILE, config))
             Core::Debug::LogMessage("Failed to save configs", true);
 
+        bool fslibInit = fslib::initialize();
+        if (!fslibInit) {
+            Core::Debug::LogMessage("Failed to initialize fslib", true);
+            Core::Debug::LogMessage(fslib::getErrorString(), true);
+        }
+
+        bool openextData = true;
+        uint32_t extDataID = static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF);
+        FS_Archive archive;
+        uint32_t binaryData[] = {MEDIATYPE_SD, extDataID, 0x00000000};
+        FS_Path path = {.type = PATH_BINARY, .size = 0x0C, .data = binaryData};
+
+        Result fsError = FSUSER_OpenArchive(&archive, ARCHIVE_EXTDATA, path);
+        if (R_FAILED(fsError)) {
+            openextData = false;
+            Core::Debug::LogMessage("Failed to open extdata", true);
+            Core::Debug::LogMessage(Utils::Format("Error opening extdata archive: 0x%08X.", fsError), true);
+        } else {
+            if (!fslib::mapArchiveToDevice(u"extdata", archive))
+            {
+                FSUSER_CloseArchive(archive);
+                openextData = false;
+                Core::Debug::LogMessage("Failed to open extdata", true);
+                Core::Debug::LogMessage(fslib::getErrorString(), true);
+            }
+        }
+
         if (loadMenuLayout && enabledPatching) {
             if (File::Exists(PLUGIN_FOLDER"/layouts/menu_layout.json") && LoadGameMenuLayout(PLUGIN_FOLDER"/layouts/menu_layout.json"))
                 PatchGameMenuLayoutFunction();
@@ -591,6 +619,10 @@ namespace CTRPluginFramework
         gmenu->Run();
         Core::Debug::LogMessage("Exiting LunaCore", false);
         Core::Debug::CloseLogFile();
+        if (openextData)
+            fslib::closeDevice(u"extdata");
+        if (fslibInit)
+            fslib::exit();
 
         delete gmenu;
         lua_close(Lua_global);

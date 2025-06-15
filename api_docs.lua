@@ -15,14 +15,6 @@ Game = {}
 
 Core = {}
 
-string = {}
-
----Returns a table with a string splitted
----@param s string
----@param separator string
----@return table
-function string.split(s, separator) end
-
 Core.Debug = {}
 
 ---Displays a notification on screen
@@ -71,6 +63,46 @@ Game.Event.OnPlayerJoinWorld = {}
 
 ---@class OnPlayerLeaveWorld: EventClass
 Game.Event.OnPlayerLeaveWorld = {}
+
+Core.Filesystem = {}
+
+---@class FilesystemFile
+local FilesystemFile = {}
+
+---Opens a file. Returns nil if the file wasn't opened with an error message. Use sdmc:/ for sd card or extdata:/ for game extdata
+---@param fp string
+---@param mode string
+---@return FilesystemFile?
+---@return string?
+function Core.Filesystem.open(fp, mode) end
+
+---Reads the specified amount of bytes to read, or use "*all" to read all file and returns the data in a string or nil if error
+---@param bytes any
+---@return string?
+function FilesystemFile:read(bytes) end
+
+---Writes all data to file of the specified amount of bytes if provided. Returns true is success, false otherwise
+---@param data string
+---@param bytes integer?
+---@return boolean
+function FilesystemFile:write(data, bytes) end
+
+---Returns the actual position in the file
+---@return integer
+function FilesystemFile:tell() end
+
+---Flushes all file data in write buffer
+---@return boolean
+function FilesystemFile:flush() end
+
+---Sets the position in file and returns the new position or nil if error
+---@param offset integer
+---@param whence string?
+---@return integer
+function FilesystemFile:seek(offset, whence) end
+
+---Closes the file
+function FilesystemFile:close() end
 
 Core.Graphics = {}
 

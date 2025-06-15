@@ -39,7 +39,7 @@ CXXFLAGS	:= $(CFLAGS) -g -fno-rtti -fno-exceptions -std=gnu++20
 ASFLAGS		:=	$(ARCH)
 LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -L $(PORTLIBS)/lib -Os -Wl,--gc-sections,--strip-discarded,--strip-debug
 
-LIBS		:=  -llua5.1 -lctrpf -lctru -lz -lm -lbz2 -llzma -lzstd
+LIBS		:=  -llua5.1 -lfslib -lctrpf -lctru -lz -lm -lbz2 -llzma -lzstd
 LIBDIRS		:= 	$(CTRPFLIB) $(CTRULIB) $(PORTLIBS)
 
 #---------------------------------------------------------------------------------
