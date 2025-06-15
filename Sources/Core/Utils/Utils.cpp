@@ -23,6 +23,10 @@ std::string Core::Utils::strip(const std::string &str) {
     return newStr;
 }
 
+bool Core::Utils::startsWith(const std::string &str, const std::string &prefix) {
+    return str.compare(0, prefix.size(), prefix) == 0;
+}
+
 std::string Core::Utils::LoadFile(const std::string &filepath)
 {
     std::string content;

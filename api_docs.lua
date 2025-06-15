@@ -76,6 +76,26 @@ local FilesystemFile = {}
 ---@return string?
 function Core.Filesystem.open(fp, mode) end
 
+---Checks if the file exists
+---@param fp string
+---@return boolean
+function Core.Filesystem.fileExists(fp) end
+
+---Checks if the directory exists
+---@param path string
+---@return boolean
+function Core.Filesystem.directoryExists(path) end
+
+---Returns a table with all the elements in a directory
+---@param path string
+---@return table
+function Core.Filesystem.getDirectoryElements(path) end
+
+---Creates a directory and returns if success
+---@param path string
+---@return boolean
+function Core.Filesystem.createDirectory(path) end
+
 ---Reads the specified amount of bytes to read, or use "*all" to read all file and returns the data in a string or nil if error
 ---@param bytes any
 ---@return string?
@@ -100,6 +120,14 @@ function FilesystemFile:flush() end
 ---@param whence string?
 ---@return integer
 function FilesystemFile:seek(offset, whence) end
+
+---Checks if the file is open
+---@return boolean
+function FilesystemFile:isOpen() end
+
+---Checks if the file is on end of file
+---@return boolean
+function FilesystemFile:isEOF() end
 
 ---Closes the file
 function FilesystemFile:close() end

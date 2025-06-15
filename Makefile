@@ -24,8 +24,8 @@ SOURCES 	:= 	Sources Sources/Core Sources/Core/Utils Sources/Game Sources/Game/H
 #---------------------------------------------------------------------------------
 ARCH		:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
-CFLAGS		:=	$(ARCH) -Os -mword-relocations \
-				-fomit-frame-pointer -ffunction-sections -fno-strict-aliasing
+CFLAGS		:=	$(ARCH) -Os -s -mword-relocations \
+				-fdata-sections -fomit-frame-pointer -ffunction-sections -fno-strict-aliasing -fvisibility=hidden
 
 CFLAGS		+=	$(INCLUDE) -D__3DS__ -I $(PORTLIBS)/include/lua5.1 \
 				-DPLG_VER_MAJ=$(PLGVERMAJ) -DPLG_VER_MIN=$(PLGVERMIN) -DPLG_VER_PAT=$(PLGVERPAT)
@@ -39,7 +39,7 @@ CXXFLAGS	:= $(CFLAGS) -g -fno-rtti -fno-exceptions -std=gnu++20
 ASFLAGS		:=	$(ARCH)
 LDFLAGS		:= -T $(TOPDIR)/3gx.ld $(ARCH) -L $(PORTLIBS)/lib -Os -Wl,--gc-sections,--strip-discarded,--strip-debug
 
-LIBS		:=  -llua5.1 -lfslib -lctrpf -lctru -lz -lm -lbz2 -llzma -lzstd
+LIBS		:=  -llua5.1 -lfslib -lctrpf -lctru
 LIBDIRS		:= 	$(CTRPFLIB) $(CTRULIB) $(PORTLIBS)
 
 #---------------------------------------------------------------------------------

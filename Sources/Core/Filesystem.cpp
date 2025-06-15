@@ -18,8 +18,14 @@ typedef struct {
     size_t size;
 } FilesystemFile;
 
-bool startsWith(const std::string &str, const std::string &prefix) {
-    return str.compare(0, prefix.size(), prefix) == 0;
+static fslib::Path path_from_string(const std::string &str) {
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+    return converter.from_bytes(str);
+}
+
+static std::string path_to_string(const fslib::Path &path) {
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
+    return converter.to_bytes(path.cString());
 }
 
 // ----------------------------------------------------------------------------
@@ -39,13 +45,10 @@ bool startsWith(const std::string &str, const std::string &prefix) {
 ### Core.Filesystem.open
 */
 static int l_Filesystem_open(lua_State *L) {
-    std::string filepath(luaL_checkstring(L, 1));
+    const char* filepath = luaL_checkstring(L, 1);
     std::string filemode(luaL_checkstring(L, 2));
 
     bool success = false;
-
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-    std::u16string utf16_path = converter.from_bytes(filepath);
     FilesystemFile* fileStruct = (FilesystemFile*)lua_newuserdata(L, sizeof(FilesystemFile));
     luaC_setmetatable(L, "FilesystemFile");
     if (filemode == "w")
@@ -60,7 +63,7 @@ static int l_Filesystem_open(lua_State *L) {
         lua_pop(L, 1);
         return luaL_error(L, "Invalid mode");
     }
-    fileStruct->filePtr = new fslib::File(utf16_path.c_str(), fileStruct->mode);
+    fileStruct->filePtr = new fslib::File(path_from_string(filepath), fileStruct->mode);
     
     if (!fileStruct->filePtr->isOpen()) {
         lua_pop(L, 1);
@@ -75,6 +78,56 @@ static int l_Filesystem_open(lua_State *L) {
         return 1;
     else
         return 2;
+}
+
+/*
+- Checks if the file exists
+## fp: string
+## return: boolean
+### Core.Filesystem.fileExists
+*/
+static int l_Filesystem_fileExists(lua_State *L) {
+    lua_pushboolean(L, fslib::fileExists(path_from_string(luaL_checkstring(L, 1))));
+    return 1;
+}
+
+/*
+- Checks if the directory exists
+## path: string
+## return: boolean
+### Core.Filesystem.directoryExists
+*/
+static int l_Filesystem_directoryExists(lua_State *L) {
+    lua_pushboolean(L, fslib::directoryExists(path_from_string(luaL_checkstring(L, 1))));
+    return 1;
+}
+
+/*
+- Returns a table with all the elements in a directory
+## path: string
+## return: table
+### Core.Filesystem.getDirectoryElements
+*/
+static int l_Filesystem_getDirectoryElements(lua_State *L) {
+    fslib::Directory dir(path_from_string(luaL_checkstring(L, 1)));
+    size_t filesCount = dir.getCount();
+    lua_newtable(L);
+    for (int i = 0; i < filesCount; i++) {
+        lua_pushstring(L, path_to_string(dir.getEntry(i)).c_str());
+        lua_rawseti(L, -2, i + 1);
+    }
+    return 1;
+}
+
+/*
+- Creates a directory and returns if success
+## path: string
+## return: boolean
+### Core.Filesystem.createDirectory
+*/
+static int l_Filesystem_createDirectory(lua_State *L) {
+    lua_pushboolean(L, fslib::createDirectory(path_from_string(luaL_checkstring(L, 1))));
+    return 1;
 }
 
 // ----------------------------------------------------------------------------
@@ -197,6 +250,28 @@ static int l_Filesystem_File_seek(lua_State *L) {
 }
 
 /*
+- Checks if the file is open
+## return: boolean
+### FilesystemFile:isOpen
+*/
+static int l_Filesystem_File_isOpen(lua_State *L) {
+    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    lua_pushboolean(L, fileStruct->filePtr->isOpen());
+    return 1;
+}
+
+/*
+- Checks if the file is on end of file
+## return: boolean
+### FilesystemFile:isEOF
+*/
+static int l_Filesystem_File_isEOF(lua_State *L) {
+    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    lua_pushboolean(L, fileStruct->filePtr->endOfFile());
+    return 1;
+}
+
+/*
 - Closes the file
 ### FilesystemFile:close
 */
@@ -211,6 +286,7 @@ static int l_Filesystem_File_gc(lua_State *L) {
     FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
     if (fileStruct->filePtr->isOpen())
         fileStruct->filePtr->close();
+    delete fileStruct->filePtr;
     return 0;
 }
 
@@ -220,6 +296,8 @@ static const luaL_Reg filesystem_file_methods[] = {
     {"tell", l_Filesystem_File_tell},
     {"flush", l_Filesystem_File_flush},
     {"seek", l_Filesystem_File_seek},
+    {"isOpen", l_Filesystem_File_isOpen},
+    {"isEOF", l_Filesystem_File_isEOF},
     {"close", l_Filesystem_File_close},
     {NULL, NULL}
 };
@@ -238,6 +316,10 @@ static inline void RegisterFilesystemMetatables(lua_State *L) {
 
 static const luaL_Reg filesystem_functions[] = {
     {"open", l_Filesystem_open},
+    {"fileExists", l_Filesystem_fileExists},
+    {"directoryExists", l_Filesystem_directoryExists},
+    {"getDirectoryElements", l_Filesystem_getDirectoryElements},
+    {"createDirectory", l_Filesystem_createDirectory},
     {NULL, NULL}
 };
 
