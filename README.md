@@ -1,14 +1,14 @@
 # LunaCore
-LunaCore is a work in progress Lua script loader for Minecraft: New Nintendo 3DS Edition, featuring an easy API interface to interact with the game. You can check api_docs.md for an introduction on basic usage of the API.
+LunaCore is a work in progress script loader for Minecraft: New Nintendo 3DS Edition, featuring an easy API interface to interact with the game. You can check api_docs.md for an introduction on basic usage of the API.
 
-The plugin runs alongside the game thanks to Luma3DS plugin loader and is built using CTRPluginFramework which provides the essentials to work together with the game.
+Is the result of merging different community contributions into a single project. To know more about the contributions see the Credits section.
 
-LunaCore is the result of fusing different community contributions into a single project. To know more about the contributions see the Credits section.
+The plugin runs alongside the game thanks to Luma3DS plugin loader and is built using CTRPluginFramework which provides the essentials to work together with the game. The script engine uses Lua 5.1 as scripting language, an easy language to use with a lot of possibilities. It was also chosen because of its easy implementation in embedded systems, for its powerful C API and for being lightweight.
 
 ## Credits
 LunaCore is made up of various projects or contributions to the Minecraft: New Nintendo 3DS Edition and homebrew community.
 
-LunaCore wouldn't be possible without the contributions made to the Minecraft: New Nintendo 3DS Edition community and the homebrew development libraries. Credits to the authors and sources that are part of LunaCore are shown below.
+LunaCore wouldn't be possible without the contributions made to the Minecraft: New Nintendo 3DS Edition community and homebrew libraries. Credits to the authors and sources that are part of LunaCore are shown below.
 
 | Elements/Fields | Module | Thanks to |
 | --- | --- | --- | 
@@ -23,9 +23,8 @@ LunaCore wouldn't be possible without the contributions made to the Minecraft: N
 | File handlers | Core.Filesystem | [FsLib](https://github.com/J-D-K/FsLib) |
 
 ### Special thanks
-- `Discord: @rairai6895` - Made `Minecraft Class v1.1` (no link, but you can join Asterium Discord server)
+- `Discord: @rairai6895` - Made `Minecraft Class v1.1` (you can join [Asterium Discord](https://discord.gg/MXFfpyEk) server for more information)
 - [@Cracko298](https://github.com/Cracko298) - Made [Minecraft-3DS-Community/GamePatches](https://github.com/Minecraft-3DS-Community/GamePatches)
 - [CTRPluginFramework](https://gitlab.com/thepixellizeross/ctrpluginframework) - All plugin functionalities
-- [Lua](https://www.lua.org) - Scripting languaje (Lua 5.1)
 - [Luma3DS](https:/github.com/LumaTeam/Luma3DS) - Plugin loader
 - [devkitPro](https://github.com/devkitPro) - ctrulib and development environment
