@@ -1,3 +1,4 @@
+local stringUtils = require("string_utils")
 local gamepad = Game.Gamepad
 local keys = gamepad.KeyCodes
 local console = {
@@ -42,7 +43,7 @@ end
 
 ---@param command string
 local function processCommand(command)
-    local args = command:split(" ")
+    local args = stringUtils.split(command, " ")
     if args[1] == "lua" then
         local code = command:sub(#args[1]+2)
         eval_line(code)
