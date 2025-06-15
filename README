@@ -26,5 +26,6 @@ LunaCore wouldn't be possible without the contributions made to the Minecraft: N
 - `Discord: @rairai6895` - Made `Minecraft Class v1.1` (no link, but you can join Asterium Discord server)
 - [@Cracko298](https://github.com/Cracko298) - Made [Minecraft-3DS-Community/GamePatches](https://github.com/Minecraft-3DS-Community/GamePatches)
 - [CTRPluginFramework](https://gitlab.com/thepixellizeross/ctrpluginframework) - All plugin functionalities
-- Luma3DS - Plugin loader
+- [Lua](https://www.lua.org) - Scripting languaje (Lua 5.1)
+- [Luma3DS](https:/github.com/LumaTeam/Luma3DS) - Plugin loader
 - [devkitPro](https://github.com/devkitPro) - ctrulib and development environment
