@@ -8,6 +8,8 @@
 #include <codecvt>
 #include <locale>
 
+#include "Core/Debug.hpp"
+
 #include "string_hash.hpp"
 
 namespace CTRPF = CTRPluginFramework;
@@ -23,9 +25,9 @@ static fslib::Path path_from_string(const std::string &str) {
     return converter.from_bytes(str);
 }
 
-static std::string path_to_string(const fslib::Path &path) {
+static std::string path_to_string(const std::u16string &path) {
     std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> converter;
-    return converter.to_bytes(path.cString());
+    return std::string(converter.to_bytes(path));
 }
 
 // ----------------------------------------------------------------------------
@@ -110,10 +112,15 @@ static int l_Filesystem_directoryExists(lua_State *L) {
 */
 static int l_Filesystem_getDirectoryElements(lua_State *L) {
     fslib::Directory dir(path_from_string(luaL_checkstring(L, 1)));
+    if (!dir.isOpen()) {
+        lua_newtable(L);
+        return 1;
+    }
     size_t filesCount = dir.getCount();
     lua_newtable(L);
     for (int i = 0; i < filesCount; i++) {
-        lua_pushstring(L, path_to_string(dir.getEntry(i)).c_str());
+        std::u16string_view entry = dir.getEntry(i);
+        lua_pushstring(L, path_to_string(std::u16string(entry.data(), entry.size())).c_str());
         lua_rawseti(L, -2, i + 1);
     }
     return 1;

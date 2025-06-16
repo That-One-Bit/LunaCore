@@ -162,7 +162,7 @@ static int l_Graphics_drawRect(lua_State *L)
     int y = luaL_checkinteger(L, 2);
     int width = luaL_checkinteger(L, 3);
     int height = luaL_checkinteger(L, 4);
-    u32 color = luaL_checkinteger(L, 5);
+    u32 color = (u32)luaL_checknumber(L, 5);
 
     if (!graphicsOpen)
         return 0;
@@ -194,7 +194,7 @@ static int l_Graphics_drawRectFill(lua_State *L)
     int y = luaL_checkinteger(L, 2);
     int width = luaL_checkinteger(L, 3);
     int height = luaL_checkinteger(L, 4);
-    u32 color = luaL_checkinteger(L, 5);
+    u32 color = (u32)luaL_checknumber(L, 5);
 
     if (!graphicsOpen)
         return 0;
@@ -222,7 +222,7 @@ static int l_Graphics_drawText(lua_State *L)
     const char *text = luaL_checkstring(L, 1);
     int x = luaL_checkinteger(L, 2);
     int y = luaL_checkinteger(L, 3);
-    u32 color = luaL_checkinteger(L, 4);
+    u32 color = (u32)luaL_checknumber(L, 4);
 
     if (!graphicsOpen)
         return 0;
@@ -250,7 +250,7 @@ static int l_Graphics_colorRGB(lua_State *L) {
     u8 b = luaL_checkinteger(L, 3);
 
     CTRPF::Color newColor(r, g, b);
-    lua_pushinteger(L, newColor.raw);
+    lua_pushnumber(L, newColor.raw);
     return 1;
 }
 
@@ -270,7 +270,7 @@ static int l_Graphics_colorRGBA(lua_State *L) {
     u8 a = luaL_checkinteger(L, 4);
 
     CTRPF::Color newColor(r, g, b, a);
-    lua_pushinteger(L, newColor.raw);
+    lua_pushnumber(L, newColor.raw);
     return 1;
 }
 
