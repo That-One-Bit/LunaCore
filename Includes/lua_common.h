@@ -26,7 +26,7 @@ extern "C" {
     })
 
 #define luaC_setfield_integer(L, num, field) ({\
-        lua_pushinteger(L, (num));\
+        lua_pushnumber(L, (num));\
         lua_setfield(L, -2, (field));\
     })
 

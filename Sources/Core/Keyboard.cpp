@@ -85,7 +85,7 @@ static int l_Keyboard_getInteger(lua_State *L) {
     if (keyboard.Open(inputNumber) == 0) {
         Core::EventRestartClock();
         Core::AsyncRestartClock();
-        lua_pushinteger(L, inputNumber);
+        lua_pushnumber(L, inputNumber);
     } else {
         Core::EventRestartClock();
         Core::AsyncRestartClock();
@@ -113,7 +113,7 @@ static int l_Keyboard_getHex(lua_State *L) {
     if (keyboard.Open(inputNumber) == 0) {
         Core::EventRestartClock();
         Core::AsyncRestartClock();
-        lua_pushinteger(L, inputNumber);
+        lua_pushnumber(L, inputNumber);
     } else {
         Core::EventRestartClock();
         Core::AsyncRestartClock();

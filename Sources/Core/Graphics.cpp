@@ -158,10 +158,10 @@ static int l_Graphics_isOpen(lua_State *L) {
 */
 static int l_Graphics_drawRect(lua_State *L)
 {
-    int x = luaL_checkinteger(L, 1);
-    int y = luaL_checkinteger(L, 2);
-    int width = luaL_checkinteger(L, 3);
-    int height = luaL_checkinteger(L, 4);
+    int x = luaL_checknumber(L, 1);
+    int y = luaL_checknumber(L, 2);
+    int width = luaL_checknumber(L, 3);
+    int height = luaL_checknumber(L, 4);
     u32 color = (u32)luaL_checknumber(L, 5);
 
     if (!graphicsOpen)
@@ -190,10 +190,10 @@ static int l_Graphics_drawRect(lua_State *L)
 */
 static int l_Graphics_drawRectFill(lua_State *L)
 {
-    int x = luaL_checkinteger(L, 1);
-    int y = luaL_checkinteger(L, 2);
-    int width = luaL_checkinteger(L, 3);
-    int height = luaL_checkinteger(L, 4);
+    int x = luaL_checknumber(L, 1);
+    int y = luaL_checknumber(L, 2);
+    int width = luaL_checknumber(L, 3);
+    int height = luaL_checknumber(L, 4);
     u32 color = (u32)luaL_checknumber(L, 5);
 
     if (!graphicsOpen)
@@ -220,8 +220,8 @@ static int l_Graphics_drawRectFill(lua_State *L)
 static int l_Graphics_drawText(lua_State *L)
 {
     const char *text = luaL_checkstring(L, 1);
-    int x = luaL_checkinteger(L, 2);
-    int y = luaL_checkinteger(L, 3);
+    int x = luaL_checknumber(L, 2);
+    int y = luaL_checknumber(L, 3);
     u32 color = (u32)luaL_checknumber(L, 4);
 
     if (!graphicsOpen)
@@ -245,9 +245,9 @@ static int l_Graphics_drawText(lua_State *L)
 ### Core.Graphics.colorRGB
 */
 static int l_Graphics_colorRGB(lua_State *L) {
-    u8 r = luaL_checkinteger(L, 1);
-    u8 g = luaL_checkinteger(L, 2);
-    u8 b = luaL_checkinteger(L, 3);
+    u8 r = luaL_checknumber(L, 1);
+    u8 g = luaL_checknumber(L, 2);
+    u8 b = luaL_checknumber(L, 3);
 
     CTRPF::Color newColor(r, g, b);
     lua_pushnumber(L, newColor.raw);
@@ -264,10 +264,10 @@ static int l_Graphics_colorRGB(lua_State *L) {
 ### Core.Graphics.colorRGBA
 */
 static int l_Graphics_colorRGBA(lua_State *L) {
-    u8 r = luaL_checkinteger(L, 1);
-    u8 g = luaL_checkinteger(L, 2);
-    u8 b = luaL_checkinteger(L, 3);
-    u8 a = luaL_checkinteger(L, 4);
+    u8 r = luaL_checknumber(L, 1);
+    u8 g = luaL_checknumber(L, 2);
+    u8 b = luaL_checknumber(L, 3);
+    u8 a = luaL_checknumber(L, 4);
 
     CTRPF::Color newColor(r, g, b, a);
     lua_pushnumber(L, newColor.raw);

@@ -80,7 +80,7 @@ static int l_Items_findItemIDByName(lua_State *L) {
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushinteger(L, itemData->itemID);
+        lua_pushnumber(L, itemData->itemID);
     }
 
     return 1;
@@ -93,7 +93,7 @@ static int l_Items_findItemIDByName(lua_State *L) {
 ### Game.Items.findItemNameByID
 */
 static int l_Items_findItemNameByID(lua_State *L) {
-    u16 itemID = luaL_checkinteger(L, 1);
+    u16 itemID = luaL_checknumber(L, 1);
     Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);

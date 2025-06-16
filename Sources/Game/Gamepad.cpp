@@ -29,7 +29,7 @@ void Core::Gamepad::BlockKey(u32 keyCode) {
 */
 static int l_Gamepad_isPressed(lua_State *L)
 {
-    CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
+    CTRPF::Key keycode = (CTRPF::Key)luaL_checknumber(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyPressed(keycode));
     return 1;
 }
@@ -42,7 +42,7 @@ static int l_Gamepad_isPressed(lua_State *L)
 */
 static int l_Gamepad_isDown(lua_State *L)
 {
-    CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
+    CTRPF::Key keycode = (CTRPF::Key)luaL_checknumber(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyDown(keycode));
     return 1;
 }
@@ -55,7 +55,7 @@ static int l_Gamepad_isDown(lua_State *L)
 */
 static int l_Gamepad_isReleased(lua_State *L)
 {
-    CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
+    CTRPF::Key keycode = (CTRPF::Key)luaL_checknumber(L, 1);
     lua_pushboolean(L, CTRPF::Controller::IsKeyReleased(keycode));
     return 1;
 }
@@ -67,7 +67,7 @@ static int l_Gamepad_isReleased(lua_State *L)
 */
 static int l_Gamepad_pressButton(lua_State *L)
 {
-    CTRPF::Key keycode = (CTRPF::Key)lua_tointeger(L, 1);
+    CTRPF::Key keycode = (CTRPF::Key)luaL_checknumber(L, 1);
     CTRPF::Controller::InjectKey(keycode);
     return 0;
 }

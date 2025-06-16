@@ -31,13 +31,10 @@ namespace CTRPF = CTRPluginFramework;
 static int l_Inventory_Slots_index(lua_State *L)
 {
     if (lua_type(L, 2) == LUA_TNUMBER) {
-        double num = lua_tonumber(L, 2);
-        if (floor(num) != num) // Check only integers
-            return 0;
-        int index = lua_tointeger(L, 2);
+        int index = lua_tonumber(L, 2);
         if (index >= 1 && index <= 36) {
             lua_newtable(L);
-            lua_pushinteger(L, index);
+            lua_pushnumber(L, index);
             lua_setfield(L, -2, "Slot");
             luaC_setmetatable(L, "InventorySlotClass"); // At the end or setfield doesn't work
             return 1;
@@ -52,7 +49,7 @@ static int l_Inventory_Slots_index(lua_State *L)
                 int handSlot = Minecraft::GetHeldSlotNumber();
                 if (handSlot >= 1) {
                     lua_newtable(L);
-                    lua_pushinteger(L, handSlot);
+                    lua_pushnumber(L, handSlot);
                     lua_setfield(L, -2, "Slot");
                     luaC_setmetatable(L, "InventorySlotClass"); // Again at the END
                 }
@@ -89,7 +86,7 @@ static int l_Inventory_Slot_class_index(lua_State *L)
         lua_pop(L, 1);
         return luaL_error(L, "Slot index is invalid");
     }
-    int slotIndex = lua_tointeger(L, -1);
+    int slotIndex = lua_tonumber(L, -1);
     lua_pop(L, 1);
 
     if (slotIndex < 1 || slotIndex > 36)
@@ -103,16 +100,16 @@ static int l_Inventory_Slot_class_index(lua_State *L)
         case hash("ItemID"): {
             Core::Game::ItemData *itemData = slotData->itemData;
             if (itemData)
-                lua_pushinteger(L, itemData->itemID);
+                lua_pushnumber(L, itemData->itemID);
             else
                 lua_pushnumber(L, 0);
             break;
         }
         case hash("ItemCount"):
-            lua_pushinteger(L, slotData->itemCount);
+            lua_pushnumber(L, slotData->itemCount);
             break;
         case hash("ItemData"):
-            lua_pushinteger(L, slotData->dataValue);
+            lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
             Core::Game::ItemData *itemData = slotData->itemData;
@@ -147,7 +144,7 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
         lua_pop(L, 1);
         return luaL_error(L, "Slot index is invalid");
     }
-    int slotIndex = lua_tointeger(L, -1);
+    int slotIndex = lua_tonumber(L, -1);
     lua_pop(L, 1);
 
     if (slotIndex < 1 || slotIndex > 36)
@@ -159,7 +156,7 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
 
     switch (key) {
         case hash("ItemID"): {
-            u16 itemID = luaL_checkinteger(L, 3);
+            u16 itemID = luaL_checknumber(L, 3);
             Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
@@ -171,10 +168,10 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
             break;
         }
         case hash("ItemCount"):
-            slotData->itemCount = lua_tointeger(L, 3);
+            slotData->itemCount = lua_tonumber(L, 3);
             break;
         case hash("ItemData"):
-            slotData->dataValue= lua_tointeger(L, 3);
+            slotData->dataValue= lua_tonumber(L, 3);
             break;
         default:
             valid = false;
@@ -200,10 +197,10 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
 static int l_Inventory_ArmorSlots_index(lua_State *L)
 {
     if (lua_type(L, 2) == LUA_TNUMBER) {
-        int index = lua_tointeger(L, 2);
+        int index = lua_tonumber(L, 2);
         if (index >= 1 && index <= 4) {
             lua_newtable(L);
-            lua_pushinteger(L, index);
+            lua_pushnumber(L, index);
             lua_setfield(L, -2, "Slot");
             luaC_setmetatable(L, "InventoryArmorSlotClass"); // At the end or setfield doesn't work
             return 1;
@@ -218,7 +215,7 @@ static int l_Inventory_ArmorSlots_index(lua_State *L)
                 u32 slot = Minecraft::GetArmorSlotAddress(1);
                 if (slot != 0) {
                     lua_newtable(L);
-                    lua_pushinteger(L, 1);
+                    lua_pushnumber(L, 1);
                     lua_setfield(L, -2, "Slot");
                     luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
                 } else
@@ -229,7 +226,7 @@ static int l_Inventory_ArmorSlots_index(lua_State *L)
                 u32 slot = Minecraft::GetArmorSlotAddress(2);
                 if (slot != 0) {
                     lua_newtable(L);
-                    lua_pushinteger(L, 2);
+                    lua_pushnumber(L, 2);
                     lua_setfield(L, -2, "Slot");
                     luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
                 } else
@@ -240,7 +237,7 @@ static int l_Inventory_ArmorSlots_index(lua_State *L)
                 u32 slot = Minecraft::GetArmorSlotAddress(3);
                 if (slot != 0) {
                     lua_newtable(L);
-                    lua_pushinteger(L, 3);
+                    lua_pushnumber(L, 3);
                     lua_setfield(L, -2, "Slot");
                     luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
                 } else
@@ -251,7 +248,7 @@ static int l_Inventory_ArmorSlots_index(lua_State *L)
                 u32 slot = Minecraft::GetArmorSlotAddress(4);
                 if (slot != 0) {
                     lua_newtable(L);
-                    lua_pushinteger(L, 4);
+                    lua_pushnumber(L, 4);
                     lua_setfield(L, -2, "Slot");
                     luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
                 } else
@@ -287,7 +284,7 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
         lua_pop(L, 1);
         return luaL_error(L, "Slot index is invalid");
     }
-    int slotIndex = lua_tointeger(L, -1);
+    int slotIndex = lua_tonumber(L, -1);
     lua_pop(L, 1);
 
     if (slotIndex < 1 || slotIndex > 4)
@@ -301,13 +298,13 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
         case hash("ItemID"): {
             Core::Game::ItemData *itemData = slotData->itemData;
             if (itemData)
-                lua_pushinteger(L, itemData->itemID);
+                lua_pushnumber(L, itemData->itemID);
             else
                 lua_pushnumber(L, 0);
             break;
         }
         case hash("ItemData"):
-            lua_pushinteger(L, slotData->dataValue);
+            lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
             Core::Game::ItemData *itemData = slotData->itemData;
@@ -342,7 +339,7 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
         lua_pop(L, 1);
         return luaL_error(L, "Slot index is invalid");
     }
-    int slotIndex = lua_tointeger(L, -1);
+    int slotIndex = lua_tonumber(L, -1);
     lua_pop(L, 1);
 
     if (slotIndex < 1 || slotIndex > 36)
@@ -354,7 +351,7 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
 
     switch (key) {
         case hash("ItemID"): {
-            u16 itemID = luaL_checkinteger(L, 3);
+            u16 itemID = luaL_checknumber(L, 3);
             Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
@@ -366,7 +363,7 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
             break;
         }
         case hash("ItemData"):
-            slotData->dataValue= lua_tointeger(L, 3);
+            slotData->dataValue= lua_tonumber(L, 3);
             break;
         default:
             valid = false;

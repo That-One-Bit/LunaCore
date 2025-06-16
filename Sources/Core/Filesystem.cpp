@@ -155,7 +155,7 @@ static int l_Filesystem_File_read(lua_State *L) {
         } else
             return luaL_error(L, "Invalid number of bytes to read. Use a number or '*all' to read whole file");
     } else
-        bytes = luaL_checkinteger(L, 2);
+        bytes = (size_t)luaL_checknumber(L, 2);
 
     if ((fileStruct->mode & FS_OPEN_READ) == 0)
         return luaL_error(L, "File not opened with read mode");
@@ -190,7 +190,7 @@ static int l_Filesystem_File_write(lua_State *L) {
     size_t bytes = 0;
     const char* data = luaL_checklstring(L, 2, &bytes);
     if (lua_gettop(L) > 2)
-        bytes = luaL_checkinteger(L, 3);
+        bytes = (size_t)luaL_checknumber(L, 3);
 
     if ((fileStruct->mode & (FS_OPEN_WRITE|FS_OPEN_APPEND)) == 0)
         return luaL_error(L, "File not opened with write mode");
@@ -210,7 +210,7 @@ static int l_Filesystem_File_write(lua_State *L) {
 */
 static int l_Filesystem_File_tell(lua_State *L) {
     FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
-    lua_pushinteger(L, fileStruct->filePtr->tell());
+    lua_pushnumber(L, fileStruct->filePtr->tell());
     return 1;
 }
 
@@ -239,7 +239,7 @@ static int l_Filesystem_File_seek(lua_State *L) {
     if (lua_gettop(L) > 1)
         whence = luaL_checkstring(L, 2);
     if (lua_gettop(L) > 2)
-        offset = luaL_checkinteger(L, 3);
+        offset = (size_t)luaL_checknumber(L, 3);
     
     int seekPos;
     if (whence == "cur")
@@ -252,7 +252,7 @@ static int l_Filesystem_File_seek(lua_State *L) {
         return luaL_error(L, "Invalid seek pos");
 
     fileStruct->filePtr->seek(offset, seekPos);
-    lua_pushinteger(L, fileStruct->filePtr->tell());
+    lua_pushnumber(L, fileStruct->filePtr->tell());
     return 1;
 }
 

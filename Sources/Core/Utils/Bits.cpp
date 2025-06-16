@@ -17,9 +17,9 @@ typedef uint32_t u32;
 ### Bits.lshift
 */
 static int l_Bits_lshift(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	u32 b = luaL_checkinteger(L, 2);
-	lua_pushinteger(L, a << b);
+	u32 a = luaL_checknumber(L, 1);
+	u32 b = luaL_checknumber(L, 2);
+	lua_pushnumber(L, a << b);
 	return 1;
 }
 
@@ -30,9 +30,9 @@ static int l_Bits_lshift(lua_State *L) {
 ### Bits.rshift
 */
 static int l_Bits_rshift(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	u32 b = luaL_checkinteger(L, 2);
-	lua_pushinteger(L, a >> b);
+	u32 a = luaL_checknumber(L, 1);
+	u32 b = luaL_checknumber(L, 2);
+	lua_pushnumber(L, a >> b);
 	return 1;
 }
 
@@ -43,9 +43,9 @@ static int l_Bits_rshift(lua_State *L) {
 ### Bits.band
 */
 static int l_Bits_band(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	u32 b = luaL_checkinteger(L, 2);
-	lua_pushinteger(L, a&b);
+	u32 a = luaL_checknumber(L, 1);
+	u32 b = luaL_checknumber(L, 2);
+	lua_pushnumber(L, a&b);
 	return 1;
 }
 
@@ -56,9 +56,9 @@ static int l_Bits_band(lua_State *L) {
 ### Bits.bor
 */
 static int l_Bits_bor(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	u32 b = luaL_checkinteger(L, 2);
-	lua_pushinteger(L, a|b);
+	u32 a = luaL_checknumber(L, 1);
+	u32 b = luaL_checknumber(L, 2);
+	lua_pushnumber(L, a|b);
 	return 1;
 }
 
@@ -69,9 +69,9 @@ static int l_Bits_bor(lua_State *L) {
 ### Bits.bxor
 */
 static int l_Bits_bxor(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	u32 b = luaL_checkinteger(L, 2);
-	lua_pushinteger(L, a^b);
+	u32 a = luaL_checknumber(L, 1);
+	u32 b = luaL_checknumber(L, 2);
+	lua_pushnumber(L, a^b);
 	return 1;
 }
 
@@ -81,8 +81,8 @@ static int l_Bits_bxor(lua_State *L) {
 ### Bits.bnot
 */
 static int l_Bits_bnot(lua_State *L) {
-	u32 a = luaL_checkinteger(L, 1);
-	lua_pushinteger(L, ~a);
+	u32 a = luaL_checknumber(L, 1);
+	lua_pushnumber(L, ~a);
 	return 1;
 }
 
