@@ -1,5 +1,5 @@
 local parser = {}
-local stringUtils = require("string_utils")
+local stringUtils = require("utils.string_utils")
 
 local function bytesToUint32(b)
     local num = Bits.band(b[1], 0xFF)
