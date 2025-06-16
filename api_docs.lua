@@ -205,6 +205,76 @@ function Core.Keyboard.getInteger(message) end
 ---@return integer?
 function Core.Keyboard.getHex(message) end
 
+Core.Memory = {}
+
+---Reads an unsigned integer of 32 bits from memory
+---@param offset integer
+---@return integer?
+function Core.Memory.readU32(offset) end
+
+---Reads an unsigned integer of 16 bits from memory
+---@param offset integer
+---@return integer?
+function Core.Memory.readU16(offset) end
+
+---Reads an unsigned integer of 8 bits from memory
+---@param offset integer
+---@return integer?
+function Core.Memory.readU8(offset) end
+
+---Reads a float from memory
+---@param offset integer
+---@return number?
+function Core.Memory.readFloat(offset) end
+
+---Reads a double from memory
+---@param offset integer
+---@return number?
+function Core.Memory.readDouble(offset) end
+
+---Reads a string from memory
+---@param offset integer
+---@param size integer
+---@return string?
+function Core.Memory.readString(offset, size) end
+
+---Writes an unsigned integer of 32 bits to memory offset
+---@param offset integer
+---@param value integer
+---@return boolean
+function Core.Memory.writeU32(offset, value) end
+
+---Writes an unsigned integer of 16 bits to memory offset
+---@param offset integer
+---@param value integer
+---@return boolean
+function Core.Memory.writeU16(offset, value) end
+
+---Writes an unsigned integer of 8 bits to memory offset
+---@param offset integer
+---@param value integer
+---@return boolean
+function Core.Memory.writeU8(offset, value) end
+
+---Writes a float to memory offset
+---@param offset integer
+---@param value number
+---@return boolean
+function Core.Memory.writeFloat(offset, value) end
+
+---Writes a double to memory offset
+---@param offset integer
+---@param value number
+---@return boolean
+function Core.Memory.writeDouble(offset, value) end
+
+---Writes a string to memory offset
+---@param offset integer
+---@param s string
+---@param size integer
+---@return boolean
+function Core.Memory.writeString(offset, s, size) end
+
 Core.System = {}
 
 ---Returns UNIX time

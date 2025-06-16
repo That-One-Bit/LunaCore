@@ -13,6 +13,7 @@
 #include "Core/Keyboard.hpp"
 #include "Core/Async.hpp"
 #include "Core/Debug.hpp"
+#include "Core/Memory.hpp"
 #include "Game/Gamepad.hpp"
 #include "Game/World.hpp"
 #include "Game/Player/Player.hpp"
@@ -75,6 +76,7 @@ namespace Core {
         Core::Module::RegisterKeyboardModule(L);
         Core::Module::RegisterFilesystemModule(L);
         Core::Module::RegisterGraphicsModule(L);
+        Core::Module::RegisterMemoryModule(L);
         return true;
     }
 }
