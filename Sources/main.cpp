@@ -257,8 +257,25 @@ namespace CTRPluginFramework
 
     void PreloadScripts()
     {
-        static int readFiles = 0;
-        readFiles++;
+        Core::Debug::LogMessage("Loading scripts", false);
+        Directory dir;
+        Directory::Open(dir, PLUGIN_FOLDER"/scripts");
+        if (!dir.IsOpen()) {
+            MessageBox("Failed to reload scripts")();
+            return;
+        }
+        std::vector<std::string> files;
+        dir.ListFiles(files, ".lua");
+        for (auto &file : files) {
+            if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
+                continue;
+
+            std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
+            Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
+            if (LoadScript(Lua_global, fullPath.c_str()))
+                scriptsLoadedCount++;
+        }
+        lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
     }
 
     void LoadLuaEnv(lua_State *L) {
@@ -482,25 +499,7 @@ namespace CTRPluginFramework
             Lua_global = luaL_newstate();
             LoadLuaEnv(Lua_global);
             scriptsLoadedCount = 0;
-            Core::Debug::LogMessage("Loading scripts", false);
-            Directory dir;
-            Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-            if (!dir.IsOpen()) {
-                MessageBox("Failed to reload scripts")();
-                return;
-            }
-            std::vector<std::string> files;
-            dir.ListFiles(files, ".lua");
-            for (auto &file : files) {
-                if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
-                    continue;
-
-                std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
-                Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
-                if (LoadScript(Lua_global, fullPath.c_str()))
-                    scriptsLoadedCount++;
-            }
-            lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
+            PreloadScripts();
             MessageBox("Lua environment reloaded")();
         }));
         menu.Append(optionsFolder);
@@ -512,6 +511,16 @@ namespace CTRPluginFramework
         u64 titleID = Process::GetTitleID();
         if (!IS_TARGET_ID(titleID))
             return 0;
+
+        if (!fslib::initialize()) {
+            Core::Debug::LogMessage("Failed to initialize fslib", true);
+            Core::Debug::LogMessage(fslib::getErrorString(), false);
+        }
+
+        if (!fslib::openExtData(u"extdata", static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF))) {
+            Core::Debug::LogMessage("Failed to open extdata", true);
+            Core::Debug::LogMessage(fslib::getErrorString(), false);
+        }
 
         if (!Directory::IsExists(PLUGIN_FOLDER"/layouts"))
             Directory::Create(PLUGIN_FOLDER"/layouts");
@@ -527,33 +536,6 @@ namespace CTRPluginFramework
         // Update configs
         if (!Core::Config::SaveConfig(CONFIG_FILE, config))
             Core::Debug::LogMessage("Failed to save configs", true);
-
-        bool fslibInit = fslib::initialize();
-        if (!fslibInit) {
-            Core::Debug::LogMessage("Failed to initialize fslib", true);
-            Core::Debug::LogMessage(fslib::getErrorString(), true);
-        }
-
-        bool openextData = true;
-        uint32_t extDataID = static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF);
-        FS_Archive archive;
-        uint32_t binaryData[] = {MEDIATYPE_SD, extDataID, 0x00000000};
-        FS_Path path = {.type = PATH_BINARY, .size = 0x0C, .data = binaryData};
-
-        Result fsError = FSUSER_OpenArchive(&archive, ARCHIVE_EXTDATA, path);
-        if (R_FAILED(fsError)) {
-            openextData = false;
-            Core::Debug::LogMessage("Failed to open extdata", true);
-            Core::Debug::LogMessage(Utils::Format("Error opening extdata archive: 0x%08X.", fsError), true);
-        } else {
-            if (!fslib::mapArchiveToDevice(u"extdata", archive))
-            {
-                FSUSER_CloseArchive(archive);
-                openextData = false;
-                Core::Debug::LogMessage("Failed to open extdata", true);
-                Core::Debug::LogMessage(fslib::getErrorString(), true);
-            }
-        }
 
         if (loadMenuLayout && enabledPatching) {
             if (File::Exists(PLUGIN_FOLDER"/layouts/menu_layout.json") && LoadGameMenuLayout(PLUGIN_FOLDER"/layouts/menu_layout.json"))
@@ -593,23 +575,8 @@ namespace CTRPluginFramework
         gmenu->Callback(Core::EventHandlerCallback);
         gmenu->Callback(Core::AsyncHandlerCallback);
 
-        if (loadScripts) {
-            Directory dir;
-            Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-            if (dir.IsOpen()) {
-                std::vector<std::string> dirFiles;
-                if (dir.ListFiles(dirFiles, ".lua") > 0) { // Only add core callbacks if any script under directory
-                    int luaFiles = 0;
-                    for (auto file : dirFiles) {
-                        if (strcmp(file.c_str() + file.size() - 4, ".lua") == 0)
-                            luaFiles++;
-                    }
-                    if (luaFiles > 0) {
-                        gmenu->Callback(PreloadScripts); // Callback that iterates over all scripts under 'PLUGIN_FOLDER/scripts'
-                    }
-                }
-            }
-        }
+        if (loadScripts)
+            PreloadScripts(); // Compiles, loads and execute the scripts under the scripts folder
 
         // Init our menu entries & folders
         InitMenu(*gmenu);
@@ -617,12 +584,12 @@ namespace CTRPluginFramework
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);
         gmenu->Run();
+
+        // Cleanup
         Core::Debug::LogMessage("Exiting LunaCore", false);
         Core::Debug::CloseLogFile();
-        if (openextData)
-            fslib::closeDevice(u"extdata");
-        if (fslibInit)
-            fslib::exit();
+        fslib::closeDevice(u"extdata");
+        fslib::exit();
 
         delete gmenu;
         lua_close(Lua_global);

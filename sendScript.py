@@ -9,13 +9,13 @@ def send_file(filename: str, host: str, port: int):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
 
-        with open(filename, "rb") as f:
+        fp = Path(filename)
+        with open(fp, "rb") as f:
             data = f.read()
 
-
-        fnameSize = len(Path(filename).name.encode("utf-8"))
+        fnameSize = len(fp.name.encode("utf-8"))
         s.sendall(struct.pack("<I", fnameSize))
-        s.sendall(Path(filename).name.encode("utf-8"))
+        s.sendall(fp.name.encode("utf-8"))
 
         size = len(data)
         s.sendall(struct.pack("<I", size))

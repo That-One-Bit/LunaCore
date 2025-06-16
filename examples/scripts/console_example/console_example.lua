@@ -1,12 +1,13 @@
-local stringUtils = require("string_utils")
+local stringUtils = require("utils.string_utils")
 local gamepad = Game.Gamepad
 local keys = gamepad.KeyCodes
 local console = {
     maxlines = 10,
     lines = {},
     env = {},
-    bg = Core.Graphics.colorRGB(255, 255, 255),
+    bg = Core.Graphics.colorRGB(0, 0, 0),
     fg = Core.Graphics.colorRGB(255, 255, 255),
+    openKey = keys.START,
     frames = 0,
     firstframe = true
 }
@@ -104,7 +105,7 @@ end
 -- The game will frezee and that allows to avoid artifacts on screen
 -- Every other events and async task will continue execution
 Game.Event.OnKeyReleased:Connect(function ()
-    if gamepad.isReleased(keys.START) and Game.World.Loaded then
+    if gamepad.isReleased(console.openKey) and Game.World.Loaded then
         if not Core.Graphics.isOpen() then
             console.firstframe = true
             Core.Graphics.open(drawGraphics)
