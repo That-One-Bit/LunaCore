@@ -10,6 +10,8 @@ namespace Core {
 
         void CloseLogFile();
 
+        void LogRaw(const std::string& msg);
+
         void LogMessage(const std::string& msg, bool showOnScreen);
 
         void LogError(const std::string& msg);

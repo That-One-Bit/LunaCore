@@ -10,6 +10,7 @@
 
 using json = nlohmann::json;
 
+#include "Core/CrashHandler.hpp"
 #include "Game/Utils/game_functions.hpp"
 #include "Core/Utils/GameState.hpp"
 #include "Core/Debug.hpp"
@@ -121,6 +122,7 @@ void CreateMenuButtons(int *ptr, std::vector<btn_ctx> &btn_ctxs) {
 }
 
 void CreateMainMenuCustomLayout(int *ptr) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     void (*MaybeRegisterData)(int*, void*) = (void(*)(int*, void*))(0x7f9788+BASE_OFF);
     btn_ctx *(*MaybeUpdateData)(btn_ctx*) = (btn_ctx*(*)(btn_ctx*))(0x7b1c18+BASE_OFF);
     u64 (*InitMenuCharacter)(GameCharacterView* chrPtr,int*,float,float,int,int,int,int) = (u64(*)(GameCharacterView*,int*,float,float,int,int,int,int))(0xec930+BASE_OFF);
@@ -164,7 +166,9 @@ void CreateMainMenuCustomLayout(int *ptr) {
     for (auto &i : btnsOrder)
         MaybeUpdateData(&btn_ctxs[i]);
     
+    Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
     GameState.MainMenuLoaded.store(true);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 
@@ -175,10 +179,13 @@ void PatchGameMenuLayoutFunction() {
 }
 
 void MainMenuLayoutLoadCallback(int *ptr) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     void (*MainMenuLoadOriginal)(int*) = (void(*)(int*))(0x16eda4+BASE_OFF);
     MainMenuLoadOriginal(ptr);
 
+    Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
     GameState.MainMenuLoaded.store(true);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 

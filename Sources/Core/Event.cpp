@@ -6,6 +6,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Core/Debug.hpp"
+#include "Core/CrashHandler.hpp"
 #include "Game/Gamepad.hpp"
 #include "Core/Utils/Utils.hpp"
 
@@ -28,6 +29,7 @@ void TimeoutEventHook(lua_State *L, lua_Debug *ar)
 void Core::EventHandlerCallback()
 {
     lua_State *L = Lua_global;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
 
     // KeyPressed Event
     u32 pressedKeys = CTRPF::Controller::GetKeysPressed();
@@ -102,9 +104,11 @@ void Core::EventHandlerCallback()
         }
         lua_pop(L, 3);
     }
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 
 void Core::Event::TriggerOnPlayerJoinWorld(lua_State *L) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
     lua_getfield(L, -1, "OnPlayerJoinWorld");
@@ -124,9 +128,11 @@ void Core::Event::TriggerOnPlayerJoinWorld(lua_State *L) {
         lua_pop(L, 1);
     }
     lua_pop(L, 3);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 
 void Core::Event::TriggerOnPlayerLeaveWorld(lua_State *L) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
     lua_getfield(L, -1, "OnPlayerLeaveWorld");
@@ -146,6 +152,7 @@ void Core::Event::TriggerOnPlayerLeaveWorld(lua_State *L) {
         lua_pop(L, 1);
     }
     lua_pop(L, 3);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 
 // ----------------------------------------------------------------------------

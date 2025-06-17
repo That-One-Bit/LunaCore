@@ -21,6 +21,7 @@
 #include "Core/Utils/Utils.hpp"
 #include "Core/Config.hpp"
 #include "Core/TCPConnection.hpp"
+#include "Core/CrashHandler.hpp"
 
 #include "Game/Hooks/GameHooks.hpp"
 #include "Core/Utils/GameState.hpp"
@@ -132,11 +133,18 @@ namespace CTRPluginFramework
             return;
         settings.UseGameHidMemory = true;
         ToggleTouchscreenForceOn();
+        System::OnAbort = Core::CrashHandler::OnAbort;
+        Process::exceptionCallback = Core::CrashHandler::ExceptionCallback;
+        Process::ThrowOldExceptionOnCallbackException = true;
+        Core::CrashHandler::ReserveMemory();
 
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE1;
         if (!Directory::IsExists(PLUGIN_FOLDER))
             Directory::Create(PLUGIN_FOLDER);
         if (!Core::Debug::OpenLogFile(LOG_FILE))
             OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
+        Core::Debug::LogMessage(Utils::Format("LunaCore version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
+        Core::Debug::LogMessage("Loading first stage", false);
         Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
         config = Core::Config::LoadConfig(CONFIG_FILE);
 
@@ -511,24 +519,24 @@ namespace CTRPluginFramework
         u64 titleID = Process::GetTitleID();
         if (!IS_TARGET_ID(titleID))
             return 0;
+        
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE2;
+        Core::Debug::LogMessage("Loading second stage", false);
 
         if (!fslib::initialize()) {
-            Core::Debug::LogMessage("Failed to initialize fslib", true);
-            Core::Debug::LogMessage(fslib::getErrorString(), false);
+            Core::Debug::LogError("Failed to initialize fslib");
+            Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
         }
 
         if (!fslib::openExtData(u"extdata", static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF))) {
-            Core::Debug::LogMessage("Failed to open extdata", true);
-            Core::Debug::LogMessage(fslib::getErrorString(), false);
+            Core::Debug::LogError("Failed to open extdata");
+            Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
         }
 
         if (!Directory::IsExists(PLUGIN_FOLDER"/layouts"))
             Directory::Create(PLUGIN_FOLDER"/layouts");
         if (!Directory::IsExists(PLUGIN_FOLDER"/scripts"))
             Directory::Create(PLUGIN_FOLDER"/scripts");
-
-        Core::Debug::LogMessage("Starting plugin", false);
-        Core::Debug::LogMessage(Utils::Format("Plugin version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
 
         bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
         bool loadScripts = Core::Config::GetBoolValue(config, "enable_scripts", true);
@@ -550,8 +558,10 @@ namespace CTRPluginFramework
         title.assign("LunaCore Plugin Menu");
 
         Core::Debug::LogMessage("Loading Lua environment", false);
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
         Lua_global = luaL_newstate();
         LoadLuaEnv(Lua_global);
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
         // Synnchronize the menu with frame event
         gmenu->SynchronizeWithFrame(true);
@@ -583,7 +593,9 @@ namespace CTRPluginFramework
 
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
         gmenu->Run();
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_EXIT;
 
         // Cleanup
         Core::Debug::LogMessage("Exiting LunaCore", false);

@@ -6,7 +6,7 @@
 
 namespace CTRPF = CTRPluginFramework;
 
-CTRPF::File logFile;
+static CTRPF::File logFile;
 
 bool Core::Debug::OpenLogFile(const std::string &filepath)
 {
@@ -24,6 +24,12 @@ void Core::Debug::CloseLogFile()
         logFile.Close();
 }
 
+void Core::Debug::LogRaw(const std::string& msg)
+{
+    logFile.Write(msg.c_str(), msg.size());
+    logFile.Flush();
+}
+
 static void DebugWriteLog(const std::string& msg)
 {
     if (logFile.IsOpen()) {
@@ -39,8 +45,7 @@ static void DebugWriteLog(const std::string& msg)
         if (timeInfo->tm_sec < 10)
             out_msg += "0";
         out_msg += std::to_string(timeInfo->tm_sec)+"] "+msg+"\n";
-        logFile.Write(out_msg.c_str(), out_msg.size());
-        logFile.Flush();
+        Core::Debug::LogRaw(out_msg);
     }
 }
 

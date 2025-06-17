@@ -3,6 +3,7 @@
 #include <CTRPluginFramework.hpp>
 
 #include "Core/Utils/GameState.hpp"
+#include "Core/CrashHandler.hpp"
 #include "lua_common.h"
 
 #include "Core/Event.hpp"
@@ -18,6 +19,7 @@ bool eventJoinTriggered = false;
 typedef int (*MBdetectStateFunc)(int *);
 
 void LoadingWorldScreenMessageCallback(int *ptr1, int *ptr2) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.MainMenuLoaded.store(false);
 
     void (*LoadingWorldScreenMessageOriginal)(int*, int*) = (void(*)(int*,int*))(0x612ef0+BASE_OFF);
@@ -26,12 +28,14 @@ void LoadingWorldScreenMessageCallback(int *ptr1, int *ptr2) {
     if (state == 0x10) {
         GameState.WorldLoaded.store(true);
         if (!eventJoinTriggered) {
+            Core::CrashHandler::game_state = Core::CrashHandler::GAME_WORLD;
             Core::Event::TriggerOnPlayerJoinWorld(Lua_global);
             eventJoinTriggered = true;
         }
     }
 
     LoadingWorldScreenMessageOriginal(ptr1, ptr2);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 
@@ -40,15 +44,18 @@ void SetLoadingWorldScreenMessageCallback() {
 }
 
 void LeaveLevelPromptCallback(int *ptr1, int param2, int param3, u32 param4) {
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     void (*LeaveLevelPromptOriginal)(int*,int,int,u32) = (void(*)(int*,int,int,u32))(0x221d78+BASE_OFF);
 
     GameState.WorldLoaded.store(false);
     if (eventJoinTriggered) {
+        Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
         Core::Event::TriggerOnPlayerLeaveWorld(Lua_global);
         eventJoinTriggered = false;
     }
 
     LeaveLevelPromptOriginal(ptr1, param2, param3, param4);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 
