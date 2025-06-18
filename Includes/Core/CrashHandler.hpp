@@ -15,6 +15,7 @@ namespace Core {
                 CORE_HOOK,
                 CORE_GAME,
                 CORE_EXIT,
+                CORE_HOOKING,
             };
             enum GameState {
                 GAME_LOADING = 0,

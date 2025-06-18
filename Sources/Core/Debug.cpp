@@ -4,9 +4,14 @@
 #include <time.h>
 #include <CTRPluginFramework.hpp>
 
+#include "Core/System.hpp"
+#include "Core/Utils/Utils.hpp"
+
 namespace CTRPF = CTRPluginFramework;
 
 static CTRPF::File logFile;
+
+const char* Core::Debug::tab = "    ";
 
 bool Core::Debug::OpenLogFile(const std::string &filepath)
 {
@@ -33,19 +38,9 @@ void Core::Debug::LogRaw(const std::string& msg)
 static void DebugWriteLog(const std::string& msg)
 {
     if (logFile.IsOpen()) {
-        time_t rawTime = time(NULL);
-        struct tm *timeInfo = localtime(&rawTime);
-        std::string out_msg("[");
-        if (timeInfo->tm_hour < 10)
-            out_msg += "0";
-        out_msg += std::to_string(timeInfo->tm_hour)+":";
-        if (timeInfo->tm_min < 10)
-            out_msg += "0";
-        out_msg += std::to_string(timeInfo->tm_min)+":";
-        if (timeInfo->tm_sec < 10)
-            out_msg += "0";
-        out_msg += std::to_string(timeInfo->tm_sec)+"] "+msg+"\n";
-        Core::Debug::LogRaw(out_msg);
+        std::string out_msg = "[";
+        out_msg += Core::Utils::formatTime(Core::System::getTime()) + "] " + msg;
+        Core::Debug::LogRaw(out_msg + "\n");
     }
 }
 
@@ -59,7 +54,7 @@ void Core::Debug::LogMessage(const std::string& msg, bool showOnScreen)
 void Core::Debug::LogError(const std::string& msg)
 {
     Core::Debug::Error(msg);
-    DebugWriteLog(std::string("[ERROR] ")+msg);
+    DebugWriteLog("[ERROR] " + msg);
 }
 
 void Core::Debug::Message(const std::string& msg)

@@ -8,6 +8,7 @@
 
 #include "lua_common.h"
 #include "Core/Debug.hpp"
+#include "Core/CrashHandler.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
@@ -23,7 +24,8 @@ extern "C" __attribute((naked)) void hookBody() {
         "str r2, [r4, #0x14]\n"
         "str r3, [r4, #0x18]\n"
         "str lr, [r4, #0x1c]\n"
-        "str sp, [r4, #0x20]\n"
+        "add r0, sp, #0x38\n"
+        "str r0, [r4, #0x20]\n"
         "ldr r6, [r4, #0x4]\n" // Load callback function address
         "mov r0, r4\n" // Copy hookCtxPtr to r0 (arg 1)
         "blx r6\n"
@@ -33,7 +35,7 @@ extern "C" __attribute((naked)) void hookBody() {
     );
 }
 
-extern "C" __attribute((naked)) void hookReturnOverwrite(CoreHookContext *ctx, void *data) {
+void hookReturnOverwrite(CoreHookContext *ctx, void *data) {
     asm volatile ( // r0 contains hookCtxPtr
         "ldr sp, [r0, #0x20]\n"
         "add sp, sp, #0x10\n"
@@ -87,15 +89,27 @@ void hookFunctionCallbackTell(CoreHookContext *ctx) {
     CTRPF::OSD::Notify(CTRPF::Utils::Format("%s", ctx->r1));
 }
 
-static const std::vector<u32> assertionFunctions = {
-    0x44474+BASE_OFF, 
-};
-
 void AssertionErrorCallback(CoreHookContext *ctx) {
+    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s. Condition is false '%s'", ctx->lr, ctx->r0, ctx->r1), true);
+    Core::CrashHandler::core_state = lastcState;
+}
+
+void DebugErrorFormatCallback(CoreHookContext *ctx) {
+    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
+    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s", ctx->lr, *(char**)(ctx->sp)), true);
+    Core::CrashHandler::core_state = lastcState;
+}
+
+void AnimFunctionCallback(CoreHookContext *ctx) {
+    hookReturnOverwrite(ctx, NULL);
 }
 
 void hookSomeFunctions() {
+    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOKING;
     //hookFunction(0x303e98+BASE_OFF, (u32)hookFunctionCallback);
     //hookFunction(0x30f7dc+BASE_OFF, (u32)hookFunctionCallback);
     //hookFunction(0x48c840+BASE_OFF, (u32)hookFunctionCallback);
@@ -104,7 +118,10 @@ void hookSomeFunctions() {
     //hookFunction(0x505820+BASE_OFF, (u32)hookFunctionCallback);
     //hookFunction(0x50ca40+BASE_OFF, (u32)hookFunctionCallback);
 
-    for (auto addr : assertionFunctions) {
-        hookFunction(addr, (u32)AssertionErrorCallback);
-    }
+    hookFunction(0x144474, (u32)AssertionErrorCallback);
+    hookFunction(0x114f50, (u32)DebugErrorFormatCallback);
+
+    hookFunction(0x4e608c, (u32)AnimFunctionCallback);
+    CTRPF::Process::Write8(0x1fecbc, 'a');
+    Core::CrashHandler::core_state = lastcState;
 }

@@ -1,6 +1,8 @@
 #include "Core/System.hpp"
 
-#include <time.h>
+time_t Core::System::getTime() {
+    return time(NULL);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -15,7 +17,7 @@
 */
 static int l_System_getTime(lua_State *L)
 {
-    lua_pushnumber(L, time(NULL));
+    lua_pushnumber(L, Core::System::getTime());
     return 1;
 }
 

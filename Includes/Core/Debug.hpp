@@ -6,6 +6,8 @@
 
 namespace Core {
     namespace Debug {
+        extern const char *tab;
+        
         bool OpenLogFile(const std::string &filepath);
 
         void CloseLogFile();

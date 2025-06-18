@@ -20,3 +20,5 @@ typedef struct alignas(4) cHkCtx_s {
 void hookFunction(u32 targetAddr, u32 callbackAddr);
 
 void hookSomeFunctions();
+
+__attribute((naked)) void hookReturnOverwrite(CoreHookContext *ctx, void *data);

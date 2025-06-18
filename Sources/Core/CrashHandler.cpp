@@ -16,7 +16,7 @@ namespace Core {
     CrashHandler::GameState CrashHandler::game_state = CrashHandler::GameState::GAME_LOADING;
 
     void CrashHandler::ReserveMemory() {
-        reservedMemory = malloc(8 * 1024);
+        reservedMemory = malloc(4 * 1024);
     }
 
     void CrashHandler::OnAbort() {
@@ -88,38 +88,38 @@ namespace Core {
                 free(reservedMemory);
                 reservedMemory = nullptr;
             }
+            bool possibleOOM = false;
+            if (Lua_global != NULL) {
+                possibleOOM = lua_gc(Lua_global, LUA_GCCOUNT, 0) >= 2000;
+                lua_close(Lua_global);
+            }
             {
                 Core::Debug::LogError("[CRITICAL] Game crashed due to an unhandled error");
                 u8 rnd = CTRPF::Utils::Random(0, (sizeof(errorMsg) / sizeof(errorMsg[0])) - 1);
-                Core::Debug::LogRaw("    "); Core::Debug::LogRaw("\""+std::string(errorMsg[rnd])+"\"\n");
-                Core::Debug::LogRaw("    "); Core::Debug::LogRaw(CTRPF::Utils::Format("Core state: %s\n", getCoreStateString(Core::CrashHandler::core_state)));
-                Core::Debug::LogRaw("    "); Core::Debug::LogRaw(CTRPF::Utils::Format("Game state: %s\n", getGameStateString(Core::CrashHandler::game_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("%s\"%s\"\n", Core::Debug::tab, errorMsg[rnd]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("%s%sCore state: %s\n", Core::Debug::tab, Core::Debug::tab, getCoreStateString(Core::CrashHandler::core_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("%s%sGame state: %s\n", Core::Debug::tab, Core::Debug::tab, getGameStateString(Core::CrashHandler::game_state)));
             }
-
-            bool possibleOOM = false;
-            if (Lua_global != NULL)
-                possibleOOM = lua_gc(Lua_global, LUA_GCCOUNT, 0) >= 1900;
+            const char* reasonMsg = "Unknown";
             if (possibleOOM) {
-                Core::Debug::LogRaw("    ");
-                Core::Debug::LogRaw(CTRPF::Utils::Format("Possible reason: Out of memory. Lua memory was %u bytes\n", lua_gc(Lua_global, LUA_GCCOUNT, 0) * 1024 + lua_gc(Lua_global, LUA_GCCOUNTB, 0)));
+                reasonMsg = "Out of memory. Lua memory was bigger than 2048000 bytes";
             }
+            Core::Debug::LogRaw(CTRPF::Utils::Format("%sPossible reason: %s\n", Core::Debug::tab, reasonMsg));
             Core::Debug::CloseLogFile();
-            if (possibleOOM)
-                return CTRPF::Process::EXCB_RETURN_HOME;
             CTRPF::Screen topScreen = CTRPF::OSD::GetTopScreen();
-            //topScreen.Fade(0.0f);
             topScreen.DrawRect(20, 20, 360, 200, CTRPF::Color::Black, true);
             const char *titleMsg = "Oops.. Game crashed!";
-            const char *tipMsg = "Press any button to exit";
+            const char *tipMsg = "Press A button to exit";
             if (abort)
                 titleMsg = "Oh no... Game abort!";
-
+            if (possibleOOM)
+                titleMsg = "Looks like we ran out of memory!";
             topScreen.DrawSysfont(titleMsg, 25, 25, CTRPF::Color::Red);
             topScreen.DrawSysfont(tipMsg, 25, 40, CTRPF::Color::White);
             CTRPF::OSD::SwapBuffers();
         }
         CTRPF::Controller::Update();
-        if (CTRPF::Controller::GetKeysDown()) return CTRPF::Process::EXCB_RETURN_HOME;
+        if (CTRPF::Controller::IsKeyDown(CTRPF::Key::A)) return CTRPF::Process::EXCB_RETURN_HOME;
         else return CTRPF::Process::EXCB_LOOP;
     }
 }

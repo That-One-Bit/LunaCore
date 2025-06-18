@@ -144,7 +144,6 @@ namespace CTRPluginFramework
         if (!Core::Debug::OpenLogFile(LOG_FILE))
             OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
         Core::Debug::LogMessage(Utils::Format("LunaCore version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
-        Core::Debug::LogMessage("Loading first stage", false);
         Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
         config = Core::Config::LoadConfig(CONFIG_FILE);
 
@@ -165,7 +164,7 @@ namespace CTRPluginFramework
                 Process::Write32(0x819530-(4*8)+BASE_OFF, 0); // Pos keycode for DPADRIGHT
                 Process::Write32(0x819530-(4*7)+BASE_OFF, 0); // Pos keycode for DPADLEFT
             }
-            //hookSomeFunctions();
+            hookSomeFunctions();
         } else {
             enabledPatching = false;
         }
@@ -521,7 +520,6 @@ namespace CTRPluginFramework
             return 0;
         
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE2;
-        Core::Debug::LogMessage("Loading second stage", false);
 
         if (!fslib::initialize()) {
             Core::Debug::LogError("Failed to initialize fslib");

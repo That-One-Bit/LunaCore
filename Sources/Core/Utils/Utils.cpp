@@ -8,6 +8,21 @@
 
 namespace CTRPF = CTRPluginFramework;
 
+std::string Core::Utils::formatTime(time_t time) {
+    struct tm *timeInfo = localtime(&time);
+    std::string outStr;
+    if (timeInfo->tm_hour < 10)
+        outStr += "0";
+    outStr += std::to_string(timeInfo->tm_hour)+":";
+    if (timeInfo->tm_min < 10)
+        outStr += "0";
+    outStr += std::to_string(timeInfo->tm_min)+":";
+    if (timeInfo->tm_sec < 10)
+        outStr += "0";
+    outStr += std::to_string(timeInfo->tm_sec);
+    return outStr;
+}
+
 std::string Core::Utils::strip(const std::string &str) {
     if (str.empty())
         return "";
