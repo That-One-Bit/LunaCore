@@ -6,15 +6,14 @@
 #include "Game/Minecraft.hpp"
 
 namespace CTRPF = CTRPluginFramework;
-using ItemClass = Game::ItemWrapper;
-using Item = ItemClass::Item;
+using Item = Game::Item;
 
 Item *Core::Items::SearchItemByName(const std::string& name) {
     short i = 1;
-    while (i <= ItemClass::MAX_ITEMS) {
-        if (ItemClass::mItems[i] != nullptr) {
-            if (name == ItemClass::mItems[i]->nameId)
-                return ItemClass::mItems[i];
+    while (i <= Item::MAX_ITEMS) {
+        if (Item::mItems[i] != nullptr) {
+            if (name == Item::mItems[i]->nameId)
+                return Item::mItems[i];
         }
         i++;
     }
@@ -22,23 +21,18 @@ Item *Core::Items::SearchItemByName(const std::string& name) {
 }
 
 Item *Core::Items::SearchItemByID(u16 id) {
-    if (id <= ItemClass::MAX_ITEMS)
-        return ItemClass::mItems[id];
+    if (id <= Item::MAX_ITEMS)
+        return Item::mItems[id];
     return nullptr;
 }
 
-u32 Core::Items::GetRenderIDByItemID(u16 id) {
-    short i = 1;
-    while (i <= ItemClass::MAX_ITEMS) {
-        if (ItemClass::mItems[i] != nullptr) {
-            if (id == ItemClass::mItems[i]->itemId) {
-                u32 renderID = Minecraft::GetRenderID((u32)&ItemClass::mItems[i]);
-                return renderID;
-            }
+void* Core::Items::GetRenderIDByItemID(u16 id) {
+    if (id <= Item::MAX_ITEMS) {
+        if (Item::renderTable[id] != nullptr) {
+            return Item::renderTable[id];
         }
-        i++;
     }
-    return 0;
+    return nullptr;
 }
 
 // ----------------------------------------------------------------------------

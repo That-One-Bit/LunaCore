@@ -7,12 +7,11 @@
 #include "Core/Game/Items.hpp"
 #include "string_hash.hpp"
 #include "Game/Minecraft.hpp"
-#include "Game/Items.hpp"
 #include "Game/Inventory.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 using InventorySlot = Game::Inventory::InventorySlot;
-using Item = Game::ItemWrapper::Item;
+using Item = Game::Item;
 
 // ----------------------------------------------------------------------------
 
@@ -162,9 +161,10 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
             u16 itemID = luaL_checknumber(L, 3);
             Item *itemData = Core::Items::SearchItemByID(itemID);
             if (itemData) {
-                u32 renderID = Core::Items::GetRenderIDByItemID(itemID);
+                void* renderID = Core::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
-                //slotData->renderID = renderID;
+                if (renderID != nullptr)
+                    slotData->renderID = renderID;
             }
             else
                 return luaL_error(L, "Unknown ID '%u'", itemID);
@@ -357,9 +357,10 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
             u16 itemID = luaL_checknumber(L, 3);
             Item *itemData = Core::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
-                u32 renderID = Core::Items::GetRenderIDByItemID(itemID);
+                void* renderID = Core::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
-                //slotData->renderID = renderID;
+                if (renderID != nullptr)
+                    slotData->renderID = renderID;
             }
             else
                 return luaL_error(L, "Unknown ID '%u'", itemID);

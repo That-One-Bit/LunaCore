@@ -5,7 +5,7 @@
 #include <string>
 
 #include "lua_common.h"
-#include "Game/Items.hpp"
+#include "Game/world/item/Item.hpp"
 
 namespace Core {
     namespace Module {
@@ -13,12 +13,12 @@ namespace Core {
     }
 
     namespace Items {
-        using Item = Game::ItemWrapper::Item;
+        using Item = Game::Item;
         
         Item *SearchItemByName(const std::string& name);
 
         Item *SearchItemByID(u16 id);
 
-        u32 GetRenderIDByItemID(u16 id);
+        void* GetRenderIDByItemID(u16 id);
     }
 }

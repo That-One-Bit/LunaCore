@@ -2,11 +2,11 @@
 
 #include "types.h"
 
-#include "Game/Items.hpp"
+#include "Game/world/item/Item.hpp"
 
 namespace Game {
     class Inventory {
-        using Item = Game::ItemWrapper::Item;
+        using Item = Game::Item;
         
         public:
         typedef struct {
@@ -16,8 +16,8 @@ namespace Game {
             bool show = true;
             u8 unk2[3] = {};
             u32 enchant = 0;
-            Item *itemData = NULL;
-            u32 renderID = 0;
+            Item *itemData = nullptr;
+            void* renderID = nullptr;
             u8 unk3[24] = {};
         } InventorySlot;
     };

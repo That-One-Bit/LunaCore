@@ -16,8 +16,8 @@ PLGVERMIN	:=	11
 PLGVERPAT	:=	0
 
 BUILD		:= 	Build
-INCLUDES	:= 	Includes
-SOURCES 	:= 	Sources Sources/Core Sources/Core/Utils Sources/Game Sources/Core/Game Sources/Game/Hooks Sources/Core/Game/Player
+INCLUDES	:= 	includes
+SOURCES 	:= 	src src/Core src/Core/Utils src/Game src/Core/Game src/Game/Hooks src/Core/Game/Player
 
 #---------------------------------------------------------------------------------
 # options for code generation

@@ -11,7 +11,7 @@
 using json = nlohmann::json;
 
 #include "Core/CrashHandler.hpp"
-#include "Game/Utils/game_functions.hpp"
+#include "Game/game_utils/game_functions.hpp"
 #include "Core/Utils/GameState.hpp"
 #include "Core/Debug.hpp"
 #include "Core/Utils/Utils.hpp"

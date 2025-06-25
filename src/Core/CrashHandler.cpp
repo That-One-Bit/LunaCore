@@ -3,7 +3,6 @@
 #include <cstdlib>
 
 #include <FsLib/fslib.hpp>
-#include "Game/Utils/game_functions.hpp"
 #include "Core/Debug.hpp"
 
 namespace CTRPF = CTRPluginFramework;

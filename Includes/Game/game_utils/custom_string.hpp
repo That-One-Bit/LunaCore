@@ -8,6 +8,10 @@ class CustomString {
     public:
     char* data;
 
+    CustomString() {
+        data = nullptr;
+    }
+
     CustomString(const std::string& str) {
         reinterpret_cast<char**(*)(char**, const char*)>(0x2ff220|1)(&data, str.c_str());
     }
