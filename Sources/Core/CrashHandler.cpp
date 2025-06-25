@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 
+#include <FsLib/fslib.hpp>
 #include "Game/Utils/game_functions.hpp"
 #include "Core/Debug.hpp"
 
@@ -12,8 +13,9 @@ static void *reservedMemory = nullptr;
 
 namespace Core {
     bool CrashHandler::abort = false;
-    CrashHandler::CoreState CrashHandler::core_state = CrashHandler::CoreState::CORE_STAGE1;
-    CrashHandler::GameState CrashHandler::game_state = CrashHandler::GameState::GAME_LOADING;
+    CrashHandler::PluginState CrashHandler::plg_state = CrashHandler::PLUGIN_PATCHPROCESS;
+    CrashHandler::CoreState CrashHandler::core_state = CrashHandler::CORE_STAGE1;
+    CrashHandler::GameState CrashHandler::game_state = CrashHandler::GAME_LOADING;
 
     void CrashHandler::ReserveMemory() {
         reservedMemory = malloc(4 * 1024);
@@ -23,6 +25,25 @@ namespace Core {
         abort = true;
         *(u32*)nullptr = 0;
         for (;;);
+    }
+
+    static const char *getPluginStateString(CrashHandler::PluginState state) {
+        const char *str = "unknown";
+        switch (state) {
+            case CrashHandler::PLUGIN_PATCHPROCESS:
+                str = "Patch process";
+                break;
+            case CrashHandler::PLUGIN_MAIN:
+                str = "Main";
+                break;
+            case CrashHandler::PLUGIN_MAINLOOP:
+                str = "Mainloop";
+                break;
+            case CrashHandler::PLUGIN_EXIT:
+                str = "Exit";
+                break;
+        }
+        return str;
     }
 
     static const char *getCoreStateString(CrashHandler::CoreState state) {
@@ -96,9 +117,13 @@ namespace Core {
             {
                 Core::Debug::LogError("[CRITICAL] Game crashed due to an unhandled error");
                 u8 rnd = CTRPF::Utils::Random(0, (sizeof(errorMsg) / sizeof(errorMsg[0])) - 1);
-                Core::Debug::LogRaw(CTRPF::Utils::Format("%s\"%s\"\n", Core::Debug::tab, errorMsg[rnd]));
-                Core::Debug::LogRaw(CTRPF::Utils::Format("%s%sCore state: %s\n", Core::Debug::tab, Core::Debug::tab, getCoreStateString(Core::CrashHandler::core_state)));
-                Core::Debug::LogRaw(CTRPF::Utils::Format("%s%sGame state: %s\n", Core::Debug::tab, Core::Debug::tab, getGameStateString(Core::CrashHandler::game_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\"%s\"\n", errorMsg[rnd]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tPlugin state: %s\n", getPluginStateString(Core::CrashHandler::plg_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tCore state: %s\n", getCoreStateString(Core::CrashHandler::core_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tGame state: %s\n", getGameStateString(Core::CrashHandler::game_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\n\tException type: %X\n", excep->type));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tReturn: %X\n", regs->lr));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tAddress: %X\n", regs->pc));
             }
             const char* reasonMsg = "Unknown";
             if (possibleOOM) {
@@ -106,10 +131,17 @@ namespace Core {
             }
             Core::Debug::LogRaw(CTRPF::Utils::Format("%sPossible reason: %s\n", Core::Debug::tab, reasonMsg));
             Core::Debug::CloseLogFile();
+            if (plg_state == PluginState::PLUGIN_PATCHPROCESS)
+                return CTRPF::Process::EXCB_REBOOT;
+            else {
+                fslib::closeDevice(u"extdata");
+                fslib::exit();
+            }
+
             CTRPF::Screen topScreen = CTRPF::OSD::GetTopScreen();
             topScreen.DrawRect(20, 20, 360, 200, CTRPF::Color::Black, true);
             const char *titleMsg = "Oops.. Game crashed!";
-            const char *tipMsg = "Press A button to exit";
+            const char *tipMsg = "Press A button to exit or B to continue";
             if (abort)
                 titleMsg = "Oh no... Game abort!";
             if (possibleOOM)
@@ -120,6 +152,7 @@ namespace Core {
         }
         CTRPF::Controller::Update();
         if (CTRPF::Controller::IsKeyDown(CTRPF::Key::A)) return CTRPF::Process::EXCB_RETURN_HOME;
+        if (CTRPF::Controller::IsKeyDown(CTRPF::Key::B)) return CTRPF::Process::EXCB_DEFAULT_HANDLER;
         else return CTRPF::Process::EXCB_LOOP;
     }
 }

@@ -7,57 +7,34 @@
 
 namespace CTRPF = CTRPluginFramework;
 
-Core::Game::ItemData *GetItemData(u32 addr) {
-    Core::Game::ItemData **itemData = (Core::Game::ItemData **)addr;
-    return *itemData;
+Core::Game::Item *Core::Game::Items::SearchItemByName(const std::string& name) {
+    short i = 1;
+    while (i <= MAX_ITEMS) {
+        if (mItems[i] != nullptr) {
+            if (name == mItems[i]->nameId)
+                return mItems[i];
+        }
+        i++;
+    }
+    return nullptr;
 }
 
-Core::Game::ItemData *Core::Game::Items::SearchItemByName(const std::string& name) {
-    u32 *startAddr = (u32 *)0xB0CEF4;
-    u32 *endAddr = (u32 *)0xB0D638;
-    u32 *actualPtr = startAddr;
-
-    while (actualPtr <= endAddr) {
-        Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
-        if (itemData != NULL) {
-            if (std::strcmp(name.c_str(), itemData->idName2) == 0)
-                return itemData;
-        }
-        actualPtr++;
-    }
-    return NULL;
-}
-
-Core::Game::ItemData *Core::Game::Items::SearchItemByID(u16 id) {
-    u32 *startAddr = (u32 *)0xB0CEF4;
-    u32 *endAddr = (u32 *)0xB0D638;
-    u32 *actualPtr = startAddr;
-
-    while (actualPtr <= endAddr) {
-        Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
-        if (itemData != NULL) {
-            if (id == itemData->itemID)
-                return itemData;
-        }
-        actualPtr++;
-    }
-    return NULL;
+Core::Game::Item *Core::Game::Items::SearchItemByID(u16 id) {
+    if (id <= MAX_ITEMS)
+        return mItems[id];
+    return nullptr;
 }
 
 u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
-    u32 *startAddr = (u32 *)0xB0CEF4;
-    u32 *endAddr = (u32 *)0xB0D638;
-    u32 *actualPtr = startAddr;
-
-    while (actualPtr <= endAddr) {
-        Core::Game::ItemData *itemData = GetItemData((u32)actualPtr);
-        if (itemData != NULL) {
-            if (id == itemData->itemID) {
-                u32 renderID = Minecraft::GetRenderID((u32)actualPtr);
+    short i = 1;
+    while (i <= MAX_ITEMS) {
+        if (mItems[i] != nullptr) {
+            if (id == mItems[i]->itemId) {
+                u32 renderID = Minecraft::GetRenderID((u32)mItems[i]);
                 return renderID;
             }
         }
-        actualPtr++;
+        i++;
     }
     return 0;
 }
@@ -76,11 +53,11 @@ u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
 */
 static int l_Items_findItemIDByName(lua_State *L) {
     const char *name = luaL_checkstring(L, 1);
-    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByName(name);
+    Core::Game::Item *itemData = Core::Game::Items::SearchItemByName(name);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushnumber(L, itemData->itemID);
+        lua_pushnumber(L, itemData->itemId);
     }
 
     return 1;
@@ -94,11 +71,11 @@ static int l_Items_findItemIDByName(lua_State *L) {
 */
 static int l_Items_findItemNameByID(lua_State *L) {
     u16 itemID = luaL_checknumber(L, 1);
-    Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
+    Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushstring(L, itemData->idName2);
+        lua_pushstring(L, itemData->nameId.c_str());
     }
 
     return 1;

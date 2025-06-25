@@ -92,14 +92,14 @@ void hookFunctionCallbackTell(CoreHookContext *ctx) {
 void AssertionErrorCallback(CoreHookContext *ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s. Condition is false '%s'", ctx->lr, ctx->r0, ctx->r1), true);
+    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s. Condition is false '%s'", ctx->lr, ctx->r0, ctx->r1), false);
     Core::CrashHandler::core_state = lastcState;
 }
 
 void DebugErrorFormatCallback(CoreHookContext *ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s", ctx->lr, *(char**)(ctx->sp)), true);
+    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s", ctx->lr, *(char**)(ctx->sp)), false);
     Core::CrashHandler::core_state = lastcState;
 }
 
@@ -118,10 +118,10 @@ void hookSomeFunctions() {
     //hookFunction(0x505820+BASE_OFF, (u32)hookFunctionCallback);
     //hookFunction(0x50ca40+BASE_OFF, (u32)hookFunctionCallback);
 
-    hookFunction(0x144474, (u32)AssertionErrorCallback);
-    hookFunction(0x114f50, (u32)DebugErrorFormatCallback);
+    //hookFunction(0x144474, (u32)AssertionErrorCallback);
+    //hookFunction(0x114f50, (u32)DebugErrorFormatCallback);
 
-    hookFunction(0x4e608c, (u32)AnimFunctionCallback);
-    CTRPF::Process::Write8(0x1fecbc, 'a');
+    //hookFunction(0x4e608c, (u32)AnimFunctionCallback);
+    //CTRPF::Process::Write8(0x1fecbc, 'a');
     Core::CrashHandler::core_state = lastcState;
 }

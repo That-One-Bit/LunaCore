@@ -7,6 +7,12 @@ namespace Core {
         public:
             static bool abort;
 
+            enum PluginState {
+                PLUGIN_PATCHPROCESS = 0,
+                PLUGIN_MAIN,
+                PLUGIN_MAINLOOP,
+                PLUGIN_EXIT
+            };
             enum CoreState {
                 CORE_STAGE1 = 0,
                 CORE_STAGE2,
@@ -23,6 +29,7 @@ namespace Core {
                 GAME_WORLD,
             };
 
+            static PluginState plg_state;
             static CoreState core_state;
             static GameState game_state;
 

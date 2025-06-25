@@ -31,7 +31,9 @@ void Core::Debug::CloseLogFile()
 
 void Core::Debug::LogRaw(const std::string& msg)
 {
-    logFile.Write(msg.c_str(), msg.size());
+    std::string newMsg(msg);
+    Core::Utils::Replace(newMsg, "\t", "    ");
+    logFile.Write(newMsg.c_str(), newMsg.size());
     logFile.Flush();
 }
 

@@ -128,6 +128,7 @@ namespace CTRPluginFramework
     // Useful to do code edits safely
     void    PatchProcess(FwkSettings &settings)
     {
+        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_PATCHPROCESS;
         u64 titleID = Process::GetTitleID();
         if (!IS_TARGET_ID(titleID))
             return;
@@ -164,7 +165,7 @@ namespace CTRPluginFramework
                 Process::Write32(0x819530-(4*8)+BASE_OFF, 0); // Pos keycode for DPADRIGHT
                 Process::Write32(0x819530-(4*7)+BASE_OFF, 0); // Pos keycode for DPADLEFT
             }
-            hookSomeFunctions();
+            //hookSomeFunctions();
         } else {
             enabledPatching = false;
         }
@@ -515,6 +516,7 @@ namespace CTRPluginFramework
 
     int main()
     {
+        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAIN;
         u64 titleID = Process::GetTitleID();
         if (!IS_TARGET_ID(titleID))
             return 0;
@@ -592,7 +594,9 @@ namespace CTRPluginFramework
         // Launch menu and mainloop
         Core::Debug::LogMessage("Starting plugin mainloop", false);
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
+        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAINLOOP;
         gmenu->Run();
+        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_EXIT;
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_EXIT;
 
         // Cleanup

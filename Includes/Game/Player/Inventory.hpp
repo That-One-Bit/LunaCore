@@ -13,7 +13,7 @@ namespace Core {
             bool show = true;
             u8 unk2[3] = {};
             u32 enchant = 0;
-            Core::Game::ItemData *itemData = NULL;
+            Core::Game::Item *itemData = NULL;
             u32 renderID = 0;
             u8 unk3[24] = {};
         } InventorySlot;

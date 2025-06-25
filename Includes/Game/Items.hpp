@@ -5,29 +5,34 @@
 #include <string>
 
 #include "lua_common.h"
+#include "Game/Utils/custom_string.hpp"
 
 namespace Core {
     namespace Game {
         typedef struct {
-            void *unknown1;
+            void *vtable;
             u8 maxStackSize;
             u8 unknown2[3];
-            char *atlasName;
+            CustomString atlasName;
             int unknown4;
-            u8 unknown5[2];
-            u16 itemID;
-            char *idName1;
-            char *idName2;
-            u8 unknown6[16];
+            u16 unknown5;
+            u16 itemId;
+            CustomString descriptionId;
+            CustomString nameId;
+            u8 unknown6[6];
             u16 blockID;
-        } ItemData;
+            u8 padding[0xac - 0x24];
+        } Item;
 
         bool RegisterItemsModule(lua_State *L);
 
         namespace Items {
-            Core::Game::ItemData *SearchItemByName(const std::string& name);
+            static Item** mItems = reinterpret_cast<Item**>(0x00b0cef0);
+            constexpr static short MAX_ITEMS = 512;
 
-            Core::Game::ItemData *SearchItemByID(u16 id);
+            Item *SearchItemByName(const std::string& name);
+
+            Item *SearchItemByID(u16 id);
 
             u32 GetRenderIDByItemID(u16 id);
         }

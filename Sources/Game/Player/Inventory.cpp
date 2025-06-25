@@ -98,9 +98,9 @@ static int l_Inventory_Slot_class_index(lua_State *L)
 
     switch (key) {
         case hash("ItemID"): {
-            Core::Game::ItemData *itemData = slotData->itemData;
+            Core::Game::Item *itemData = slotData->itemData;
             if (itemData)
-                lua_pushnumber(L, itemData->itemID);
+                lua_pushnumber(L, itemData->itemId);
             else
                 lua_pushnumber(L, 0);
             break;
@@ -112,9 +112,9 @@ static int l_Inventory_Slot_class_index(lua_State *L)
             lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
-            Core::Game::ItemData *itemData = slotData->itemData;
+            Core::Game::Item *itemData = slotData->itemData;
             if (itemData)
-                lua_pushstring(L, itemData->idName2);
+                lua_pushstring(L, itemData->nameId.c_str());
             else
                 lua_pushstring(L, "empty_slot");
             break;
@@ -157,8 +157,8 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
-            if (itemData != NULL) {
+            Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+            if (itemData) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
                 //slotData->renderID = renderID;
@@ -296,9 +296,9 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
 
     switch (key) {
         case hash("ItemID"): {
-            Core::Game::ItemData *itemData = slotData->itemData;
+            Core::Game::Item *itemData = slotData->itemData;
             if (itemData)
-                lua_pushnumber(L, itemData->itemID);
+                lua_pushnumber(L, itemData->itemId);
             else
                 lua_pushnumber(L, 0);
             break;
@@ -307,9 +307,9 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
             lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
-            Core::Game::ItemData *itemData = slotData->itemData;
+            Core::Game::Item *itemData = slotData->itemData;
             if (itemData)
-                lua_pushstring(L, itemData->idName2);
+                lua_pushstring(L, itemData->nameId.c_str());
             else
                 lua_pushstring(L, "empty_slot");
             break;
@@ -352,7 +352,7 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Core::Game::ItemData *itemData = Core::Game::Items::SearchItemByID(itemID);
+            Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
