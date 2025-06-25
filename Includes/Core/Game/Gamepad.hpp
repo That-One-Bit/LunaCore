@@ -5,7 +5,7 @@
 typedef uint32_t u32;
 
 namespace Core {
-    namespace Game {
+    namespace Module {
         bool RegisterGamepadModule(lua_State *L);
     }
 

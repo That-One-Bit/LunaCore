@@ -7,8 +7,9 @@
 
 namespace CTRPF = CTRPluginFramework;
 using ItemClass = Game::ItemWrapper;
+using Item = ItemClass::Item;
 
-Item *Core::Game::Items::SearchItemByName(const std::string& name) {
+Item *Core::Items::SearchItemByName(const std::string& name) {
     short i = 1;
     while (i <= ItemClass::MAX_ITEMS) {
         if (ItemClass::mItems[i] != nullptr) {
@@ -20,13 +21,13 @@ Item *Core::Game::Items::SearchItemByName(const std::string& name) {
     return nullptr;
 }
 
-Item *Core::Game::Items::SearchItemByID(u16 id) {
+Item *Core::Items::SearchItemByID(u16 id) {
     if (id <= ItemClass::MAX_ITEMS)
         return ItemClass::mItems[id];
     return nullptr;
 }
 
-u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
+u32 Core::Items::GetRenderIDByItemID(u16 id) {
     short i = 1;
     while (i <= ItemClass::MAX_ITEMS) {
         if (ItemClass::mItems[i] != nullptr) {
@@ -54,7 +55,7 @@ u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
 */
 static int l_Items_findItemIDByName(lua_State *L) {
     const char *name = luaL_checkstring(L, 1);
-    Item *itemData = Core::Game::Items::SearchItemByName(name);
+    Item *itemData = Core::Items::SearchItemByName(name);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
@@ -72,7 +73,7 @@ static int l_Items_findItemIDByName(lua_State *L) {
 */
 static int l_Items_findItemNameByID(lua_State *L) {
     u16 itemID = luaL_checknumber(L, 1);
-    Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+    Item *itemData = Core::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
@@ -90,7 +91,7 @@ static const luaL_Reg items_functions[] = {
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterItemsModule(lua_State *L)
+bool Core::Module::RegisterItemsModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     luaC_register_field(L, items_functions, "Items");

@@ -336,7 +336,7 @@ static inline void RegisterLocalPlayerMetatables(lua_State *L)
     lua_pop(L, 1);
 }
 
-bool Core::Game::RegisterLocalPlayerModule(lua_State *L)
+bool Core::Module::RegisterLocalPlayerModule(lua_State *L)
 {
     RegisterLocalPlayerMetatables(L);
 
@@ -345,8 +345,8 @@ bool Core::Game::RegisterLocalPlayerModule(lua_State *L)
 
     luaC_register_field(L, player_position_methods, "Position");
     luaC_register_field(L, player_velocity_methods, "Velocity");
-    Core::Game::LocalPlayer::RegisterCameraModule(L);
-    Core::Game::LocalPlayer::RegisterInventoryModule(L);
+    Core::Module::LocalPlayer::RegisterCameraModule(L);
+    Core::Module::LocalPlayer::RegisterInventoryModule(L);
     
     luaC_setmetatable(L, "LocalPlayerMetatable"); // Set metatable at the end otherwise setfield doesn't work
     lua_setfield(L, -2, "LocalPlayer");

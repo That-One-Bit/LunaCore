@@ -12,6 +12,7 @@
 
 namespace CTRPF = CTRPluginFramework;
 using InventorySlot = Game::Inventory::InventorySlot;
+using Item = Game::ItemWrapper::Item;
 
 // ----------------------------------------------------------------------------
 
@@ -159,9 +160,9 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+            Item *itemData = Core::Items::SearchItemByID(itemID);
             if (itemData) {
-                u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
+                u32 renderID = Core::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
                 //slotData->renderID = renderID;
             }
@@ -354,9 +355,9 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+            Item *itemData = Core::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
-                u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
+                u32 renderID = Core::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
                 //slotData->renderID = renderID;
             }
@@ -412,7 +413,7 @@ static inline void RegisterInventoryMetatables(lua_State *L)
 }
 
 // Required to be called inside LocalPlayer definition
-bool Core::Game::LocalPlayer::RegisterInventoryModule(lua_State *L)
+bool Core::Module::LocalPlayer::RegisterInventoryModule(lua_State *L)
 {
     RegisterInventoryMetatables(L);
 

@@ -99,7 +99,7 @@ static const luaL_Reg gamepad_functions[] =
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterGamepadModule(lua_State *L)
+bool Core::Module::RegisterGamepadModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     lua_newtable(L); // Gamepad

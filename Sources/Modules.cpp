@@ -30,11 +30,11 @@ namespace Core {
         //$Game
         lua_newtable(L);
         lua_setglobal(L, "Game");
-        Core::Game::RegisterGamepadModule(L);
-        Core::Game::RegisterWorldModule(L);
-        Core::Game::RegisterLocalPlayerModule(L);
-        Core::Game::RegisterItemsModule(L);
-        Core::Game::RegisterEventModule(L);
+        Core::Module::RegisterGamepadModule(L);
+        Core::Module::RegisterWorldModule(L);
+        Core::Module::RegisterLocalPlayerModule(L);
+        Core::Module::RegisterItemsModule(L);
+        Core::Module::RegisterEventModule(L);
 
         const char *lua_Code = R"(
             local realGame = readOnlyTable(Game, "Game")

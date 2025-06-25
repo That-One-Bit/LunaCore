@@ -6,6 +6,8 @@
 
 namespace Game {
     class Inventory {
+        using Item = Game::ItemWrapper::Item;
+        
         public:
         typedef struct {
             u8 itemCount;

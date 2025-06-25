@@ -1,7 +1,7 @@
 #pragma once
 
 namespace Core {
-    namespace Game {
+    namespace Module {
         class Blocks {
             static void** BlockModels;
         };

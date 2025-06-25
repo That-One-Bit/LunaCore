@@ -3,7 +3,7 @@
 #include "lua_common.h"
 
 namespace Core {
-    namespace Game {
+    namespace Module {
         bool RegisterLocalPlayerModule(lua_State *L);
     }
 }

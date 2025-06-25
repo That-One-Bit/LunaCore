@@ -256,7 +256,7 @@ static int l_Event_BaseEvent_Trigger(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterEventModule(lua_State *L)
+bool Core::Module::RegisterEventModule(lua_State *L)
 {
     lua_getglobal(L, "Game");
     lua_newtable(L); // Game.Event

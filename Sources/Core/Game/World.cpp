@@ -95,7 +95,7 @@ static int l_World_newindex(lua_State *L)
 
 // ----------------------------------------------------------------------------
 
-bool Core::Game::RegisterWorldModule(lua_State *L)
+bool Core::Module::RegisterWorldModule(lua_State *L)
 {
     luaL_newmetatable(L, "WorldMetatable");
     lua_pushcfunction(L, l_World_index);

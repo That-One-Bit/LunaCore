@@ -101,7 +101,7 @@ static inline void RegisterCameraMetatables(lua_State *L)
 }
 
 // Required to be called inside LocalPlayer definition
-bool Core::Game::LocalPlayer::RegisterCameraModule(lua_State *L)
+bool Core::Module::LocalPlayer::RegisterCameraModule(lua_State *L)
 {
     RegisterCameraMetatables(L);
 

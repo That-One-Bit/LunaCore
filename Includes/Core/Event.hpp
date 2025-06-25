@@ -13,7 +13,7 @@ namespace Core {
         void TriggerOnPlayerLeaveWorld(lua_State *L);
     }
 
-    namespace Game {
+    namespace Module {
         bool RegisterEventModule(lua_State *L);
     }
 }
