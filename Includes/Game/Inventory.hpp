@@ -1,11 +1,12 @@
 #pragma once
 
-#include "lua_common.h"
+#include "types.h"
 
 #include "Game/Items.hpp"
 
-namespace Core {
-    namespace Game {
+namespace Game {
+    class Inventory {
+        public:
         typedef struct {
             u8 itemCount;
             u8 unk1 = 0;
@@ -13,13 +14,9 @@ namespace Core {
             bool show = true;
             u8 unk2[3] = {};
             u32 enchant = 0;
-            Core::Game::Item *itemData = NULL;
+            Item *itemData = NULL;
             u32 renderID = 0;
             u8 unk3[24] = {};
         } InventorySlot;
-
-        namespace LocalPlayer {
-            bool RegisterInventoryModule(lua_State *L);
-        }
-    }
+    };
 }

@@ -1,4 +1,4 @@
-#include "Game/World.hpp"
+#include "Core/Game/World.hpp"
 
 #include <CTRPluginFramework.hpp>
 

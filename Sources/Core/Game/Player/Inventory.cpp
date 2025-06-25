@@ -1,15 +1,17 @@
-#include "Game/Player/Inventory.hpp"
+#include "Core/Game/Player/Inventory.hpp"
 
 #include <vector>
 
 #include <CTRPluginFramework.hpp>
 
+#include "Core/Game/Items.hpp"
 #include "string_hash.hpp"
 #include "Game/Minecraft.hpp"
-
 #include "Game/Items.hpp"
+#include "Game/Inventory.hpp"
 
 namespace CTRPF = CTRPluginFramework;
+using InventorySlot = Game::Inventory::InventorySlot;
 
 // ----------------------------------------------------------------------------
 
@@ -92,13 +94,13 @@ static int l_Inventory_Slot_class_index(lua_State *L)
     if (slotIndex < 1 || slotIndex > 36)
         return luaL_error(L, "Slot index out of range");
     
-    Core::Game::InventorySlot *slotData = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+    InventorySlot *slotData = (InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
     if (slotData == NULL)
         return 0;
 
     switch (key) {
         case hash("ItemID"): {
-            Core::Game::Item *itemData = slotData->itemData;
+            Item *itemData = slotData->itemData;
             if (itemData)
                 lua_pushnumber(L, itemData->itemId);
             else
@@ -112,7 +114,7 @@ static int l_Inventory_Slot_class_index(lua_State *L)
             lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
-            Core::Game::Item *itemData = slotData->itemData;
+            Item *itemData = slotData->itemData;
             if (itemData)
                 lua_pushstring(L, itemData->nameId.c_str());
             else
@@ -150,14 +152,14 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
     if (slotIndex < 1 || slotIndex > 36)
         return luaL_error(L, "Slot index out of range");
 
-    Core::Game::InventorySlot* slotData = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+    InventorySlot* slotData = (InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
     if (slotData == NULL)
         return 0;
 
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+            Item *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;
@@ -290,13 +292,13 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
     if (slotIndex < 1 || slotIndex > 4)
         return luaL_error(L, "Slot index out of range");
     
-    Core::Game::InventorySlot *slotData = (Core::Game::InventorySlot*)Minecraft::GetArmorSlotAddress(slotIndex);
+    InventorySlot *slotData = (InventorySlot*)Minecraft::GetArmorSlotAddress(slotIndex);
     if (slotData == NULL)
         return 0;
 
     switch (key) {
         case hash("ItemID"): {
-            Core::Game::Item *itemData = slotData->itemData;
+            Item *itemData = slotData->itemData;
             if (itemData)
                 lua_pushnumber(L, itemData->itemId);
             else
@@ -307,7 +309,7 @@ static int l_Inventory_ArmorSlot_class_index(lua_State *L)
             lua_pushnumber(L, slotData->dataValue);
             break;
         case hash("ItemName"): {
-            Core::Game::Item *itemData = slotData->itemData;
+            Item *itemData = slotData->itemData;
             if (itemData)
                 lua_pushstring(L, itemData->nameId.c_str());
             else
@@ -345,14 +347,14 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
     if (slotIndex < 1 || slotIndex > 36)
         return luaL_error(L, "Slot index out of range");
 
-    Core::Game::InventorySlot* slotData = (Core::Game::InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
+    InventorySlot* slotData = (InventorySlot*)Minecraft::GetSlotAddress(slotIndex);
     if (slotData == NULL)
         return 0;
 
     switch (key) {
         case hash("ItemID"): {
             u16 itemID = luaL_checknumber(L, 3);
-            Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+            Item *itemData = Core::Game::Items::SearchItemByID(itemID);
             if (itemData != NULL) {
                 u32 renderID = Core::Game::Items::GetRenderIDByItemID(itemID);
                 slotData->itemData = itemData;

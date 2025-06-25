@@ -1,4 +1,4 @@
-#include "Game/Items.hpp"
+#include "Core/Game/Items.hpp"
 
 #include <cstring>
 #include "string_hash.hpp"
@@ -6,31 +6,32 @@
 #include "Game/Minecraft.hpp"
 
 namespace CTRPF = CTRPluginFramework;
+using ItemClass = Game::ItemWrapper;
 
-Core::Game::Item *Core::Game::Items::SearchItemByName(const std::string& name) {
+Item *Core::Game::Items::SearchItemByName(const std::string& name) {
     short i = 1;
-    while (i <= MAX_ITEMS) {
-        if (mItems[i] != nullptr) {
-            if (name == mItems[i]->nameId)
-                return mItems[i];
+    while (i <= ItemClass::MAX_ITEMS) {
+        if (ItemClass::mItems[i] != nullptr) {
+            if (name == ItemClass::mItems[i]->nameId)
+                return ItemClass::mItems[i];
         }
         i++;
     }
     return nullptr;
 }
 
-Core::Game::Item *Core::Game::Items::SearchItemByID(u16 id) {
-    if (id <= MAX_ITEMS)
-        return mItems[id];
+Item *Core::Game::Items::SearchItemByID(u16 id) {
+    if (id <= ItemClass::MAX_ITEMS)
+        return ItemClass::mItems[id];
     return nullptr;
 }
 
 u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
     short i = 1;
-    while (i <= MAX_ITEMS) {
-        if (mItems[i] != nullptr) {
-            if (id == mItems[i]->itemId) {
-                u32 renderID = Minecraft::GetRenderID((u32)mItems[i]);
+    while (i <= ItemClass::MAX_ITEMS) {
+        if (ItemClass::mItems[i] != nullptr) {
+            if (id == ItemClass::mItems[i]->itemId) {
+                u32 renderID = Minecraft::GetRenderID((u32)&ItemClass::mItems[i]);
                 return renderID;
             }
         }
@@ -53,7 +54,7 @@ u32 Core::Game::Items::GetRenderIDByItemID(u16 id) {
 */
 static int l_Items_findItemIDByName(lua_State *L) {
     const char *name = luaL_checkstring(L, 1);
-    Core::Game::Item *itemData = Core::Game::Items::SearchItemByName(name);
+    Item *itemData = Core::Game::Items::SearchItemByName(name);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
@@ -71,7 +72,7 @@ static int l_Items_findItemIDByName(lua_State *L) {
 */
 static int l_Items_findItemNameByID(lua_State *L) {
     u16 itemID = luaL_checknumber(L, 1);
-    Core::Game::Item *itemData = Core::Game::Items::SearchItemByID(itemID);
+    Item *itemData = Core::Game::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {

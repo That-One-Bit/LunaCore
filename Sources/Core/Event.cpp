@@ -7,7 +7,7 @@
 
 #include "Core/Debug.hpp"
 #include "Core/CrashHandler.hpp"
-#include "Game/Gamepad.hpp"
+#include "Core/Game/Gamepad.hpp"
 #include "Core/Utils/Utils.hpp"
 
 namespace CTRPF = CTRPluginFramework;

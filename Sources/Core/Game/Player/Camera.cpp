@@ -1,4 +1,4 @@
-#include "Game/Player/Camera.hpp"
+#include "Core/Game/Player/Camera.hpp"
 
 #include <CTRPluginFramework.hpp>
 

@@ -17,7 +17,7 @@ PLGVERPAT	:=	0
 
 BUILD		:= 	Build
 INCLUDES	:= 	Includes
-SOURCES 	:= 	Sources Sources/Core Sources/Core/Utils Sources/Game Sources/Game/Hooks Sources/Game/Player
+SOURCES 	:= 	Sources Sources/Core Sources/Core/Utils Sources/Game Sources/Core/Game Sources/Game/Hooks Sources/Core/Game/Player
 
 #---------------------------------------------------------------------------------
 # options for code generation
