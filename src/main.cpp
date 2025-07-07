@@ -165,7 +165,7 @@ namespace CTRPluginFramework
                 Process::Write32(0x819530-(4*8)+BASE_OFF, 0); // Pos keycode for DPADRIGHT
                 Process::Write32(0x819530-(4*7)+BASE_OFF, 0); // Pos keycode for DPADLEFT
             }
-            //hookSomeFunctions();
+            hookSomeFunctions();
         } else {
             enabledPatching = false;
         }

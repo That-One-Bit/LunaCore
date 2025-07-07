@@ -12,7 +12,7 @@ Item *Core::Items::SearchItemByName(const std::string& name) {
     short i = 1;
     while (i <= Item::MAX_ITEMS) {
         if (Item::mItems[i] != nullptr) {
-            if (name == Item::mItems[i]->nameId)
+            if (Item::mItems[i]->nameId == name)
                 return Item::mItems[i];
         }
         i++;

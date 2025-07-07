@@ -17,7 +17,7 @@ class CustomString {
     }
 
     ~CustomString() {
-        reinterpret_cast<void(*)(char*)>(0x2febbc|1)(data);
+        reinterpret_cast<void(*)(char**)>(0x2febbc|1)(&data);
     }
 
     uint32_t length() const {

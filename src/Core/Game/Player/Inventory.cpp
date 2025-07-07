@@ -167,7 +167,7 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
                     slotData->renderID = renderID;
             }
             else
-                return luaL_error(L, "Unknown ID '%u'", itemID);
+                return luaL_error(L, "Unknown ID '%d'", itemID);
             break;
         }
         case hash("ItemCount"):
@@ -363,7 +363,7 @@ static int l_Inventory_ArmorSlot_class_newindex(lua_State *L)
                     slotData->renderID = renderID;
             }
             else
-                return luaL_error(L, "Unknown ID '%u'", itemID);
+                return luaL_error(L, "Unknown ID '%d", itemID);
             break;
         }
         case hash("ItemData"):

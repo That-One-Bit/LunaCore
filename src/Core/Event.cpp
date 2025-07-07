@@ -104,6 +104,13 @@ void Core::EventHandlerCallback()
         }
         lua_pop(L, 3);
     }
+
+    static float lastSlider = 0;
+    float slider = osGet3DSliderState();
+    if (lastSlider != slider) {
+        CTRPF::OSD::Notify(CTRPF::Utils::Format("%f", slider));
+        lastSlider = slider;
+    }
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 

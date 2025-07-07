@@ -93,11 +93,19 @@ namespace Core {
         "The game had no desire",
         "It was inevitable",
         "Got distracted for a second and...",
-        "The bug became a plague!",
         "Stay calm and call a trusted adult",
         "Don't panic!",
         "Always expect the unexpected",
-        "Who tried sqrt(-1)?"
+        "Who tried sqrt(-1)?",
+        "I guess you are not happy :(",
+        "Well... that wasn't planned",
+        "[Insert silly comment]",
+        "Weird, it works for me",
+        "Someone should fix this",
+        "Two guys are walking, and the game falls",
+        "(O_O\")",
+        "I'm sorry :(",
+        "We learn from our mistakes"
     };
 
     CTRPF::Process::ExceptionCallbackState CrashHandler::ExceptionCallback(ERRF_ExceptionInfo *excep, CpuRegisters *regs) {
@@ -121,8 +129,12 @@ namespace Core {
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tCore state: %s\n", getCoreStateString(Core::CrashHandler::core_state)));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tGame state: %s\n", getGameStateString(Core::CrashHandler::game_state)));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\n\tException type: %X\n", excep->type));
-                Core::Debug::LogRaw(CTRPF::Utils::Format("\tReturn: %X\n", regs->lr));
-                Core::Debug::LogRaw(CTRPF::Utils::Format("\tAddress: %X\n", regs->pc));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tException at address: %08X\n", regs->pc));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tR0: %08X\tR1: %08X\n", regs->r[0], regs->r[1]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tR2: %08X\tR3: %08X\n", regs->r[2], regs->r[3]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tR4: %08X\tR5: %08X\n", regs->r[4], regs->r[5]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tR6: %08X\tR7: %08X\n", regs->r[6], regs->r[7]));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\tR8: %08X\tR9: %08X\n", regs->r[8], regs->r[9]));
             }
             const char* reasonMsg = "Unknown";
             if (possibleOOM) {

@@ -172,8 +172,8 @@ bool Core::RegisterAsyncModule(lua_State *L)
                 coroutine.yield()
                 return true
             end
-            local start = System.getTime()
-            while System.getTime() - start < seconds do
+            local start = Core.System.getTime()
+            while Core.System.getTime() - start < seconds do
                 coroutine.yield()
             end
             return true

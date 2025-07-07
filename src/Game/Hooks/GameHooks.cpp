@@ -6,17 +6,20 @@
 
 #include <CTRPluginFramework.hpp>
 
+#include "string_hash.hpp"
 #include "lua_common.h"
 #include "Core/Debug.hpp"
 #include "Core/CrashHandler.hpp"
+#include "Game/world/item/Item.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
 #define BASE_OFF 0x100000
 
 static std::vector<std::unique_ptr<CoreHookContext>> hooks;
+Game::Item* mCopper_ingot = nullptr;
 
-extern "C" __attribute((naked)) void hookBody() {
+static __attribute((naked)) void hookBody() {
     asm volatile ( // r4 contains hookCtxPtr
         "mov r5, sp\n" // Save stack pointer
         "str r0, [r4, #0x0c]\n" // Store r0-r3 in hookCtxPtr->r0-r3
@@ -24,8 +27,7 @@ extern "C" __attribute((naked)) void hookBody() {
         "str r2, [r4, #0x14]\n"
         "str r3, [r4, #0x18]\n"
         "str lr, [r4, #0x1c]\n"
-        "add r0, sp, #0x38\n"
-        "str r0, [r4, #0x20]\n"
+        "str r5, [r4, #0x20]\n" // Store current sp
         "ldr r6, [r4, #0x4]\n" // Load callback function address
         "mov r0, r4\n" // Copy hookCtxPtr to r0 (arg 1)
         "blx r6\n"
@@ -35,14 +37,15 @@ extern "C" __attribute((naked)) void hookBody() {
     );
 }
 
-void hookReturnOverwrite(CoreHookContext *ctx, void *data) {
+void hookReturnOverwrite(CoreHookContext *ctx, u32 returnCallback) {
     asm volatile ( // r0 contains hookCtxPtr
         "ldr sp, [r0, #0x20]\n"
         "add sp, sp, #0x10\n"
         "ldmia sp!, {r4-r12, lr}\n"
-        "mov r3, r0\n"
-        "mov r0, r1\n"
-        "ldr pc, [r3, #0x1c]"
+        "mov r2, r1\n"
+        "ldr r1, [r0, #0x10]\n"
+        "ldr r0, [r0, #0x0c]\n"
+        "bx r2\n"
     );
 }
 
@@ -51,7 +54,7 @@ void hookReturnOverwrite(CoreHookContext *ctx, void *data) {
 void hookFunction(u32 targetAddr, u32 callbackAddr) {
     const u32 asmData[] = {
         0xE92D5FFF, // stmdb sp!, {r0-r12, lr}
-        0xE59F4004, // ldr r4, [pc, #0x4] pc is already 2 bytes ahead
+        0xE59F4004, // ldr r4, [pc, #0x4] pc is already 2 ins ahead
         0xE5945000, // ldr r5, [r4, #0x0]
         0xE12FFF15, // bx r5
         // hookCtxPtr
@@ -62,7 +65,7 @@ void hookFunction(u32 targetAddr, u32 callbackAddr) {
     hookCtx->callbackAddress = callbackAddr;
 
     hookCtx->restoreIns = 0xE8BD5FFF; // ldmia sp!, {r0-r12, lr}
-    hookCtx->jmpIns = 0xE51FF004; // ldr pc, [pc, #-0x4] pc is already 2 bytes ahead
+    hookCtx->jmpIns = 0xE51FF004; // ldr pc, [pc, #-0x4] pc is already 2 ins ahead
     hookCtx->returnAddress = targetAddr + 4 * 5;
 
     hookCtx->overwrittenIns[0] = *(u32*)targetAddr;
@@ -81,47 +84,70 @@ void hookFunction(u32 targetAddr, u32 callbackAddr) {
     *((u32*)targetAddr + 4) = (u32)hookCtxPtr;
 }
 
-void hookFunctionCallback(CoreHookContext *ctx) {
-    CTRPF::OSD::Notify(CTRPF::Utils::Format("Called %X from %X", ctx->targetAddress, ctx->lr));
+static __attribute((naked)) void RegisterItemOverwriteReturn() {
+    asm volatile (
+        "add sp, sp, #0x3c\n"
+        "ldmia sp!, {r4-r11, pc}"
+    );
 }
 
-void hookFunctionCallbackTell(CoreHookContext *ctx) {
-    CTRPF::OSD::Notify(CTRPF::Utils::Format("%s", ctx->r1));
-}
-
-void AssertionErrorCallback(CoreHookContext *ctx) {
+static void RegisterItemsHook(CoreHookContext* ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s. Condition is false '%s'", ctx->lr, ctx->r0, ctx->r1), false);
+    Game::Item* totemItem = reinterpret_cast<Game::Item*>(ctx->r0);
+    totemItem->padding[6] = 1;
+    Game::Item::mTotem = totemItem;
+
+    mCopper_ingot = Game::registerItem("copper", 255);
+    if (mCopper_ingot == nullptr)
+        Core::Debug::LogMessage("Cannot register 'copper' item", true);
+
+    reinterpret_cast<void(*)()>(0x0056e450)();
     Core::CrashHandler::core_state = lastcState;
+    hookReturnOverwrite(ctx, (u32)RegisterItemOverwriteReturn);
 }
 
-void DebugErrorFormatCallback(CoreHookContext *ctx) {
+static __attribute((naked)) void RegisterItemsTexturesOverwriteReturn() {
+    asm volatile (
+        "add r0, sp, #0xa0\n"
+        "ldr r4, =0x57c5a0\n"
+        "blx r4\n"
+        "add sp, sp, #0x124\n"
+        "ldmia sp!, {r4-r11, pc}"
+    );
+}
+
+static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-    Core::Debug::LogMessage(CTRPF::Utils::Format("[Game] Warning: at %X. %s", ctx->lr, *(char**)(ctx->sp)), false);
+
+    mCopper_ingot->setTexture(hash("copper"), 0);
+
     Core::CrashHandler::core_state = lastcState;
+    hookReturnOverwrite(ctx, (u32)RegisterItemsTexturesOverwriteReturn);
 }
 
-void AnimFunctionCallback(CoreHookContext *ctx) {
-    hookReturnOverwrite(ctx, NULL);
+static __attribute((naked)) void RegisterCreativeItemsOverwriteReturn() {
+    asm volatile (
+        "ldr r2, =0x56e108\n"
+        "blx r2\n"
+        "add r0, sp, #0x8\n"
+        "ldr r2, =0x57836c\n"
+        "bx r2"
+    );
+}
+
+static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
+    Game::Item::addCreativeItem(mCopper_ingot, 4, 49);
+    hookReturnOverwrite(ctx, (u32)RegisterCreativeItemsOverwriteReturn);
 }
 
 void hookSomeFunctions() {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOKING;
-    //hookFunction(0x303e98+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x30f7dc+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x48c840+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x4FA688+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x503754+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x505820+BASE_OFF, (u32)hookFunctionCallback);
-    //hookFunction(0x50ca40+BASE_OFF, (u32)hookFunctionCallback);
-
-    //hookFunction(0x144474, (u32)AssertionErrorCallback);
-    //hookFunction(0x114f50, (u32)DebugErrorFormatCallback);
-
-    //hookFunction(0x4e608c, (u32)AnimFunctionCallback);
-    //CTRPF::Process::Write8(0x1fecbc, 'a');
+    hookFunction(0x0056c2a0, (u32)RegisterItemsHook);
+    hookFunction(0x0056de70, (u32)RegisterItemsTexturesHook);
+    hookFunction(0x00578358, (u32)RegisterCreativeItemsHook);
+    CTRPF::Process::Write32(0x00573e88, 0xe3a01014);
     Core::CrashHandler::core_state = lastcState;
 }
