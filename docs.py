@@ -264,7 +264,7 @@ def process_lines(path: str, lines: list, segpos: int):
             DOCS_FILE.write(f"\n{globalName} = {globalDefValue}\n")
 
 DOCS_FILE.write("---@diagnostic disable: missing-return, duplicate-set-field\n")
-for file in iglob("./Sources/**", recursive=True):
+for file in iglob("./LunaCoreRuntime/Sources/**", recursive=True):
     try:
         process_file(str(Path(file)))
     except UnicodeDecodeError:

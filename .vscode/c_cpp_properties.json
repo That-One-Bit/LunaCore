@@ -13,7 +13,7 @@
                 "C:/devkitPro/portlibs/3ds/include/lua5.1/**",
                 "C:/devkitPro/devkitARM/arm-none-eabi/include/**",
                 "C:/devkitPro/libctru/include/**",
-                "${workspaceFolder}/Includes/**",
+                "${workspaceFolder}/LunaCoreRuntime/Includes/**",
                 "C:/devkitPro/**",
                 "C:/devkitPro/libctrpf/include/**"
             ],
