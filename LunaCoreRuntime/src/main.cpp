@@ -6,8 +6,6 @@
 #include <string>
 #include <unordered_map>
 #include <atomic>
-#include <sys/socket.h>
-#include <malloc.h>
 
 #include <cstring>
 
@@ -20,7 +18,6 @@
 #include "Core/Graphics.hpp"
 #include "Core/Utils/Utils.hpp"
 #include "Core/Config.hpp"
-#include "Core/TCPConnection.hpp"
 #include "Core/CrashHandler.hpp"
 
 #include "Game/Hooks/GameHooks.hpp"
@@ -28,52 +25,27 @@
 #include "Game/Hooks/MainMenuLayoutLoad.hpp"
 #include "Game/Hooks/LoadingWorldScreenMessage.hpp"
 
+#include "CoreInit.hpp"
+#include "PluginInit.hpp"
+#include "CoreConstants.hpp"
+
 #define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
 #define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
 #define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
-#define PLUGIN_FOLDER "sdmc:/Minecraft 3DS"
-#define LOG_FILE PLUGIN_FOLDER"/log.txt"
-#define CONFIG_FILE PLUGIN_FOLDER"/config.txt"
 #define BASE_OFF 0x100000
 
 namespace CTRPF = CTRPluginFramework;
 
 lua_State *Lua_global = NULL;
 int scriptsLoadedCount = 0;
-CTRPF::Clock timeoutLoadClock;
 std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
 u32 currentCamFOVOffset = 0;
 CTRPF::PluginMenu *gmenu;
-
-u32 *socBuffer = NULL;
-
-void initSockets()
-{
-	socBuffer = (u32*)memalign(0x1000, 0x100000);
-	if (!socBuffer)
-		return;
-
-	Result res = socInit(socBuffer, 0x100000);
-	if (R_FAILED(res))
-		return;
-}
-
-void exitSockets()
-{
-	socExit();
-	free(socBuffer);
-}
-
-void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
-{
-    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(2000)))
-        luaL_error(L, "Script load exceeded execution time (2000 ms)");
-}
 
 namespace CTRPluginFramework
 {
@@ -178,74 +150,6 @@ namespace CTRPluginFramework
         ToggleTouchscreenForceOn();
     }
 
-    bool LoadBuffer(lua_State *L, const char *buffer, size_t size, const char* name) {
-        bool success = true;
-        lua_newtable(L);
-        lua_newtable(L);
-        lua_getglobal(L, "_G");
-        lua_setfield(L, -2, "__index");
-        lua_getglobal(L, "_G");
-        lua_getmetatable(L, -1);
-        lua_getfield(L, -1, "__newindex");
-        int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        lua_pop(L, 2);
-        lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-        lua_setfield(L, -2, "__newindex");
-        lua_setmetatable(L, -2);
-        luaL_unref(L, LUA_REGISTRYINDEX, ref);
-
-        int status_code = luaL_loadbuffer(L, buffer, size, name);
-        if (status_code)
-        {
-            Core::Debug::LogError("Script load error: "+std::string(lua_tostring(L, -1)));
-            lua_pop(L, 2);
-            success = false;
-        }
-        else
-        {
-            // Execute script on a private env
-            lua_pushvalue(L, -2);
-            lua_setfenv(L, -2);
-
-            lua_sethook(L, TimeoutLoadHook, LUA_MASKCOUNT, 100);
-            timeoutLoadClock.Restart();
-            if (lua_pcall(L, 0, 0, 0))
-            {
-                std::string error_msg(lua_tostring(L, -1));
-                Core::Utils::Replace(error_msg, "\t", "    ");
-                Core::Debug::LogError("Script load error: "+error_msg);
-                lua_pop(L, 2);
-                success = false;
-            }
-            else
-            {
-                // If success copy state to global env
-                lua_getglobal(L, "_G");
-                lua_pushnil(L);
-                while (lua_next(L, -3))
-                {
-                    lua_pushvalue(L, -2);
-                    lua_insert(L, -2);
-                    lua_settable(L, -4);
-                }
-                lua_pop(L, 2);
-            }
-            lua_sethook(L, nullptr, 0, 0);
-        }
-        return success;
-    }
-
-    bool LoadScript(lua_State *L, const std::string& fp)
-    {
-        std::string fileContent = Core::Utils::LoadFile(fp);
-        if (fileContent.empty())
-        {
-            Core::Debug::LogMessage("Failed to open file"+fp, false);
-            return false;
-        }
-        return LoadBuffer(L, fileContent.c_str(), fileContent.size(), fp.c_str());
-    }
-
     void UpdateLuaStatistics()
     {
         lua_State *L = Lua_global;
@@ -257,261 +161,8 @@ namespace CTRPluginFramework
     bool DrawMonitors(const Screen &screen)
     {
         if (screen.IsTop)
-        {
             screen.Draw("Lua memory: "+std::to_string(luaMemoryUsage.load()), 10, 10, Color::Black, Color(0, 0, 0, 0));
-        }
         return false;
-    }
-
-    void PreloadScripts()
-    {
-        Core::Debug::LogMessage("Loading scripts", false);
-        Directory dir;
-        Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-        if (!dir.IsOpen()) {
-            MessageBox("Failed to reload scripts")();
-            return;
-        }
-        std::vector<std::string> files;
-        dir.ListFiles(files, ".lua");
-        for (auto &file : files) {
-            if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
-                continue;
-
-            std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
-            Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
-            if (LoadScript(Lua_global, fullPath.c_str()))
-                scriptsLoadedCount++;
-        }
-        lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
-    }
-
-    void LoadLuaEnv(lua_State *L) {
-        Core::Debug::LogMessage("Loading standard libs", false);
-        luaL_openlibs(L);
-        Core::Debug::LogMessage("Loading core modules", false);
-        Core::LoadModules(L);
-
-        // Set Lua path
-        lua_getglobal(L, "package");
-        lua_getfield(L, -1, "path");
-        const char *current_path = lua_tostring(L, -1);
-        lua_pop(L, 1);
-        std::string newPath(current_path);
-        newPath += ";" PLUGIN_FOLDER "/scripts/?.lua;" PLUGIN_FOLDER "/scripts/?/init.lua";
-        lua_pushstring(L, newPath.c_str());
-        lua_setfield(L, -2, "path");
-        lua_pop(L, 1);
-        Core::Debug::LogMessage("Lua environment loaded", false);
-    }
-
-    bool CancelOperationCallback() {
-        Controller::Update();
-        if (Controller::IsKeyDown(Key::B))
-            return false;
-        return true;
-    }
-
-    void InitMenu(PluginMenu &menu)
-    {
-        // Create your entries here, or elsewhere
-        // You can create your entries whenever/wherever you feel like it
-        
-        // Example entry
-        /*menu += new MenuEntry("Test", nullptr, [](MenuEntry *entry)
-        {
-            std::string body("What's the answer ?\n");
-
-            body += std::to_string(42);
-
-            MessageBox("UA", body)();
-        });*/
-        auto optionsFolder = new MenuFolder("Options");
-        auto devFolder = new MenuFolder("Developer");
-        optionsFolder->Append(new MenuEntry("Toggle Script Loader", nullptr, [](MenuEntry *entry)
-        {
-            bool changed = false;
-            if (config["enable_scripts"] == "true") {
-                if (MessageBox("Do you want to DISABLE script loader?", DialogType::DialogYesNo)()) {
-                    config["enable_scripts"] = "false";
-                    changed = true;
-                }
-            } else {
-                if (MessageBox("Do you want to ENABLE script loader?", DialogType::DialogYesNo)()) {
-                    config["enable_scripts"] = "true";
-                    changed = true;
-                }
-            }
-            if (changed) {
-                MessageBox("Restart the game to apply the changes")();
-                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
-                    Core::Debug::LogMessage("Failed to save configs", true);
-            }
-        }));
-        optionsFolder->Append(new MenuEntry("Toggle Menu Layout", nullptr, [](MenuEntry *entry)
-        {
-            bool changed = false;
-            if (config["custom_game_menu_layout"] == "true") {
-                if (MessageBox("Do you want to DISABLE custom menu layout?", DialogType::DialogYesNo)()) {
-                    config["custom_game_menu_layout"] = "false";
-                    changed = true;
-                }
-            } else {
-                if (MessageBox("Do you want to ENABLE custom menu layout?", DialogType::DialogYesNo)()) {
-                    config["custom_game_menu_layout"] = "true";
-                    changed = true;
-                }
-            }
-            if (changed) {
-                MessageBox("Restart the game to apply the changes")();
-                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
-                    Core::Debug::LogMessage("Failed to save configs", true);
-            }
-        }));
-        optionsFolder->Append(new MenuEntry("Toggle Block ZL and ZR keys", nullptr, [](MenuEntry *entry)
-        {
-            bool changed = false;
-            if (config["disable_zl_and_zr"] == "true") {
-                if (MessageBox("Do you want to ENABLE ZL and ZR keys?", DialogType::DialogYesNo)()) {
-                    config["disable_zl_and_zr"] = "false";
-                    Process::Write32(0x819530+BASE_OFF, KEY_ZL); // Pos keycode for ZL
-                    Process::Write32(0x819534+BASE_OFF, KEY_ZR); // Pos keycode for ZR
-                    changed = true;
-                }
-            } else {
-                if (MessageBox("Do you want to DISABLE ZL and ZR keys (only scripts will be able to use them)?", DialogType::DialogYesNo)()) {
-                    config["disable_zl_and_zr"] = "true";
-                    Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
-                    Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
-                    changed = true;
-                }
-            }
-            if (changed) {
-                MessageBox("Restart the game to apply the changes")();
-                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
-                    Core::Debug::LogMessage("Failed to save configs", true);
-            }
-        }));
-        optionsFolder->Append(new MenuEntry("Toggle Block DPADLEFT and DPADRIGHT keys", nullptr, [](MenuEntry *entry)
-        {
-            bool changed = false;
-            if (config["disable_zl_and_zr"] == "true") {
-                if (MessageBox("Do you want to ENABLE DPADLEFT and DPADRIGHT keys?", DialogType::DialogYesNo)()) {
-                    config["disable_dleft_and_dright"] = "false";
-                    changed = true;
-                }
-            } else {
-                if (MessageBox("Do you want to DISABLE DPADLEFT and DPADRIGHT keys (only scripts will be able to use them)?", DialogType::DialogYesNo)()) {
-                    config["disable_dleft_and_dright"] = "true";
-                    changed = true;
-                }
-            }
-            if (changed) {
-                MessageBox("Restart the game to apply the changes")();
-                if (!Core::Config::SaveConfig(CONFIG_FILE, config))
-                    Core::Debug::LogMessage("Failed to save configs", true);
-            }
-        }));
-        devFolder->Append(new MenuEntry("Load script from network", nullptr, [](MenuEntry *entry) {
-            initSockets();
-            Core::Network::TCPServer tcp(5432);
-            std::string host = tcp.getHostName();
-            const Screen& topScreen = OSD::GetTopScreen();
-            topScreen.DrawSysfont("Connect to host: "+host+":5432", 40, 185, Color::White);
-            topScreen.DrawSysfont("Waiting connection... Press B to cancel", 40, 200, Color::White);
-            OSD::SwapBuffers();
-            topScreen.DrawSysfont("Connect to host: "+host+":5432", 40, 185, Color::White);
-            topScreen.DrawSysfont("Waiting connection... Press B to cancel", 40, 200, Color::White);
-            if (!tcp.waitConnection(CancelOperationCallback)) {
-                exitSockets();
-                if (!tcp.aborted)
-                    MessageBox("Connection error")();
-                return;
-            }
-            size_t fnameSize = 0;
-            if (!tcp.recv(&fnameSize, sizeof(size_t))) {
-                exitSockets();
-                MessageBox("Failed to get filename size")();
-                return;
-            }
-            char *namebuf = new char[fnameSize];
-            if (!namebuf) {
-                exitSockets();
-                MessageBox("Memory error")();
-                return;
-            }
-            if (namebuf == NULL || !tcp.recv(namebuf, fnameSize)) {
-                exitSockets();
-                delete namebuf;
-                MessageBox("Failed to get filename")();
-                return;
-            }
-
-            size_t size = 0;
-            if (!tcp.recv(&size, sizeof(size_t))) {
-                exitSockets();
-                delete namebuf;
-                MessageBox("Failed to get file size")();
-                return;
-            }
-            char *buffer = new char[size];
-            if (!buffer) {
-                exitSockets();
-                delete namebuf;
-                MessageBox("Memory error")();
-                return;
-            }
-            if (!tcp.recv(buffer, size)) {
-                exitSockets();
-                delete namebuf;
-                delete buffer;
-                MessageBox("Failed to get file")();
-                return;
-            }
-
-            if (LoadBuffer(Lua_global, buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
-                MessageBox("Script loaded")();
-                if (MessageBox("Do you want to save this script to the sd card?", DialogType::DialogYesNo)()) {
-                    File scriptOut;
-                    File::Open(scriptOut, PLUGIN_FOLDER "/scripts/"+std::string(namebuf), File::WRITE|File::CREATE);
-                    if (!scriptOut.IsOpen()) {
-                        MessageBox("Failed to write to sd card")();
-                    } else {
-                        scriptOut.Clear();
-                        scriptOut.Write(buffer, size);
-                        scriptOut.Flush();
-                    }
-                }
-            } else {
-                MessageBox("Error executing the script")();
-            }
-            exitSockets();
-            delete namebuf;
-            delete buffer;
-        }));
-        devFolder->Append(new MenuEntry("Clean Lua environment", nullptr, [](MenuEntry *entry) {
-            if (!MessageBox("This will unload all loaded scripts. Continue?", DialogType::DialogYesNo)())
-                return;
-            Core::Debug::LogMessage("Reloading Lua environment", false);
-            lua_close(Lua_global);
-            Lua_global = luaL_newstate();
-            LoadLuaEnv(Lua_global);
-            scriptsLoadedCount = 0;
-            MessageBox("Lua environment reloaded")();
-        }));
-        devFolder->Append(new MenuEntry("Reload scripts", nullptr, [](MenuEntry *entry) {
-            if (!MessageBox("This will reload saved scripts, not including loaded by network (if not saved to sd card). Continue?", DialogType::DialogYesNo)())
-                return;
-            Core::Debug::LogMessage("Reloading Lua environment", false);
-            lua_close(Lua_global);
-            Lua_global = luaL_newstate();
-            LoadLuaEnv(Lua_global);
-            scriptsLoadedCount = 0;
-            PreloadScripts();
-            MessageBox("Lua environment reloaded")();
-        }));
-        menu.Append(optionsFolder);
-        menu.Append(devFolder);
     }
 
     int main()
@@ -560,7 +211,7 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Loading Lua environment", false);
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
         Lua_global = luaL_newstate();
-        LoadLuaEnv(Lua_global);
+        Core::LoadLuaEnv(Lua_global);
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
         // Synnchronize the menu with frame event
@@ -586,7 +237,7 @@ namespace CTRPluginFramework
         gmenu->Callback(Core::AsyncHandlerCallback);
 
         if (loadScripts)
-            PreloadScripts(); // Compiles, loads and execute the scripts under the scripts folder
+            Core::PreloadScripts(); // Compiles, loads and execute the scripts under the scripts folder
 
         // Init our menu entries & folders
         InitMenu(*gmenu);
