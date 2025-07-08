@@ -4,7 +4,7 @@
             "name": "Win32",
             "compilerPath": "C:/devkitPro/devkitARM/bin/arm-none-eabi-gcc",
             "compilerArgs": [
-                "-std=gnu++17"
+                "-std=gnu++20"
             ],
             "includePath": [
                 "${workspaceFolder}/**",

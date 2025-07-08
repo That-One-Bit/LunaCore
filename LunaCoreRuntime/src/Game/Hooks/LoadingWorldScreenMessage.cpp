@@ -7,13 +7,13 @@
 #include "lua_common.h"
 
 #include "Core/Event.hpp"
+#include "CoreGlobals.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
 #define BASE_OFF 0x100000
 
 extern GameState_s GameState;
-extern lua_State *Lua_global;
 bool eventJoinTriggered = false;
 
 typedef int (*MBdetectStateFunc)(int *);

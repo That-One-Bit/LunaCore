@@ -4,11 +4,13 @@
 #include "lua_common.h"
 
 namespace Core {
-    void LoadLuaEnv(lua_State *L);
+    void LoadLuaEnv();
 
-    bool LoadBuffer(lua_State *L, const char *buffer, size_t size, const char* name);
+    bool LoadBuffer(const char *buffer, size_t size, const char* name);
 
-    bool LoadScript(lua_State *L, const std::string& fp);
+    bool LoadScript(const std::string& fp);
 
     void PreloadScripts();
+
+    void LoadMods();
 }

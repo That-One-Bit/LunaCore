@@ -4,10 +4,10 @@
 
 #include "Core/Debug.hpp"
 #include "Core/Utils/Utils.hpp"
+#include "CoreGlobals.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
-extern lua_State *Lua_global;
 CTRPluginFramework::Clock timeoutAsynClock;
 
 void Core::AsyncRestartClock() {

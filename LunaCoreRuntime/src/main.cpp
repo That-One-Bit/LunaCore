@@ -28,6 +28,7 @@
 #include "CoreInit.hpp"
 #include "PluginInit.hpp"
 #include "CoreConstants.hpp"
+#include "CoreGlobals.hpp"
 
 #define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
 #define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
@@ -38,7 +39,6 @@
 
 namespace CTRPF = CTRPluginFramework;
 
-lua_State *Lua_global = NULL;
 int scriptsLoadedCount = 0;
 std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
@@ -211,14 +211,16 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Loading Lua environment", false);
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
         Lua_global = luaL_newstate();
-        Core::LoadLuaEnv(Lua_global);
+        Core::LoadLuaEnv();
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
+        Core::LoadMods();
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
         // Synnchronize the menu with frame event
         gmenu->SynchronizeWithFrame(true);
         gmenu->ShowWelcomeMessage(false);
 
-        Core::Debug::LogMessage("LunaCore loaded", true);
+        Core::Debug::LogMessage("LunaCore Runtime loaded", true);
         u16 gameVer = Process::GetVersion();
         if (System::IsCitra())
             Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);

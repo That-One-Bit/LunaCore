@@ -9,10 +9,10 @@
 #include "Core/CrashHandler.hpp"
 #include "Core/Game/Gamepad.hpp"
 #include "Core/Utils/Utils.hpp"
+#include "CoreGlobals.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
-extern lua_State *Lua_global;
 CTRPF::Clock timeoutEventClock;
 extern std::atomic<bool> graphicsIsTop;
 

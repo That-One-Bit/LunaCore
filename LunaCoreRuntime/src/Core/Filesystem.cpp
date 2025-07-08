@@ -2,6 +2,7 @@
 
 #include <CTRPluginFramework.hpp>
 #include <FsLib/fslib.hpp>
+#include <3ds.h>
 
 #include <string>
 #include <cstring>

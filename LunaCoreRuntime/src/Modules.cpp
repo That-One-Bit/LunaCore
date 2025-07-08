@@ -4,8 +4,7 @@
 
 #include <CTRPluginFramework.hpp>
 
-#include "Core/Utils/lua_json.hpp"
-#include "Core/Utils/FileLoader.hpp"
+#include "CoreGlobals.hpp"
 
 #include "Core/Utils/Bits.hpp"
 #include "Core/System.hpp"
@@ -22,6 +21,7 @@
 #include "Core/Graphics.hpp"
 
 #include "Core/Utils/Utils.hpp"
+#include "Core/Utils/FileLoader.hpp"
 
 namespace Core {
     bool RegisterGameModule(lua_State *L)
@@ -66,10 +66,21 @@ namespace Core {
         return true;
     }
 
+    static int l_Core_getModpath(lua_State* L) {
+        std::string modname = luaL_checkstring(L, 1);
+        if (modPaths.contains(modname))
+            lua_pushstring(L, modPaths[modname].c_str());
+        else
+            lua_pushnil(L);
+        return 1;
+    }
+
     bool RegisterCoreModule(lua_State *L) {
         //Use global Core as entry point related to functions that are external to the game
         //$Core
         lua_newtable(L);
+        lua_pushcfunction(L, l_Core_getModpath);
+        lua_setfield(L, -2, "getModpath");
         lua_setglobal(L, "Core");
         Core::Module::RegisterDebugModule(L);
         Core::Module::RegisterSystemModule(L);
@@ -84,8 +95,6 @@ namespace Core {
 void Core::LoadModules(lua_State *L)
 {
     Core::RegisterCustomFileLoader(L);
-    Core::PreloadJsonModule(L);
-
     Core::RegisterUtilsModule(L);
     
     Core::RegisterBitsModule(L);

@@ -17,6 +17,7 @@ namespace Core {
                 CORE_STAGE1 = 0,
                 CORE_STAGE2,
                 CORE_STAGE3,
+                CORE_LOADING_MODS,
                 CORE_LUA_EXEC,
                 CORE_HOOK,
                 CORE_GAME,

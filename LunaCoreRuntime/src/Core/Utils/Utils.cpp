@@ -45,6 +45,8 @@ bool Core::Utils::startsWith(const std::string &str, const std::string &prefix) 
 std::string Core::Utils::LoadFile(const std::string &filepath)
 {
     std::string content;
+    if (!CTRPF::File::Exists(filepath))
+        return content;
     CTRPF::File file_ptr;
     CTRPF::File::Open(file_ptr, filepath, CTRPF::File::READ);
     if (!file_ptr.IsOpen())

@@ -57,6 +57,9 @@ namespace Core {
             case CrashHandler::CORE_STAGE3:
                 str = "Loading stage 3";
                 break;
+            case CrashHandler::CORE_LOADING_MODS:
+                str = "Loading mods";
+                break;
             case CrashHandler::CORE_LUA_EXEC:
                 str = "Executing Lua code";
                 break;

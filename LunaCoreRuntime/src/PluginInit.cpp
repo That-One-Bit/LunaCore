@@ -6,6 +6,7 @@
 #include <malloc.h>
 
 #include "CoreConstants.hpp"
+#include "CoreGlobals.hpp"
 #include "CoreInit.hpp"
 #include "Core/TCPConnection.hpp"
 #include "Core/Config.hpp"
@@ -13,7 +14,6 @@
 
 using namespace CTRPluginFramework;
 
-extern lua_State *Lua_global;
 extern int scriptsLoadedCount;
 extern std::unordered_map<std::string, std::string> config;
 extern PluginMenu *gmenu;
@@ -200,7 +200,7 @@ void InitMenu(PluginMenu &menu)
             return;
         }
 
-        if (Core::LoadBuffer(Lua_global, buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
+        if (Core::LoadBuffer(buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
             MessageBox("Script loaded")();
             if (MessageBox("Do you want to save this script to the sd card?", DialogType::DialogYesNo)()) {
                 File scriptOut;
@@ -226,7 +226,7 @@ void InitMenu(PluginMenu &menu)
         Core::Debug::LogMessage("Reloading Lua environment", false);
         lua_close(Lua_global);
         Lua_global = luaL_newstate();
-        Core::LoadLuaEnv(Lua_global);
+        Core::LoadLuaEnv();
         scriptsLoadedCount = 0;
         MessageBox("Lua environment reloaded")();
     }));
@@ -236,7 +236,7 @@ void InitMenu(PluginMenu &menu)
         Core::Debug::LogMessage("Reloading Lua environment", false);
         lua_close(Lua_global);
         Lua_global = luaL_newstate();
-        Core::LoadLuaEnv(Lua_global);
+        Core::LoadLuaEnv();
         scriptsLoadedCount = 0;
         Core::PreloadScripts();
         MessageBox("Lua environment reloaded")();
