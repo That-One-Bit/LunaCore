@@ -15,7 +15,7 @@ enum player_camera_offsets : u32 {
 
 // ----------------------------------------------------------------------------
 
-//!include Sources/Game/Player/Player.cpp
+//!include LunaCoreRuntime/src/Core/Game/Player/Player.cpp
 //$Game.LocalPlayer.Camera
 
 // ----------------------------------------------------------------------------

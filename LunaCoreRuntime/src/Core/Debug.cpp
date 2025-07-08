@@ -71,7 +71,7 @@ void Core::Debug::Error(const std::string& msg)
 
 // ----------------------------------------------------------------------------
 
-//!include Sources/Modules.cpp
+//!include LunaCoreRuntime/src/Modules.cpp
 //$Core.Debug
 
 // ----------------------------------------------------------------------------

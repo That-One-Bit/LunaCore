@@ -75,9 +75,15 @@ namespace Core {
         return 1;
     }
 
+    //$Core
+    /*
+    - Returns the full path that corresponds to the modname if registered
+    ## modname: string
+    ## return: string?
+    ### Core.getModpath
+    */
     bool RegisterCoreModule(lua_State *L) {
         //Use global Core as entry point related to functions that are external to the game
-        //$Core
         lua_newtable(L);
         lua_pushcfunction(L, l_Core_getModpath);
         lua_setfield(L, -2, "getModpath");
