@@ -246,7 +246,7 @@ static int l_Filesystem_File_seek(lua_State *L) {
     if (whence == "cur")
         seekPos = SEEK_CUR;
     else if (whence == "set")
-        seekPos = SEEK_END;
+        seekPos = SEEK_SET;
     else if (whence == "end")
         seekPos = SEEK_END;
     else

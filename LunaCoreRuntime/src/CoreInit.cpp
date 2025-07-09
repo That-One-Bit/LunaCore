@@ -47,19 +47,19 @@ void Core::LoadLuaEnv() {
 bool Core::LoadBuffer(const char *buffer, size_t size, const char* name) {
     lua_State* L = Lua_global;
     bool success = true;
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_getglobal(L, "_G");
-    lua_setfield(L, -2, "__index");
-    lua_getglobal(L, "_G");
-    lua_getmetatable(L, -1);
-    lua_getfield(L, -1, "__newindex");
-    int ref = luaL_ref(L, LUA_REGISTRYINDEX);
-    lua_pop(L, 2);
-    lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
-    lua_setfield(L, -2, "__newindex");
-    lua_setmetatable(L, -2);
-    luaL_unref(L, LUA_REGISTRYINDEX, ref);
+    lua_newtable(L); // -
+    lua_newtable(L); // --
+    lua_getglobal(L, "_G"); // --
+    lua_setfield(L, -2, "__index"); // --
+    lua_getglobal(L, "_G"); // --
+    lua_getmetatable(L, -1); // ---
+    lua_getfield(L, -1, "__newindex"); // ----
+    int ref = luaL_ref(L, LUA_REGISTRYINDEX); // ----
+    lua_pop(L, 2); // --
+    lua_rawgeti(L, LUA_REGISTRYINDEX, ref); // --
+    lua_setfield(L, -2, "__newindex"); // --
+    lua_setmetatable(L, -2); // -
+    luaL_unref(L, LUA_REGISTRYINDEX, ref); // -
 
     int status_code = luaL_loadbuffer(L, buffer, size, name);
     if (status_code)
@@ -74,18 +74,26 @@ bool Core::LoadBuffer(const char *buffer, size_t size, const char* name) {
         lua_pushvalue(L, -2);
         lua_setfenv(L, -2);
 
+        lua_getglobal(L, "debug");
+        lua_getfield(L, -1, "traceback");
+        lua_remove(L, -2);
+
+        int errfunc = lua_gettop(L);
+        lua_insert(L, errfunc - 1);
+
         lua_sethook(L, TimeoutLoadHook, LUA_MASKCOUNT, 100);
         timeoutLoadClock.Restart();
-        if (lua_pcall(L, 0, 0, 0))
+        if (lua_pcall(L, 0, 0, errfunc - 1))
         {
             std::string error_msg(lua_tostring(L, -1));
             Core::Utils::Replace(error_msg, "\t", "    ");
             Core::Debug::LogError("Script load error: "+error_msg);
-            lua_pop(L, 2);
+            lua_pop(L, 3);
             success = false;
         }
         else
         {
+            lua_pop(L, 1);
             // If success copy state to global env
             lua_getglobal(L, "_G");
             lua_pushnil(L);
