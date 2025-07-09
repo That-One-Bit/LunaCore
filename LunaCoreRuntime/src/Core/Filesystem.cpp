@@ -238,9 +238,9 @@ static int l_Filesystem_File_seek(lua_State *L) {
     std::string whence = "cur";
     size_t offset = 0;
     if (lua_gettop(L) > 1)
-        whence = luaL_checkstring(L, 2);
+        offset = (size_t)luaL_checknumber(L, 2);
     if (lua_gettop(L) > 2)
-        offset = (size_t)luaL_checknumber(L, 3);
+        whence = luaL_checkstring(L, 3);
     
     int seekPos;
     if (whence == "cur")

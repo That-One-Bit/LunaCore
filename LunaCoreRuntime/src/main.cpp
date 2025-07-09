@@ -148,6 +148,15 @@ namespace CTRPluginFramework
     void    OnProcessExit(void)
     {
         ToggleTouchscreenForceOn();
+        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_EXIT;
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_EXIT;
+
+        // Cleanup
+        Core::Debug::LogMessage("Exiting LunaCore", false);
+        Core::Debug::CloseLogFile();
+        fslib::closeDevice(u"extdata");
+        fslib::exit();
+        lua_close(Lua_global);
     }
 
     void UpdateLuaStatistics()
@@ -212,15 +221,12 @@ namespace CTRPluginFramework
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
         Lua_global = luaL_newstate();
         Core::LoadLuaEnv();
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
-        Core::LoadMods();
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
         // Synnchronize the menu with frame event
         gmenu->SynchronizeWithFrame(true);
         gmenu->ShowWelcomeMessage(false);
 
-        Core::Debug::LogMessage("LunaCore Runtime loaded", true);
         u16 gameVer = Process::GetVersion();
         if (System::IsCitra())
             Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);
@@ -232,14 +238,19 @@ namespace CTRPluginFramework
             Core::Debug::LogMessage(Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
         else
             Core::Debug::LogMessage(Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
-        
+        Core::Debug::LogMessage("LunaCore runtime loaded", true);
+
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
+        Core::LoadMods();
+        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
+
         OSD::Run(DrawMonitors);
         gmenu->Callback(UpdateLuaStatistics);
         gmenu->Callback(Core::EventHandlerCallback);
         gmenu->Callback(Core::AsyncHandlerCallback);
 
         if (loadScripts)
-            Core::PreloadScripts(); // Compiles, loads and execute the scripts under the scripts folder
+            Core::PreloadScripts(); // Executes the scripts under the scripts folder
 
         // Init our menu entries & folders
         InitMenu(*gmenu);
@@ -249,17 +260,8 @@ namespace CTRPluginFramework
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
         Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAINLOOP;
         gmenu->Run();
-        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_EXIT;
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_EXIT;
-
-        // Cleanup
-        Core::Debug::LogMessage("Exiting LunaCore", false);
-        Core::Debug::CloseLogFile();
-        fslib::closeDevice(u"extdata");
-        fslib::exit();
-
+        
         delete gmenu;
-        lua_close(Lua_global);
 
         // Exit plugin
         return 0;

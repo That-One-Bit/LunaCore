@@ -8,8 +8,4 @@ namespace Core {
     namespace Module {
         bool RegisterGamepadModule(lua_State *L);
     }
-
-    namespace Gamepad {
-        void BlockKey(u32 keyCode);
-    }
 }

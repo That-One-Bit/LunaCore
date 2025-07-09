@@ -116,25 +116,26 @@ bool Core::LoadScript(const std::string& fp)
 
 void Core::PreloadScripts()
 {
-    Core::Debug::LogMessage("Loading scripts", false);
     CTRPF::Directory dir;
     CTRPF::Directory::Open(dir, PLUGIN_FOLDER"/scripts");
-    if (!dir.IsOpen()) {
-        CTRPF::MessageBox("Failed to reload scripts")();
+    if (!dir.IsOpen())
         return;
-    }
+
     std::vector<std::string> files;
     dir.ListFiles(files, ".lua");
-    for (auto &file : files) {
-        if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
-            continue;
+    if (files.size() > 0) {
+        Core::Debug::LogMessage("Loading scripts", false);
+        for (auto &file : files) {
+            if (strcmp(file.c_str() + file.size() - 4, ".lua") != 0) // Double check to skip not .lua files
+                continue;
 
-        std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
-        Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
-        if (LoadScript(fullPath.c_str()))
-            scriptsLoadedCount++;
+            std::string fullPath("sdmc:" + dir.GetFullName() + "/" + file);
+            Core::Debug::LogMessage("Loading script '"+fullPath+"'", false);
+            if (LoadScript(fullPath.c_str()))
+                scriptsLoadedCount++;
+        }
+        lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
     }
-    lua_gc(Lua_global, LUA_GCCOLLECT, 0); // If needed collect all garbage
 }
 
 bool LoadMod(const std::string& modName, std::unordered_map<std::string, std::string> &modsAvailable, std::vector<u32> &modsLoading, std::vector<u32> &modsLoaded, std::vector<u32> &modsDiscarded)
@@ -182,15 +183,16 @@ bool LoadMod(const std::string& modName, std::unordered_map<std::string, std::st
         }
     }
 
-    modPaths[modName] = PLUGIN_FOLDER "/mods/" + modsAvailable[modName];
     if (!CTRPF::File::Exists(PLUGIN_FOLDER "/mods/" + modsAvailable[modName] + "/init.lua")) {
         Core::Debug::LogError(CTRPF::Utils::Format("Failed to load '%s'. Failed to open 'init.lua'", modsAvailable[modName].c_str()));
         modsDiscarded.emplace_back(hash(modName.c_str()));
         return false;
     }
+    modPaths[modName] = PLUGIN_FOLDER "/mods/" + modsAvailable[modName];
     if (!Core::LoadScript(PLUGIN_FOLDER "/mods/" + modsAvailable[modName] + "/init.lua")) {
         Core::Debug::LogError(CTRPF::Utils::Format("Failed to load '%s'. Failed to load 'init.lua'", modsAvailable[modName].c_str()));
         modsDiscarded.emplace_back(hash(modName.c_str()));
+        modPaths.erase(modName);
         return false;
     }
     auto it = std::find(modsLoading.begin(), modsLoading.end(), hash(modName.c_str()));

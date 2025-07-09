@@ -145,7 +145,7 @@ namespace Core {
             }
             Core::Debug::LogRaw(CTRPF::Utils::Format("%sPossible reason: %s\n", Core::Debug::tab, reasonMsg));
             Core::Debug::CloseLogFile();
-            if (plg_state == PluginState::PLUGIN_PATCHPROCESS)
+            if (plg_state != PluginState::PLUGIN_MAINLOOP)
                 return CTRPF::Process::EXCB_REBOOT;
             else {
                 fslib::closeDevice(u"extdata");

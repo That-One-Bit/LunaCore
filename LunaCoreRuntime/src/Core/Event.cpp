@@ -35,7 +35,6 @@ void Core::EventHandlerCallback()
     u32 pressedKeys = CTRPF::Controller::GetKeysPressed();
     u32 downKeys = CTRPF::Controller::GetKeysDown();
     u32 releasedKeys = CTRPF::Controller::GetKeysReleased();
-    //Core::Gamepad::BlockKey((u32)CTRPF::Key::DPadLeft | (u32)CTRPF::Key::DPadRight);
     if (pressedKeys > 0)
     {
         lua_getglobal(L, "Game");

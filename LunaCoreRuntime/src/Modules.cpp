@@ -24,10 +24,10 @@
 #include "Core/Utils/FileLoader.hpp"
 
 namespace Core {
+    //Use global Game as entry point related to all game functions
+    //$Game
     bool RegisterGameModule(lua_State *L)
     {
-        //Use global Game as entry point related to all game functions
-        //$Game
         lua_newtable(L);
         lua_setglobal(L, "Game");
         Core::Module::RegisterGamepadModule(L);
@@ -75,6 +75,13 @@ namespace Core {
         return 1;
     }
 
+    static int l_Core_getTitleId(lua_State* L) {
+        std::string titleId;
+        CTRPluginFramework::Process::GetTitleID(titleId);
+        lua_pushstring(L, titleId.c_str());
+        return 1;
+    }
+
     //$Core
     /*
     - Returns the full path that corresponds to the modname if registered
@@ -82,11 +89,17 @@ namespace Core {
     ## return: string?
     ### Core.getModpath
     */
+    /*
+    - Returns the title id formated in a hex string
+    ## return: string
+    ### Core.getTitleId
+    */
     bool RegisterCoreModule(lua_State *L) {
-        //Use global Core as entry point related to functions that are external to the game
         lua_newtable(L);
         lua_pushcfunction(L, l_Core_getModpath);
         lua_setfield(L, -2, "getModpath");
+        lua_pushcfunction(L, l_Core_getTitleId);
+        lua_setfield(L, -2, "getTitleId");
         lua_setglobal(L, "Core");
         Core::Module::RegisterDebugModule(L);
         Core::Module::RegisterSystemModule(L);

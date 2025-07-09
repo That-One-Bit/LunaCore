@@ -11,11 +11,13 @@
 #include "Core/Debug.hpp"
 #include "Core/CrashHandler.hpp"
 #include "Game/world/item/Item.hpp"
+#include "Core/Utils/GameState.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
 #define BASE_OFF 0x100000
 
+extern GameState_s GameState;
 static std::vector<std::unique_ptr<CoreHookContext>> hooks;
 Game::Item* mCopper_ingot = nullptr;
 
@@ -98,11 +100,14 @@ static void RegisterItemsHook(CoreHookContext* ctx) {
     totemItem->padding[6] = 1;
     Game::Item::mTotem = totemItem;
 
+    GameState.LoadingItems.store(true);
+
     mCopper_ingot = Game::registerItem("copper", 255);
     if (mCopper_ingot == nullptr)
         Core::Debug::LogMessage("Cannot register 'copper' item", true);
 
     reinterpret_cast<void(*)()>(0x0056e450)();
+    GameState.LoadingItems.store(false);
     Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterItemOverwriteReturn);
 }
@@ -120,9 +125,11 @@ static __attribute((naked)) void RegisterItemsTexturesOverwriteReturn() {
 static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
+    GameState.SettingItemsTextures.store(true);
 
     mCopper_ingot->setTexture(hash("copper"), 0);
 
+    GameState.SettingItemsTextures.store(false);
     Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterItemsTexturesOverwriteReturn);
 }
@@ -138,7 +145,14 @@ static __attribute((naked)) void RegisterCreativeItemsOverwriteReturn() {
 }
 
 static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
+    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
+    GameState.LoadingCreativeItems.store(true);
+
     Game::Item::addCreativeItem(mCopper_ingot, 4, 49);
+
+    GameState.LoadingCreativeItems.store(false);
+    Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterCreativeItemsOverwriteReturn);
 }
 

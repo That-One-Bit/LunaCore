@@ -11,9 +11,7 @@ static int l_custom_loadfile(lua_State *L)
 
     std::string scriptContent = Core::Utils::LoadFile(filename);
     if (scriptContent.empty()) {
-        lua_pushnil(L);
-        lua_pushfstring(L, "cannot open %s", filename);
-        return 2;
+        return luaL_error(L, "cannot open %s", filename);
     }
     if (luaL_loadbuffer(L, scriptContent.c_str(), scriptContent.size(), filename) != 0)
         return lua_error(L);
@@ -22,10 +20,30 @@ static int l_custom_loadfile(lua_State *L)
 
 static int l_custom_dofile(lua_State *L) 
 {
-    l_custom_loadfile(L);
+    lua_getglobal(L, "loadfile");
+    lua_pushvalue(L, 1);
+    if (lua_pcall(L, 1, 1, 0) != 0)
+        return lua_error(L);
+
     if (!lua_isfunction(L, -1))
-        return 2;
-    return lua_pcall(L, 0, LUA_MULTRET, 0);
+        return luaL_error(L, "Failed to load");
+
+    lua_Debug ar;
+    if (lua_getstack(L, 1, &ar) && lua_getinfo(L, "f", &ar)) {
+        lua_getfenv(L, -1);
+        lua_remove(L, -2);
+    } else {
+        lua_pushvalue(L, LUA_GLOBALSINDEX);
+    }
+    lua_setfenv(L, -2);
+    lua_remove(L, 1);
+
+    int baseTop = lua_gettop(L);
+    if (lua_pcall(L, 0, LUA_MULTRET, 0) != 0)
+        return lua_error(L);
+    
+    int newtop = lua_gettop(L);
+    return newtop - baseTop + 1;
 }
 
 static int l_custom_loader(lua_State *L) 
