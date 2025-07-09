@@ -20,8 +20,8 @@ CTRPF::Clock timeoutLoadClock;
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(2000)))
-        luaL_error(L, "Script load exceeded execution time (2000 ms)");
+    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(20000)))
+        luaL_error(L, "Script load exceeded execution time (20000 ms)");
 }
 
 void Core::LoadLuaEnv() {
@@ -107,6 +107,7 @@ bool Core::LoadBuffer(const char *buffer, size_t size, const char* name) {
         }
         lua_sethook(L, nullptr, 0, 0);
     }
+    lua_pop(L, 1);
     return success;
 }
 
@@ -247,12 +248,19 @@ void Core::LoadMods()
         }
     }
 
+    int modsLoadedCount = 0;
     for (auto it = modsAvailable.begin(); it != modsAvailable.end(); it++) {
-        if (std::find(modsDiscarded.begin(), modsDiscarded.end(), hash(it->first.c_str())) != modsDiscarded.end() || 
-        std::find(modsLoaded.begin(), modsLoaded.end(), hash(it->first.c_str())) != modsLoaded.end())
+        if (std::find(modsDiscarded.begin(), modsDiscarded.end(), hash(it->first.c_str())) != modsDiscarded.end())
             continue;
-        LoadMod(it->first, modsAvailable, modsLoading, modsLoaded, modsDiscarded);
+        if (std::find(modsLoaded.begin(), modsLoaded.end(), hash(it->first.c_str())) != modsLoaded.end()) {
+            modsLoadedCount++;
+            continue;
+        }
+        if (LoadMod(it->first, modsAvailable, modsLoading, modsLoaded, modsDiscarded))
+            modsLoadedCount++;
     }
+    if (modsLoadedCount == 0)
+        Core::Debug::LogMessage("No mods loaded", false);
     modsLoaded.clear();
     modsDiscarded.clear();
     modsLoading.clear();

@@ -35,8 +35,6 @@
 #define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
 #define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
-#define BASE_OFF 0x100000
-
 namespace CTRPF = CTRPluginFramework;
 
 int scriptsLoadedCount = 0;
@@ -130,12 +128,12 @@ namespace CTRPluginFramework
             SetLoadingWorldScreenMessageCallback();
             SetLeaveLevelPromptCallback();
             if (disableZLandZR) {
-                Process::Write32(0x819530+BASE_OFF, 0); // Pos keycode for ZL
-                Process::Write32(0x819534+BASE_OFF, 0); // Pos keycode for ZR
+                Process::Write32(0x919530, 0); // Pos keycode for ZL
+                Process::Write32(0x919534, 0); // Pos keycode for ZR
             }
             if (disableDLandDR) {
-                Process::Write32(0x819530-(4*8)+BASE_OFF, 0); // Pos keycode for DPADRIGHT
-                Process::Write32(0x819530-(4*7)+BASE_OFF, 0); // Pos keycode for DPADLEFT
+                Process::Write32(0x919530-(4*8), 0); // Pos keycode for DPADRIGHT
+                Process::Write32(0x919530-(4*7), 0); // Pos keycode for DPADLEFT
             }
             hookSomeFunctions();
         } else {
