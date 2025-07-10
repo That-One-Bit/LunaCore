@@ -107,7 +107,6 @@ bool Core::LoadBuffer(const char *buffer, size_t size, const char* name) {
         }
         lua_sethook(L, nullptr, 0, 0);
     }
-    lua_pop(L, 1);
     return success;
 }
 
