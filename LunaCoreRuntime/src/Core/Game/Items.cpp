@@ -35,6 +35,16 @@ void* Core::Items::GetRenderIDByItemID(u16 id) {
     return nullptr;
 }
 
+u16 Core::Items::GetCreativeItemPositionOfGroup(u16 itemId, u16 groupId) {
+    Game::ItemInstance* actualPos = Item::creativeItems;
+    while (actualPos < Item::creativeItemsEnd) {
+        if (actualPos->unknown1 == groupId && (*reinterpret_cast<Item**>(&actualPos->padding + 0xc))->itemId == itemId)
+            return actualPos->unknown2;
+        actualPos = actualPos + 1;
+    }
+    return 0xFFFF;
+}
+
 // ----------------------------------------------------------------------------
 
 //$Game.Items
@@ -77,9 +87,25 @@ static int l_Items_findItemNameByID(lua_State *L) {
     return 1;
 }
 
+/*
+- Get the item position in creative using the id
+## itemID: integer
+## groupID: integer
+## return: number
+### Game.Items.getCreativePosition
+*/
+static int l_Items_getCreativePosition(lua_State *L) {
+    u16 itemID = luaL_checknumber(L, 1);
+    u16 groupID = luaL_checknumber(L, 1);
+    u16 position = Core::Items::GetCreativeItemPositionOfGroup(itemID, groupID);
+    lua_pushnumber(L, position);
+    return 1;
+}
+
 static const luaL_Reg items_functions[] = {
     {"findItemIDByName", l_Items_findItemIDByName},
     {"findItemNameByID", l_Items_findItemNameByID},
+    {"getCreativePosition", l_Items_getCreativePosition},
     {NULL, NULL}
 };
 
