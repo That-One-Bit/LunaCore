@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "lua_common.h"
 
 namespace Core {
@@ -8,9 +10,7 @@ namespace Core {
     void EventHandlerCallback();
 
     namespace Event {
-        void TriggerOnPlayerJoinWorld(lua_State *L);
-
-        void TriggerOnPlayerLeaveWorld(lua_State *L);
+        void TriggerEvent(lua_State* L, const std::string& eventName);
     }
 
     namespace Module {

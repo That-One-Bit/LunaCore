@@ -10,8 +10,10 @@
 #include "lua_common.h"
 #include "Core/Debug.hpp"
 #include "Core/CrashHandler.hpp"
+#include "Core/Event.hpp"
 #include "Game/world/item/Item.hpp"
 #include "Core/Utils/GameState.hpp"
+#include "CoreGlobals.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
@@ -106,6 +108,8 @@ static void RegisterItemsHook(CoreHookContext* ctx) {
     if (mCopper_ingot == nullptr)
         Core::Debug::LogMessage("Cannot register 'copper' item", true);
 
+    Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
+
     reinterpret_cast<void(*)()>(0x0056e450)();
     GameState.LoadingItems.store(false);
     Core::CrashHandler::core_state = lastcState;
@@ -129,6 +133,8 @@ static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
 
     mCopper_ingot->setTexture(hash("copper"), 0);
 
+    Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegisterTexture");
+
     GameState.SettingItemsTextures.store(false);
     Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterItemsTexturesOverwriteReturn);
@@ -150,6 +156,8 @@ static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
     GameState.LoadingCreativeItems.store(true);
 
     Game::Item::addCreativeItem(mCopper_ingot, 4, 49);
+
+    Core::Event::TriggerEvent(Lua_global, "OnGameCreativeItemsRegister");
 
     GameState.LoadingCreativeItems.store(false);
     Core::CrashHandler::core_state = lastcState;

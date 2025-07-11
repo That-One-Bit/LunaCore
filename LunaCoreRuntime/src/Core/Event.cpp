@@ -1,6 +1,5 @@
 #include "Core/Event.hpp"
 
-#include <string>
 #include <atomic>
 
 #include <CTRPluginFramework.hpp>
@@ -26,6 +25,31 @@ void TimeoutEventHook(lua_State *L, lua_Debug *ar)
         luaL_error(L, "Event listener exceeded execution time (5000 ms)");
 }
 
+void Core::Event::TriggerEvent(lua_State* L, const std::string& eventName) {
+    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
+    lua_getglobal(L, "Game");
+    lua_getfield(L, -1, "Event");
+    lua_getfield(L, -1, eventName.c_str());
+    lua_getfield(L, -1, "Trigger");
+
+    if (lua_isfunction(L, -1))
+    {
+        lua_pushvalue(L, -2);
+        if (lua_pcall(L, 1, 0, 0))
+        {
+            Core::Debug::LogError("Core::Event::" + eventName + "error: " + std::string(lua_tostring(L, -1)));
+            lua_pop(L, 1);
+        }
+    }
+    else {
+        Core::Debug::LogError("Core::Event::" + eventName + "::Trigger error. Unexpected type");
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 3);
+    Core::CrashHandler::core_state = lastcState;
+}
+
 void Core::EventHandlerCallback()
 {
     lua_State *L = Lua_global;
@@ -36,128 +60,20 @@ void Core::EventHandlerCallback()
     u32 downKeys = CTRPF::Controller::GetKeysDown();
     u32 releasedKeys = CTRPF::Controller::GetKeysReleased();
     if (pressedKeys > 0)
-    {
-        lua_getglobal(L, "Game");
-        lua_getfield(L, -1, "Event");
-        lua_getfield(L, -1, "OnKeyPressed");
-        lua_getfield(L, -1, "Trigger");
-
-        if (lua_isfunction(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            if (lua_pcall(L, 1, 0, 0))
-            {
-                Core::Debug::LogError("Core::Event::OnKeyPressed error: " + std::string(lua_tostring(L, -1)));
-                lua_pop(L, 1);
-            }
-        }
-        else {
-            Core::Debug::LogError("Core::Event::OnKeyPressed::Trigger error. Unexpected type");
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 3);
-    }
+        Core::Event::TriggerEvent(L, "OnKeyPressed");
 
     if (downKeys > 0)
-    {
-        lua_getglobal(L, "Game");
-        lua_getfield(L, -1, "Event");
-        lua_getfield(L, -1, "OnKeyDown");
-        lua_getfield(L, -1, "Trigger");
-
-        if (lua_isfunction(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            if (lua_pcall(L, 1, 0, 0))
-            {
-                Core::Debug::LogError("Core::Event::OnKeyDown error: " + std::string(lua_tostring(L, -1)));
-                lua_pop(L, 1);
-            }
-        }
-        else {
-            Core::Debug::LogError("Core::Event::OnKeyDown::Trigger error. Unexpected type");
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 3);
-    }
+        Core::Event::TriggerEvent(L, "OnKeyDown");
 
     if (releasedKeys > 0)
-    {
-        lua_getglobal(L, "Game");
-        lua_getfield(L, -1, "Event");
-        lua_getfield(L, -1, "OnKeyReleased");
-        lua_getfield(L, -1, "Trigger");
+        Core::Event::TriggerEvent(L, "OnKeyReleased");
 
-        if (lua_isfunction(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            if (lua_pcall(L, 1, 0, 0))
-            {
-                Core::Debug::LogError("Core::Event::OnKeyReleased error: " + std::string(lua_tostring(L, -1)));
-                lua_pop(L, 1);
-            }
-        }
-        else {
-            Core::Debug::LogError("Core::Event::OnKeyReleased::Trigger error. Unexpected type");
-            lua_pop(L, 1);
-        }
-        lua_pop(L, 3);
-    }
-
-    static float lastSlider = 0;
+    /*static float lastSlider = 0;
     float slider = osGet3DSliderState();
     if (lastSlider != slider) {
         CTRPF::OSD::Notify(CTRPF::Utils::Format("%f", slider));
         lastSlider = slider;
-    }
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
-}
-
-void Core::Event::TriggerOnPlayerJoinWorld(lua_State *L) {
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
-    lua_getglobal(L, "Game");
-    lua_getfield(L, -1, "Event");
-    lua_getfield(L, -1, "OnPlayerJoinWorld");
-    lua_getfield(L, -1, "Trigger");
-
-    if (lua_isfunction(L, -1))
-    {
-        lua_pushvalue(L, -2);
-        if (lua_pcall(L, 1, 0, 0))
-        {
-            Core::Debug::LogError("Core::Event::OnPlayerJoinWorld error: " + std::string(lua_tostring(L, -1)));
-            lua_pop(L, 1);
-        }
-    }
-    else {
-        Core::Debug::LogError("Core::Event::OnPlayerJoinWorld::Trigger error. Unexpected type");
-        lua_pop(L, 1);
-    }
-    lua_pop(L, 3);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
-}
-
-void Core::Event::TriggerOnPlayerLeaveWorld(lua_State *L) {
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
-    lua_getglobal(L, "Game");
-    lua_getfield(L, -1, "Event");
-    lua_getfield(L, -1, "OnPlayerLeaveWorld");
-    lua_getfield(L, -1, "Trigger");
-
-    if (lua_isfunction(L, -1))
-    {
-        lua_pushvalue(L, -2);
-        if (lua_pcall(L, 1, 0, 0))
-        {
-            Core::Debug::LogError("Core::Event::OnPlayerLeaveWorld error: " + std::string(lua_tostring(L, -1)));
-            lua_pop(L, 1);
-        }
-    }
-    else {
-        Core::Debug::LogError("Core::Event::OnPlayerLeaveWorld::Trigger error. Unexpected type");
-        lua_pop(L, 1);
-    }
-    lua_pop(L, 3);
+    }*/
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 
@@ -292,6 +208,27 @@ bool Core::Module::RegisterEventModule(lua_State *L)
     
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
+
+    //$@@@Game.Event.OnGameItemsRegister: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnGameItemsRegister");
+
+    //$@@@Game.Event.OnGameItemsRegisterTexture: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnGameItemsRegisterTexture");
+
+    //$@@@Game.Event.OnGameCreativeItemsRegister: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnGameCreativeItemsRegister");
 
     //$@@@Game.Event.OnKeyPressed: EventClass
     lua_newtable(L);
