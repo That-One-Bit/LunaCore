@@ -49,7 +49,7 @@ namespace Game {
 
         inline static void (*registerItems)(void) = reinterpret_cast<void(*)(void)>(0x00563db0);
 
-        inline static void addCreativeItem(Item* item, u8 categoryId, int position) {
+        inline static void addCreativeItem(Item* item, u8 categoryId, s16 position) {
             ItemInstance itemins(item->itemId);
             itemins.unknown1 = categoryId;
             itemins.unknown2 = position;
