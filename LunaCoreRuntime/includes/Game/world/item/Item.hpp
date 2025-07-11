@@ -39,8 +39,8 @@ namespace Game {
         constexpr static short MAX_ITEMS = 512;
         inline static Item** mItems = reinterpret_cast<Item**>(0x00b0cef0);
         inline static void** renderTable = reinterpret_cast<void**>(0x00b10520);
-        inline static ItemInstance* creativeItems = *reinterpret_cast<ItemInstance**>(0x00B0D744);
-        inline static ItemInstance* creativeItemsEnd = *(reinterpret_cast<ItemInstance**>(0x00B0D744) + 1);
+        inline static ItemInstance** creativeItems = reinterpret_cast<ItemInstance**>(0x00b0d744);
+        inline static ItemInstance** creativeItemsEnd = reinterpret_cast<ItemInstance**>(0x00b0d748);
 
         /* Item.itemId = itemId + 0x100 */
         Item(const std::string& nameId, short itemId) {

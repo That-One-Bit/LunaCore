@@ -36,9 +36,9 @@ void* Core::Items::GetRenderIDByItemID(u16 id) {
 }
 
 u16 Core::Items::GetCreativeItemPositionOfGroup(u16 itemId, u16 groupId) {
-    Game::ItemInstance* actualPos = Item::creativeItems;
-    while (actualPos < Item::creativeItemsEnd) {
-        if (actualPos->unknown1 == groupId && (*reinterpret_cast<Item**>((u8*)(actualPos) + 0xc))->itemId == itemId)
+    Game::ItemInstance* actualPos = *Item::creativeItems;
+    while (actualPos < *Item::creativeItemsEnd) {
+        if (actualPos->unknown1 == groupId && (*reinterpret_cast<Item**>((u32)(actualPos) + 0xc))->itemId == itemId)
             return actualPos->unknown2;
         actualPos = actualPos + 1;
     }
