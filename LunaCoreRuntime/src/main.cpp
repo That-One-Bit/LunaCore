@@ -257,6 +257,7 @@ namespace CTRPluginFramework
         Core::Debug::LogMessage("Starting plugin mainloop", false);
         Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
         Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAINLOOP;
+        GameState.CoreLoaded.store(true);
         gmenu->Run();
         
         delete gmenu;

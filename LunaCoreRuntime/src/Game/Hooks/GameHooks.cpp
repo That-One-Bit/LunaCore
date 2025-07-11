@@ -108,6 +108,8 @@ static void RegisterItemsHook(CoreHookContext* ctx) {
     if (mCopper_ingot == nullptr)
         Core::Debug::LogMessage("Cannot register 'copper' item", true);
 
+    while (!GameState.CoreLoaded.load())
+        svcSleepThread(1000000);
     Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
 
     reinterpret_cast<void(*)()>(0x0056e450)();

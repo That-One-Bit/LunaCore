@@ -4,10 +4,10 @@
 
 #include <FsLib/fslib.hpp>
 #include "Core/Debug.hpp"
+#include "CoreGlobals.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
-extern "C" lua_State* Lua_global;
 static void *reservedMemory = nullptr;
 
 namespace Core {
