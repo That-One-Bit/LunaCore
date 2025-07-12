@@ -59,9 +59,9 @@ static int l_Filesystem_open(lua_State *L) {
     else if (filemode == "r")
         fileStruct->mode = FS_OPEN_READ;
     else if (filemode == "a")
-        fileStruct->mode = FS_OPEN_APPEND|FS_OPEN_CREATE;
+        fileStruct->mode = FS_OPEN_APPEND;
     else if (filemode == "rw" || filemode == "wr" || filemode == "r+" || filemode == "w+")
-        fileStruct->mode = FS_OPEN_WRITE|FS_OPEN_READ|FS_OPEN_CREATE;
+        fileStruct->mode = FS_OPEN_WRITE|FS_OPEN_READ;
     else {
         lua_pop(L, 1);
         return luaL_error(L, "Invalid mode");

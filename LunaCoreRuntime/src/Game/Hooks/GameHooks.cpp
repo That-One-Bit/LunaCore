@@ -21,7 +21,6 @@ namespace CTRPF = CTRPluginFramework;
 
 extern GameState_s GameState;
 static std::vector<std::unique_ptr<CoreHookContext>> hooks;
-Game::Item* mCopper_ingot = nullptr;
 
 static __attribute((naked)) void hookBody() {
     asm volatile ( // r4 contains hookCtxPtr
@@ -104,10 +103,6 @@ static void RegisterItemsHook(CoreHookContext* ctx) {
 
     GameState.LoadingItems.store(true);
 
-    mCopper_ingot = Game::registerItem("copper", 255);
-    if (mCopper_ingot == nullptr)
-        Core::Debug::LogMessage("Cannot register 'copper' item", true);
-
     while (!GameState.CoreLoaded.load())
         svcSleepThread(1000000);
     Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
@@ -133,8 +128,6 @@ static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.SettingItemsTextures.store(true);
 
-    mCopper_ingot->setTexture(hash("copper"), 0);
-
     Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegisterTexture");
 
     GameState.SettingItemsTextures.store(false);
@@ -156,8 +149,6 @@ static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
     Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.LoadingCreativeItems.store(true);
-
-    Game::Item::addCreativeItem(mCopper_ingot, 4, 49);
 
     Core::Event::TriggerEvent(Lua_global, "OnGameCreativeItemsRegister");
 
