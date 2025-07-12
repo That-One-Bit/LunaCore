@@ -6,7 +6,6 @@
 
 #include "CoreGlobals.hpp"
 
-#include "Core/Utils/Bits.hpp"
 #include "Core/System.hpp"
 #include "Core/Filesystem.hpp"
 #include "Core/Keyboard.hpp"
@@ -116,7 +115,6 @@ void Core::LoadModules(lua_State *L)
     Core::RegisterCustomFileLoader(L);
     Core::RegisterUtilsModule(L);
     
-    Core::RegisterBitsModule(L);
     Core::RegisterAsyncModule(L);
     Core::RegisterCoreModule(L);
     Core::RegisterGameModule(L);
