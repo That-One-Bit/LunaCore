@@ -5,10 +5,12 @@
 #include "Core/Debug.hpp"
 #include "Core/Utils/Utils.hpp"
 #include "CoreGlobals.hpp"
+#include "Core/Utils/GameState.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
 CTRPluginFramework::Clock timeoutAsynClock;
+extern GameState_s GameState;
 
 void Core::AsyncRestartClock() {
     timeoutAsynClock.Restart();
@@ -22,6 +24,7 @@ static void TimeoutAsyncHook(lua_State *L, lua_Debug *ar)
 
 void Core::AsyncHandlerCallback()
 {
+    Lua_Global_Mut.lock();
     lua_State *L = Lua_global;
 
     // Async handles timeout hooks individually so no need to configure
@@ -40,6 +43,7 @@ void Core::AsyncHandlerCallback()
     else
         lua_pop(L, 1);
     lua_pop(L, 1);
+    Lua_Global_Mut.unlock();
 }
 
 // ----------------------------------------------------------------------------

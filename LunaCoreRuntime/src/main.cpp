@@ -5,7 +5,6 @@
 
 #include <string>
 #include <unordered_map>
-#include <atomic>
 
 #include <cstring>
 
@@ -38,7 +37,6 @@
 namespace CTRPF = CTRPluginFramework;
 
 int scriptsLoadedCount = 0;
-std::atomic<int> luaMemoryUsage = 0;
 bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
@@ -157,18 +155,18 @@ namespace CTRPluginFramework
         lua_close(Lua_global);
     }
 
-    void UpdateLuaStatistics()
-    {
-        lua_State *L = Lua_global;
-        int memusgkb = lua_gc(L, LUA_GCCOUNT, 0);
-        int memusgb = lua_gc(L, LUA_GCCOUNTB, 0);
-        luaMemoryUsage.store(memusgkb * 1024 + memusgb);
-    }
-
     bool DrawMonitors(const Screen &screen)
     {
-        if (screen.IsTop)
-            screen.Draw("Lua memory: "+std::to_string(luaMemoryUsage.load()), 10, 10, Color::Black, Color(0, 0, 0, 0));
+        static int luaMemoryUsage = 0;
+        if (screen.IsTop) {
+            if (Lua_Global_Mut.try_lock()) {
+                int memusgkb = lua_gc(Lua_global, LUA_GCCOUNT, 0);
+                int memusgb = lua_gc(Lua_global, LUA_GCCOUNTB, 0);
+                luaMemoryUsage = memusgkb * 1024 + memusgb;
+                Lua_Global_Mut.unlock();
+            }
+            screen.Draw("Lua memory: "+std::to_string(luaMemoryUsage), 10, 10, Color::Black, Color(0, 0, 0, 0));
+        }
         return false;
     }
 
@@ -178,26 +176,11 @@ namespace CTRPluginFramework
         u64 titleID = Process::GetTitleID();
         if (!IS_TARGET_ID(titleID))
             return 0;
-        
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE2;
-
-        if (!fslib::initialize()) {
-            Core::Debug::LogError("Failed to initialize fslib");
-            Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
-        }
-
-        if (!fslib::openExtData(u"extdata", static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF))) {
-            Core::Debug::LogError("Failed to open extdata");
-            Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
-        }
 
         if (!Directory::IsExists(PLUGIN_FOLDER"/layouts"))
             Directory::Create(PLUGIN_FOLDER"/layouts");
-        if (!Directory::IsExists(PLUGIN_FOLDER"/scripts"))
-            Directory::Create(PLUGIN_FOLDER"/scripts");
 
         bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
-        bool loadScripts = Core::Config::GetBoolValue(config, "enable_scripts", true);
 
         // Update configs
         if (!Core::Config::SaveConfig(CONFIG_FILE, config))
@@ -215,40 +198,13 @@ namespace CTRPluginFramework
         std::string &title = gmenu->Title();
         title.assign("LunaCore Plugin Menu");
 
-        Core::Debug::LogMessage("Loading Lua environment", false);
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
-        Lua_global = luaL_newstate();
-        Core::LoadLuaEnv();
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
-
         // Synnchronize the menu with frame event
         gmenu->SynchronizeWithFrame(true);
         gmenu->ShowWelcomeMessage(false);
 
-        u16 gameVer = Process::GetVersion();
-        if (System::IsCitra())
-            Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);
-        else if (IS_VUSA_COMP(titleID, gameVer))
-            Core::Debug::LogMessage(Utils::Format("Game USA region version '%hu' (1.9.19) detected", gameVer), false);
-        else if (IS_VEUR_COMP(titleID, gameVer))
-            Core::Debug::LogMessage(Utils::Format("Game EUR region version '%hu' (1.9.19) detected", gameVer), false);
-        else if (IS_VJPN_COMP(titleID, gameVer))
-            Core::Debug::LogMessage(Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
-        else
-            Core::Debug::LogMessage(Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
-        Core::Debug::LogMessage("LunaCore runtime loaded", true);
-
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
-        Core::LoadMods();
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
-
         OSD::Run(DrawMonitors);
-        gmenu->Callback(UpdateLuaStatistics);
         gmenu->Callback(Core::EventHandlerCallback);
         gmenu->Callback(Core::AsyncHandlerCallback);
-
-        if (loadScripts)
-            Core::PreloadScripts(); // Executes the scripts under the scripts folder
 
         // Init our menu entries & folders
         InitMenu(*gmenu);

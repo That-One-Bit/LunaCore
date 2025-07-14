@@ -9,11 +9,13 @@
 #include "Core/Game/Gamepad.hpp"
 #include "Core/Utils/Utils.hpp"
 #include "CoreGlobals.hpp"
+#include "Core/Utils/GameState.hpp"
 
 namespace CTRPF = CTRPluginFramework;
 
 CTRPF::Clock timeoutEventClock;
 extern std::atomic<bool> graphicsIsTop;
+extern GameState_s GameState;
 
 void Core::EventRestartClock() {
     timeoutEventClock.Restart();
@@ -52,6 +54,7 @@ void Core::Event::TriggerEvent(lua_State* L, const std::string& eventName) {
 
 void Core::EventHandlerCallback()
 {
+    Lua_Global_Mut.lock();
     lua_State *L = Lua_global;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
 
@@ -67,6 +70,8 @@ void Core::EventHandlerCallback()
 
     if (releasedKeys > 0)
         Core::Event::TriggerEvent(L, "OnKeyReleased");
+
+    Lua_Global_Mut.unlock();
 
     /*static float lastSlider = 0;
     float slider = osGet3DSliderState();
@@ -209,6 +214,13 @@ bool Core::Module::RegisterEventModule(lua_State *L)
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
 
+    //$@@@Game.Event.OnGameLoad: EventClass
+    lua_newtable(L);
+    lua_newtable(L);
+    lua_setfield(L, -2, "listeners");
+    luaC_setmetatable(L, "EventClass");
+    lua_setfield(L, -2, "OnGameLoad");
+    
     //$@@@Game.Event.OnGameItemsRegister: EventClass
     lua_newtable(L);
     lua_newtable(L);

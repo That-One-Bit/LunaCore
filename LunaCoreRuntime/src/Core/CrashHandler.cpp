@@ -120,8 +120,10 @@ namespace Core {
                 reservedMemory = nullptr;
             }
             bool possibleOOM = false;
+            bool luaEnvBusy = !Lua_Global_Mut.try_lock();
             if (Lua_global != NULL) {
-                possibleOOM = lua_gc(Lua_global, LUA_GCCOUNT, 0) >= 2000;
+                if (!luaEnvBusy)
+                    possibleOOM = lua_gc(Lua_global, LUA_GCCOUNT, 0) >= 2000;
                 lua_close(Lua_global);
             }
             {
@@ -140,9 +142,14 @@ namespace Core {
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\tR8: %08X\tR9: %08X\n", regs->r[8], regs->r[9]));
             }
             const char* reasonMsg = "Unknown";
-            if (possibleOOM) {
+            if (possibleOOM)
                 reasonMsg = "Out of memory. Lua memory was bigger than 2048000 bytes";
-            }
+            else if (luaEnvBusy)
+                reasonMsg = "Core lua runtime error";
+            else if (plg_state == PluginState::PLUGIN_PATCHPROCESS)
+                reasonMsg = "Core internal error during startup";
+            else if (plg_state == PluginState::PLUGIN_MAIN)
+                reasonMsg = "Core internal error during initialization";
             Core::Debug::LogRaw(CTRPF::Utils::Format("%sPossible reason: %s\n", Core::Debug::tab, reasonMsg));
             Core::Debug::CloseLogFile();
             if (plg_state != PluginState::PLUGIN_MAINLOOP)

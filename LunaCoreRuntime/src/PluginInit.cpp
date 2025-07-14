@@ -144,6 +144,8 @@ void InitMenu(PluginMenu &menu)
         }
     }));
     devFolder->Append(new MenuEntry("Load script from network", nullptr, [](MenuEntry *entry) {
+        if (!Lua_Global_Mut.try_lock())
+            return
         initSockets();
         Core::Network::TCPServer tcp(5432);
         std::string host = tcp.getHostName();
@@ -219,20 +221,26 @@ void InitMenu(PluginMenu &menu)
         exitSockets();
         delete namebuf;
         delete buffer;
+        Lua_Global_Mut.unlock();
     }));
     devFolder->Append(new MenuEntry("Clean Lua environment", nullptr, [](MenuEntry *entry) {
         if (!MessageBox("This will unload all loaded scripts. Continue?", DialogType::DialogYesNo)())
             return;
+        if (!Lua_Global_Mut.try_lock())
+            return
         Core::Debug::LogMessage("Reloading Lua environment", false);
         lua_close(Lua_global);
         Lua_global = luaL_newstate();
         Core::LoadLuaEnv();
         scriptsLoadedCount = 0;
         MessageBox("Lua environment reloaded")();
+        Lua_Global_Mut.unlock();
     }));
     devFolder->Append(new MenuEntry("Reload scripts", nullptr, [](MenuEntry *entry) {
         if (!MessageBox("This will reload saved scripts, not including loaded by network (if not saved to sd card). Continue?", DialogType::DialogYesNo)())
             return;
+        if (!Lua_Global_Mut.try_lock())
+            return
         Core::Debug::LogMessage("Reloading Lua environment", false);
         lua_close(Lua_global);
         Lua_global = luaL_newstate();
@@ -240,6 +248,7 @@ void InitMenu(PluginMenu &menu)
         scriptsLoadedCount = 0;
         Core::PreloadScripts();
         MessageBox("Lua environment reloaded")();
+        Lua_Global_Mut.unlock();
     }));
     menu.Append(optionsFolder);
     menu.Append(devFolder);

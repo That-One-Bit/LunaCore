@@ -9,4 +9,5 @@ typedef struct {
     std::atomic<bool> SettingItemsTextures = false;
     std::atomic<bool> LoadingCreativeItems = false;
     std::atomic<bool> CoreLoaded = false;
+    std::atomic<bool> GameExecutingLua = false;
 } GameState_s;

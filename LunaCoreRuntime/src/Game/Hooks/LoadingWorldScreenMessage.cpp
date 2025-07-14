@@ -11,8 +11,6 @@
 
 namespace CTRPF = CTRPluginFramework;
 
-#define BASE_OFF 0x100000
-
 extern GameState_s GameState;
 bool eventJoinTriggered = false;
 
@@ -22,14 +20,18 @@ void LoadingWorldScreenMessageCallback(int *ptr1, int *ptr2) {
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.MainMenuLoaded.store(false);
 
-    void (*LoadingWorldScreenMessageOriginal)(int*, int*) = (void(*)(int*,int*))(0x612ef0+BASE_OFF);
+    void (*LoadingWorldScreenMessageOriginal)(int*, int*) = (void(*)(int*,int*))(0x712ef0);
     MBdetectStateFunc *detectState = (MBdetectStateFunc*)(*ptr2 + 0x18);
     int state = detectState[0](ptr2);
     if (state == 0x10) {
         GameState.WorldLoaded.store(true);
         if (!eventJoinTriggered) {
             Core::CrashHandler::game_state = Core::CrashHandler::GAME_WORLD;
+            Lua_Global_Mut.lock();
+            GameState.GameExecutingLua.store(true);
             Core::Event::TriggerEvent(Lua_global, "OnPlayerJoinWorld");
+            GameState.GameExecutingLua.store(false);
+            Lua_Global_Mut.unlock();
             eventJoinTriggered = true;
         }
     }
@@ -40,17 +42,21 @@ void LoadingWorldScreenMessageCallback(int *ptr1, int *ptr2) {
 }
 
 void SetLoadingWorldScreenMessageCallback() {
-    CTRPF::Process::Write32(0x8c5df4+BASE_OFF, (u32)LoadingWorldScreenMessageCallback);
+    CTRPF::Process::Write32(0x9c5df4, (u32)LoadingWorldScreenMessageCallback);
 }
 
 void LeaveLevelPromptCallback(int *ptr1, int param2, int param3, u32 param4) {
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-    void (*LeaveLevelPromptOriginal)(int*,int,int,u32) = (void(*)(int*,int,int,u32))(0x221d78+BASE_OFF);
+    void (*LeaveLevelPromptOriginal)(int*,int,int,u32) = (void(*)(int*,int,int,u32))(0x321d78);
 
     GameState.WorldLoaded.store(false);
     if (eventJoinTriggered) {
         Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
+        Lua_Global_Mut.lock();
+        GameState.GameExecutingLua.store(true);
         Core::Event::TriggerEvent(Lua_global, "OnPlayerLeaveWorld");
+        GameState.GameExecutingLua.store(false);
+        Lua_Global_Mut.unlock();
         eventJoinTriggered = false;
     }
 
@@ -60,5 +66,5 @@ void LeaveLevelPromptCallback(int *ptr1, int param2, int param3, u32 param4) {
 }
 
 void SetLeaveLevelPromptCallback() {
-    CTRPF::Process::Write32(0x8b3a70+BASE_OFF, (u32)LeaveLevelPromptCallback);
+    CTRPF::Process::Write32(0x9b3a70, (u32)LeaveLevelPromptCallback);
 }

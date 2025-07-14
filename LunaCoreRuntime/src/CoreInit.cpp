@@ -3,6 +3,9 @@
 #include <CTRPluginFramework.hpp>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
+#include <FsLib/fslib.hpp>
+
 #include "json.hpp"
 #include "string_hash.hpp"
 
@@ -11,16 +14,80 @@
 #include "Modules.hpp"
 #include "CoreConstants.hpp"
 #include "CoreGlobals.hpp"
+#include "Core/CrashHandler.hpp"
+#include "Core/Config.hpp"
+
+#define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
+#define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
+#define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
+#define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
 
 using json = nlohmann::json;
 namespace CTRPF = CTRPluginFramework;
 
 extern int scriptsLoadedCount;
 CTRPF::Clock timeoutLoadClock;
+extern std::unordered_map<std::string, std::string> config;
+
+void Core::InitCore() {
+    u64 titleID = CTRPF::Process::GetTitleID();
+        if (!IS_TARGET_ID(titleID))
+            return;
+    Lua_Global_Mut.lock();
+
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE2;
+
+    if (!fslib::initialize()) {
+        Core::Debug::LogError("Failed to initialize fslib");
+        Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
+    }
+
+    if (!fslib::openExtData(u"extdata", static_cast<uint32_t>(titleID >> 8 & 0x00FFFFFF))) {
+        Core::Debug::LogError("Failed to open extdata");
+        Core::Debug::LogRaw(std::string(fslib::getErrorString())+"\n");
+    }
+
+    if (!CTRPF::Directory::IsExists(PLUGIN_FOLDER"/scripts"))
+        CTRPF::Directory::Create(PLUGIN_FOLDER"/scripts");
+
+    bool loadScripts = Core::Config::GetBoolValue(config, "enable_scripts", true);
+
+    // Update configs
+    if (!Core::Config::SaveConfig(CONFIG_FILE, config))
+        Core::Debug::LogMessage("Failed to save configs", true);
+    
+    Core::Debug::LogMessage("Loading Lua environment", false);
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
+    Lua_global = luaL_newstate();
+    Core::LoadLuaEnv();
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
+
+    u16 gameVer = CTRPF::Process::GetVersion();
+    if (CTRPF::System::IsCitra())
+        Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);
+    else if (IS_VUSA_COMP(titleID, gameVer))
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Game USA region version '%hu' (1.9.19) detected", gameVer), false);
+    else if (IS_VEUR_COMP(titleID, gameVer))
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Game EUR region version '%hu' (1.9.19) detected", gameVer), false);
+    else if (IS_VJPN_COMP(titleID, gameVer))
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
+    else
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
+    Core::Debug::LogMessage("LunaCore runtime loaded", true);
+
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
+    Core::LoadMods();
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
+
+    if (loadScripts)
+        Core::PreloadScripts(); // Executes the scripts under the scripts folder
+    
+    Lua_Global_Mut.unlock();
+}
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(20000)))
+    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(100000)))
         luaL_error(L, "Script load exceeded execution time (20000 ms)");
 }
 
