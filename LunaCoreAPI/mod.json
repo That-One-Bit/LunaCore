@@ -1,0 +1,5 @@
+{
+    "name": "LunaCoreAPI",
+    "description": "An API that provides more useful features that make it easier to create mods for LunaCore",
+    "dependencies": []
+}

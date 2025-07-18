@@ -15,6 +15,15 @@ Game = {}
 
 Core = {}
 
+---Returns the full path that corresponds to the modname if registered
+---@param modname string
+---@return string?
+function Core.getModpath(modname) end
+
+---Returns the title id formated in a hex string
+---@return string
+function Core.getTitleId() end
+
 Core.Debug = {}
 
 ---Displays a notification on screen
@@ -48,6 +57,18 @@ function EventClass:Trigger() end
 
 ---@class BaseEvent: EventClass
 Game.Event.BaseEvent = {}
+
+---@class OnGameLoad: EventClass
+Game.Event.OnGameLoad = {}
+
+---@class OnGameItemsRegister: EventClass
+Game.Event.OnGameItemsRegister = {}
+
+---@class OnGameItemsRegisterTexture: EventClass
+Game.Event.OnGameItemsRegisterTexture = {}
+
+---@class OnGameCreativeItemsRegister: EventClass
+Game.Event.OnGameCreativeItemsRegister = {}
 
 ---@class OnKeyPressed: EventClass
 Game.Event.OnKeyPressed = {}
@@ -131,6 +152,254 @@ function FilesystemFile:isEOF() end
 
 ---Closes the file
 function FilesystemFile:close() end
+
+Game.Gamepad = {}
+
+---@class KeyCode: integer
+
+---Returns true if the key is pressed (only counts for the first press, for button held use isDown)
+---@param keycode KeyCode
+---@return boolean
+function Game.Gamepad.isPressed(keycode) end
+
+---Returns true if the key is down
+---@param keycode KeyCode
+---@return boolean
+function Game.Gamepad.isDown(keycode) end
+
+---Returns true if the key just got released
+---@param keycode KeyCode
+---@return boolean
+function Game.Gamepad.isReleased(keycode) end
+
+---Performs a virtual button press
+---@param keycode KeyCode
+function Game.Gamepad.pressButton(keycode) end
+
+---Returns touch x and y position
+---@return number
+---@return number
+function Game.Gamepad.getTouch() end
+
+Game.Gamepad.KeyCodes = {}
+
+Game.Gamepad.KeyCodes.A = 1
+
+Game.Gamepad.KeyCodes.B = 2
+
+Game.Gamepad.KeyCodes.SELECT = 4
+
+Game.Gamepad.KeyCodes.START = 8
+
+Game.Gamepad.KeyCodes.DPADRIGHT = 16
+
+Game.Gamepad.KeyCodes.DPADLEFT = 32
+
+Game.Gamepad.KeyCodes.DPADUP = 64
+
+Game.Gamepad.KeyCodes.DPADDOWN = 128
+
+Game.Gamepad.KeyCodes.R = 256
+
+Game.Gamepad.KeyCodes.L = 512
+
+Game.Gamepad.KeyCodes.X = 1024
+
+Game.Gamepad.KeyCodes.Y = 2048
+
+Game.Gamepad.KeyCodes.ZL = 16384
+
+Game.Gamepad.KeyCodes.ZR = 32768
+
+Game.Gamepad.KeyCodes.TOUCHPAD = 1048576
+
+Game.Gamepad.KeyCodes.CSTICKRIGHT = 16777216
+
+Game.Gamepad.KeyCodes.CSTICKLEFT = 33554432
+
+Game.Gamepad.KeyCodes.CSTICKUP = 67108864
+
+Game.Gamepad.KeyCodes.CSTICKDOWN = 134217728
+
+Game.Gamepad.KeyCodes.CPADRIGHT = 268435456
+
+Game.Gamepad.KeyCodes.CPADLEFT = 536870912
+
+Game.Gamepad.KeyCodes.CPADUP = 1073741824
+
+Game.Gamepad.KeyCodes.CPADDOWN = 2147483648
+
+Game.Gamepad.KeyCodes.UP = 1073741888
+
+Game.Gamepad.KeyCodes.DOWN = 2147483776
+
+Game.Gamepad.KeyCodes.LEFT = 536870944
+
+Game.Gamepad.KeyCodes.RIGHT = 268435472
+
+Game.Gamepad.KeyCodes.CPAD = 2952790016
+
+Game.Gamepad.KeyCodes.CSTICK = 184549376
+
+Game.Items = {}
+
+---Find the item ID using its name
+---@param name string
+---@return integer?
+function Game.Items.findItemIDByName(name) end
+
+---Find the item ID using its name
+---@param itemID integer
+---@return string?
+function Game.Items.findItemNameByID(itemID) end
+
+---Get the item position in creative using the id
+---@param itemID integer
+---@param groupID integer
+---@return number
+function Game.Items.getCreativePosition(itemID, groupID) end
+
+---Creates a new item and stores it in the game's items table. Returns the address to the item
+---@param itemName string
+---@param itemId integer
+---@return lightuserdata?
+function Game.Items.registerItem(itemName, itemId) end
+
+---Takes a registered item with Game.Items.registerItem, and sets its texture
+---@param item lightuserdata
+---@param textureName string
+---@param textureIndex integer
+function Game.Items.registerItemTexture(item, textureName, textureIndex) end
+
+---Takes a registered item with Game.Items.registerItem, and registers it in creative menu
+---@param item lightuserdata
+---@param groupId integer
+---@param position integer
+function Game.Items.registerCreativeItem(item, groupId, position) end
+
+Game.LocalPlayer = {}
+
+Game.LocalPlayer.Position = {}
+
+---Gets local player position
+---@return number
+---@return number
+---@return number
+function Game.LocalPlayer.Position.get() end
+
+---Sets player position
+---@param x number
+---@param y number
+---@param z number
+function Game.LocalPlayer.Position.set(x, y, z) end
+
+Game.LocalPlayer.Velocity = {}
+
+---Gets local player velocity
+---@return number
+---@return number
+---@return number
+function Game.LocalPlayer.Velocity.get() end
+
+---Sets player velocity
+---@param x number
+---@param y number
+---@param z number
+function Game.LocalPlayer.Velocity.set(x, y, z) end
+
+Game.LocalPlayer.OnGround = false
+
+Game.LocalPlayer.Sneaking = false
+
+Game.LocalPlayer.Jumping = false
+
+Game.LocalPlayer.Sprinting = false
+
+Game.LocalPlayer.Flying = false
+
+Game.LocalPlayer.UnderWater = false
+
+Game.LocalPlayer.TouchingWall = false
+
+Game.LocalPlayer.Invincible = false
+
+Game.LocalPlayer.CanFly = false
+
+Game.LocalPlayer.CanConsumeItems = false
+
+Game.LocalPlayer.BaseMoveSpeed = 0.0
+
+Game.LocalPlayer.MoveSpeed = 0.0
+
+Game.LocalPlayer.SwimSpeed = 0.02
+
+Game.LocalPlayer.FlySpeed = 0.0
+
+Game.LocalPlayer.CurrentHP = 0.0
+
+Game.LocalPlayer.MaxHP = 0.0
+
+Game.LocalPlayer.CurrentHunger = 0.0
+
+Game.LocalPlayer.MaxHunger = 0.0
+
+Game.LocalPlayer.CurrentLevel = 0.0
+
+Game.LocalPlayer.LevelProgress = 0.0
+
+Game.LocalPlayer.Gamemode = 0
+
+Game.LocalPlayer.ReachDistance = 0.0
+
+Game.LocalPlayer.SprintDelay = 0.0
+
+Game.LocalPlayer.Camera = {}
+
+Game.LocalPlayer.Camera.FOV = 0.0
+
+Game.LocalPlayer.Camera.Yaw = 0.0
+
+Game.LocalPlayer.Camera.Pitch = 0.0
+
+Game.LocalPlayer.Inventory = {}
+
+Game.LocalPlayer.Inventory.Slots = {}
+
+Game.LocalPlayer.Inventory.ArmorSlots = {}
+
+---@class InventorySlot
+local InventorySlot = {}
+
+InventorySlot.Slot = 0
+
+InventorySlot.ItemID = 0
+
+InventorySlot.ItemCount = 0
+
+InventorySlot.ItemData = 0
+
+InventorySlot.ItemName = ""
+
+---@class InventoryArmorSlot
+local InventoryArmorSlot = {}
+
+InventoryArmorSlot.Slot = 0
+
+InventoryArmorSlot.ItemID = 0
+
+InventoryArmorSlot.ItemData = 0
+
+InventoryArmorSlot.ItemName = ""
+
+Game.World = {}
+
+Game.World.Loaded = false
+
+Game.World.Raining = false
+
+Game.World.Thunderstorm = false
+
+Game.World.CloudsHeight = 0.0
 
 Core.Graphics = {}
 
@@ -280,258 +549,3 @@ Core.System = {}
 ---Returns UNIX time
 ---@return number
 function Core.System.getTime() end
-
-Bits = {}
-
----@param a integer
----@param b integer
----@return integer
-function Bits.lshift(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.rshift(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.band(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.bor(a, b) end
-
----@param a integer
----@param b integer
----@return integer
-function Bits.bxor(a, b) end
-
----@param a integer
----@return integer
-function Bits.bnot(a) end
-
-Game.Gamepad = {}
-
----@class KeyCode: integer
-
----Returns true if the key is pressed (only counts for the first press, for button held use isDown)
----@param keycode KeyCode
----@return boolean
-function Game.Gamepad.isPressed(keycode) end
-
----Returns true if the key is down
----@param keycode KeyCode
----@return boolean
-function Game.Gamepad.isDown(keycode) end
-
----Returns true if the key just got released
----@param keycode KeyCode
----@return boolean
-function Game.Gamepad.isReleased(keycode) end
-
----Performs a virtual button press
----@param keycode KeyCode
-function Game.Gamepad.pressButton(keycode) end
-
----Returns touch x and y position
----@return number
----@return number
-function Game.Gamepad.getTouch() end
-
-Game.Gamepad.KeyCodes = {}
-
-Game.Gamepad.KeyCodes.A = 1
-
-Game.Gamepad.KeyCodes.B = 2
-
-Game.Gamepad.KeyCodes.SELECT = 4
-
-Game.Gamepad.KeyCodes.START = 8
-
-Game.Gamepad.KeyCodes.DPADRIGHT = 16
-
-Game.Gamepad.KeyCodes.DPADLEFT = 32
-
-Game.Gamepad.KeyCodes.DPADUP = 64
-
-Game.Gamepad.KeyCodes.DPADDOWN = 128
-
-Game.Gamepad.KeyCodes.R = 256
-
-Game.Gamepad.KeyCodes.L = 512
-
-Game.Gamepad.KeyCodes.X = 1024
-
-Game.Gamepad.KeyCodes.Y = 2048
-
-Game.Gamepad.KeyCodes.ZL = 16384
-
-Game.Gamepad.KeyCodes.ZR = 32768
-
-Game.Gamepad.KeyCodes.TOUCHPAD = 1048576
-
-Game.Gamepad.KeyCodes.CSTICKRIGHT = 16777216
-
-Game.Gamepad.KeyCodes.CSTICKLEFT = 33554432
-
-Game.Gamepad.KeyCodes.CSTICKUP = 67108864
-
-Game.Gamepad.KeyCodes.CSTICKDOWN = 134217728
-
-Game.Gamepad.KeyCodes.CPADRIGHT = 268435456
-
-Game.Gamepad.KeyCodes.CPADLEFT = 536870912
-
-Game.Gamepad.KeyCodes.CPADUP = 1073741824
-
-Game.Gamepad.KeyCodes.CPADDOWN = 2147483648
-
-Game.Gamepad.KeyCodes.UP = 1073741888
-
-Game.Gamepad.KeyCodes.DOWN = 2147483776
-
-Game.Gamepad.KeyCodes.LEFT = 536870944
-
-Game.Gamepad.KeyCodes.RIGHT = 268435472
-
-Game.Gamepad.KeyCodes.CPAD = 2952790016
-
-Game.Gamepad.KeyCodes.CSTICK = 184549376
-
-Game.Items = {}
-
----Find the item ID using its name
----@param name string
----@return integer?
-function Game.Items.findItemIDByName(name) end
-
----Find the item ID using its name
----@param itemID integer
----@return string?
-function Game.Items.findItemNameByID(itemID) end
-
-Game.LocalPlayer = {}
-
-Game.LocalPlayer.Position = {}
-
----Gets local player position
----@return number
----@return number
----@return number
-function Game.LocalPlayer.Position.get() end
-
----Sets player position
----@param x number
----@param y number
----@param z number
-function Game.LocalPlayer.Position.set(x, y, z) end
-
-Game.LocalPlayer.Velocity = {}
-
----Gets local player velocity
----@return number
----@return number
----@return number
-function Game.LocalPlayer.Velocity.get() end
-
----Sets player velocity
----@param x number
----@param y number
----@param z number
-function Game.LocalPlayer.Velocity.set(x, y, z) end
-
-Game.LocalPlayer.OnGround = false
-
-Game.LocalPlayer.Sneaking = false
-
-Game.LocalPlayer.Jumping = false
-
-Game.LocalPlayer.Sprinting = false
-
-Game.LocalPlayer.Flying = false
-
-Game.LocalPlayer.UnderWater = false
-
-Game.LocalPlayer.TouchingWall = false
-
-Game.LocalPlayer.Invincible = false
-
-Game.LocalPlayer.CanFly = false
-
-Game.LocalPlayer.CanConsumeItems = false
-
-Game.LocalPlayer.BaseMoveSpeed = 0.0
-
-Game.LocalPlayer.MoveSpeed = 0.0
-
-Game.LocalPlayer.SwimSpeed = 0.02
-
-Game.LocalPlayer.FlySpeed = 0.0
-
-Game.LocalPlayer.CurrentHP = 0.0
-
-Game.LocalPlayer.MaxHP = 0.0
-
-Game.LocalPlayer.CurrentHunger = 0.0
-
-Game.LocalPlayer.MaxHunger = 0.0
-
-Game.LocalPlayer.CurrentLevel = 0.0
-
-Game.LocalPlayer.LevelProgress = 0.0
-
-Game.LocalPlayer.Gamemode = 0
-
-Game.LocalPlayer.ReachDistance = 0.0
-
-Game.LocalPlayer.SprintDelay = 0.0
-
-Game.LocalPlayer.Camera = {}
-
-Game.LocalPlayer.Camera.FOV = 0.0
-
-Game.LocalPlayer.Camera.Yaw = 0.0
-
-Game.LocalPlayer.Camera.Pitch = 0.0
-
-Game.LocalPlayer.Inventory = {}
-
-Game.LocalPlayer.Inventory.Slots = {}
-
-Game.LocalPlayer.Inventory.ArmorSlots = {}
-
----@class InventorySlot
-local InventorySlot = {}
-
-InventorySlot.Slot = 0
-
-InventorySlot.ItemID = 0
-
-InventorySlot.ItemCount = 0
-
-InventorySlot.ItemData = 0
-
-InventorySlot.ItemName = ""
-
----@class InventoryArmorSlot
-local InventoryArmorSlot = {}
-
-InventoryArmorSlot.Slot = 0
-
-InventoryArmorSlot.ItemID = 0
-
-InventoryArmorSlot.ItemData = 0
-
-InventoryArmorSlot.ItemName = ""
-
-Game.World = {}
-
-Game.World.Loaded = false
-
-Game.World.Raining = false
-
-Game.World.Thunderstorm = false
-
-Game.World.CloudsHeight = 0.0

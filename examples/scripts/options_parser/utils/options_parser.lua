@@ -1,3 +1,5 @@
+--- Use with bitop or change to LunaCoreAPI that includes bitop and struct
+local Bits = require("utils.bitop.funcs")
 local parser = {}
 local stringUtils = require("utils.string_utils")
 

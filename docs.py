@@ -2,7 +2,7 @@ from glob import iglob
 from pathlib import Path
 
 DOCS_FILE = open("./api_docs.lua", "w", encoding="utf-8")
-DEF_CLASSES = ["number", "integer", "table", "nil", "userdata", "string", "boolean", "function", "any"]
+DEF_CLASSES = ["number", "integer", "table", "nil", "userdata", "lightuserdata", "string", "boolean", "function", "any"]
 LOADED_FILES = []
 DEF_GLOBALS = {}
 
