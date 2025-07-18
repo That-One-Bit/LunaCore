@@ -182,6 +182,8 @@ namespace CTRPluginFramework
 
         bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
 
+        Core::InitCore();
+
         // Update configs
         if (!Core::Config::SaveConfig(CONFIG_FILE, config))
             Core::Debug::LogMessage("Failed to save configs", true);

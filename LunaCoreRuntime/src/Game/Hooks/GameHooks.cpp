@@ -205,6 +205,6 @@ void hookSomeFunctions() {
     hookFunction(0x0056c2a0, (u32)RegisterItemsHook);
     hookFunction(0x0056de70, (u32)RegisterItemsTexturesHook);
     hookFunction(0x00578358, (u32)RegisterCreativeItemsHook);
-    hookFunction(0x0022da8c, (u32)LoadGame);
+    //hookFunction(0x0022da8c, (u32)LoadGame);
     Core::CrashHandler::core_state = lastcState;
 }

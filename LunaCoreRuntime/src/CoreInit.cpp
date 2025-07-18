@@ -16,6 +16,7 @@
 #include "CoreGlobals.hpp"
 #include "Core/CrashHandler.hpp"
 #include "Core/Config.hpp"
+#include "Core/Event.hpp"
 
 #define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
 #define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
@@ -82,12 +83,13 @@ void Core::InitCore() {
     if (loadScripts)
         Core::PreloadScripts(); // Executes the scripts under the scripts folder
     
+    Core::Event::TriggerEvent(Lua_global, "OnGameLoad");
     Lua_Global_Mut.unlock();
 }
 
 void TimeoutLoadHook(lua_State *L, lua_Debug *ar)
 {
-    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(100000)))
+    if (timeoutLoadClock.HasTimePassed(CTRPF::Milliseconds(20000)))
         luaL_error(L, "Script load exceeded execution time (20000 ms)");
 }
 
