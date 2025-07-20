@@ -1,0 +1,6 @@
+{
+    "name": "testMod",
+    "description": "A test mod description",
+    "version": "0.1.0",
+    "dependencies": ["LunaCoreAPI"]
+}
