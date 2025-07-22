@@ -25,6 +25,7 @@
 
 using json = nlohmann::json;
 namespace CTRPF = CTRPluginFramework;
+using namespace Core;
 
 extern int scriptsLoadedCount;
 CTRPF::Clock timeoutLoadClock;
@@ -35,8 +36,6 @@ void Core::InitCore() {
         if (!IS_TARGET_ID(titleID))
             return;
     Lua_Global_Mut.lock();
-
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE2;
 
     if (!fslib::initialize()) {
         Core::Debug::LogError("Failed to initialize fslib");
@@ -58,32 +57,29 @@ void Core::InitCore() {
         Core::Debug::LogMessage("Failed to save configs", true);
     
     Core::Debug::LogMessage("Loading Lua environment", false);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
     Lua_global = luaL_newstate();
     Core::LoadLuaEnv();
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
+    std::string region;
+    Core::Utils::getRegion(region);
     u16 gameVer = CTRPF::Process::GetVersion();
-    if (CTRPF::System::IsCitra())
-        Core::Debug::LogMessage("Emulator detected, unable to get game version. Enabled patching by default", true);
-    else if (IS_VUSA_COMP(titleID, gameVer))
-        Core::Debug::LogMessage(CTRPF::Utils::Format("Game USA region version '%hu' (1.9.19) detected", gameVer), false);
-    else if (IS_VEUR_COMP(titleID, gameVer))
-        Core::Debug::LogMessage(CTRPF::Utils::Format("Game EUR region version '%hu' (1.9.19) detected", gameVer), false);
-    else if (IS_VJPN_COMP(titleID, gameVer))
-        Core::Debug::LogMessage(CTRPF::Utils::Format("Game JPN region version '%hu' (1.9.19) detected", gameVer), false);
+    if (Core::Utils::checkCompatibility()) {
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Game region is %s, version '%hu' (1.9.19) detected", region.c_str(), gameVer), false);
+    } else if (CTRPF::System::IsCitra())
+        Core::Debug::LogMessage("Emulator detected, some things may work differently than on console. Patching enabled by default", true);
     else
-        Core::Debug::LogMessage(CTRPF::Utils::Format("Incompatible version detected: '%hu'! Needed 1.9.19. Some features may not work"), true);
+        Core::Debug::LogMessage(CTRPF::Utils::Format("Incompatible version detected: %s '%hu'! Patching disabled", region.c_str(), gameVer), true);
     Core::Debug::LogMessage("LunaCore runtime loaded", true);
 
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LOADING_MODS;
+    CrashHandler::core_state = CrashHandler::CORE_LOADING_MODS;
     Core::LoadMods();
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE3;
 
-    if (loadScripts)
+    if (loadScripts) {
+        CrashHandler::core_state = CrashHandler::CORE_LOADING_SCRIPTS;
         Core::PreloadScripts(); // Executes the scripts under the scripts folder
+    }
     
-    Core::Event::TriggerEvent(Lua_global, "OnGameLoad");
+    Event::TriggerEvent(Lua_global, "OnGameLoad");
     Lua_Global_Mut.unlock();
 }
 

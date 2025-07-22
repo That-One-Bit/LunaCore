@@ -28,8 +28,7 @@ void TimeoutEventHook(lua_State *L, lua_Debug *ar)
 }
 
 void Core::Event::TriggerEvent(lua_State* L, const std::string& eventName) {
-    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
+    Core::CrashHandler::core_state = Core::CrashHandler::CORE_EVENT;
     lua_getglobal(L, "Game");
     lua_getfield(L, -1, "Event");
     lua_getfield(L, -1, eventName.c_str());
@@ -40,23 +39,21 @@ void Core::Event::TriggerEvent(lua_State* L, const std::string& eventName) {
         lua_pushvalue(L, -2);
         if (lua_pcall(L, 1, 0, 0))
         {
-            Core::Debug::LogError("Core::Event::" + eventName + "error: " + std::string(lua_tostring(L, -1)));
+            Core::Debug::LogError("Game.Event." + eventName + "error: " + std::string(lua_tostring(L, -1)));
             lua_pop(L, 1);
         }
     }
     else {
-        Core::Debug::LogError("Core::Event::" + eventName + "::Trigger error. Unexpected type");
+        Core::Debug::LogError("Game.Event." + eventName + ":Trigger error. Unexpected type");
         lua_pop(L, 1);
     }
     lua_pop(L, 3);
-    Core::CrashHandler::core_state = lastcState;
 }
 
 void Core::EventHandlerCallback()
 {
     Lua_Global_Mut.lock();
     lua_State *L = Lua_global;
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_LUA_EXEC;
 
     // KeyPressed Event
     u32 pressedKeys = CTRPF::Controller::GetKeysPressed();
@@ -79,7 +76,6 @@ void Core::EventHandlerCallback()
         CTRPF::OSD::Notify(CTRPF::Utils::Format("%f", slider));
         lastSlider = slider;
     }*/
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
 }
 
 // ----------------------------------------------------------------------------

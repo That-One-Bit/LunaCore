@@ -14,15 +14,14 @@ namespace Core {
                 PLUGIN_EXIT
             };
             enum CoreState {
-                CORE_STAGE1 = 0,
-                CORE_STAGE2,
-                CORE_STAGE3,
+                CORE_INIT = 0,
+                CORE_LOADING_RUNTIME,
+                CORE_LOADING_SCRIPTS,
                 CORE_LOADING_MODS,
-                CORE_LUA_EXEC,
+                CORE_EVENT,
                 CORE_HOOK,
-                CORE_GAME,
-                CORE_EXIT,
                 CORE_HOOKING,
+                CORE_EXIT,
             };
             enum GameState {
                 GAME_LOADING = 0,

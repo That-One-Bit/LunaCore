@@ -168,7 +168,6 @@ void CreateMainMenuCustomLayout(int *ptr) {
     
     Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
     GameState.MainMenuLoaded.store(true);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 
@@ -185,7 +184,6 @@ void MainMenuLayoutLoadCallback(int *ptr) {
 
     Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
     GameState.MainMenuLoaded.store(true);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 

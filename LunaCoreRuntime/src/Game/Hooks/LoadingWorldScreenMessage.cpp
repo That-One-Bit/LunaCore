@@ -28,16 +28,13 @@ void LoadingWorldScreenMessageCallback(int *ptr1, int *ptr2) {
         if (!eventJoinTriggered) {
             Core::CrashHandler::game_state = Core::CrashHandler::GAME_WORLD;
             Lua_Global_Mut.lock();
-            GameState.GameExecutingLua.store(true);
             Core::Event::TriggerEvent(Lua_global, "OnPlayerJoinWorld");
-            GameState.GameExecutingLua.store(false);
             Lua_Global_Mut.unlock();
             eventJoinTriggered = true;
         }
     }
 
     LoadingWorldScreenMessageOriginal(ptr1, ptr2);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 
@@ -53,15 +50,12 @@ void LeaveLevelPromptCallback(int *ptr1, int param2, int param3, u32 param4) {
     if (eventJoinTriggered) {
         Core::CrashHandler::game_state = Core::CrashHandler::GAME_MENU;
         Lua_Global_Mut.lock();
-        GameState.GameExecutingLua.store(true);
         Core::Event::TriggerEvent(Lua_global, "OnPlayerLeaveWorld");
-        GameState.GameExecutingLua.store(false);
         Lua_Global_Mut.unlock();
         eventJoinTriggered = false;
     }
 
     LeaveLevelPromptOriginal(ptr1, param2, param3, param4);
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
     return;
 }
 

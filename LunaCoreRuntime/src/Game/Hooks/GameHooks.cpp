@@ -96,25 +96,21 @@ static __attribute((naked)) void RegisterItemOverwriteReturn() {
 }
 
 static void RegisterItemsHook(CoreHookContext* ctx) {
-    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     Game::Item* totemItem = reinterpret_cast<Game::Item*>(ctx->r0);
     totemItem->padding[6] = 1;
     Game::Item::mTotem = totemItem;
 
     Lua_Global_Mut.lock();
-    GameState.GameExecutingLua.store(true);
 
     GameState.LoadingItems.store(true);
     Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
     GameState.LoadingItems.store(false);
 
-    GameState.GameExecutingLua.store(false);
     Lua_Global_Mut.unlock();
 
     reinterpret_cast<void(*)()>(0x0056e450)();
     GameState.LoadingItems.store(false);
-    Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterItemOverwriteReturn);
 }
 
@@ -134,9 +130,7 @@ static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
     GameState.SettingItemsTextures.store(true);
 
     Lua_Global_Mut.lock();
-    GameState.GameExecutingLua.store(true);
     Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegisterTexture");
-    GameState.GameExecutingLua.store(false);
     Lua_Global_Mut.unlock();
 
     GameState.SettingItemsTextures.store(false);
@@ -160,9 +154,7 @@ static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
     GameState.LoadingCreativeItems.store(true);
 
     Lua_Global_Mut.lock();
-    GameState.GameExecutingLua.store(true);
     Core::Event::TriggerEvent(Lua_global, "OnGameCreativeItemsRegister");
-    GameState.GameExecutingLua.store(false);
     Lua_Global_Mut.unlock();
 
     GameState.LoadingCreativeItems.store(false);
@@ -190,9 +182,7 @@ static void LoadGame(CoreHookContext *ctx) {
     Core::InitCore();
 
     Lua_Global_Mut.lock();
-    GameState.GameExecutingLua.store(true);
     Core::Event::TriggerEvent(Lua_global, "OnGameLoad");
-    GameState.GameExecutingLua.store(false);
     Lua_Global_Mut.unlock();
 
     Core::CrashHandler::core_state = lastcState;

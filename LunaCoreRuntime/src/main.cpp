@@ -29,18 +29,12 @@
 #include "CoreConstants.hpp"
 #include "CoreGlobals.hpp"
 
-#define IS_VUSA_COMP(id, version) ((id) == 0x00040000001B8700LL && (version) == 9408) // 1.9.19 USA
-#define IS_VEUR_COMP(id, version) ((id) == 0x000400000017CA00LL && (version) == 9392) // 1.9.19 EUR
-#define IS_VJPN_COMP(id, version) ((id) == 0x000400000017FD00LL && (version) == 9424) // 1.9.19 JPN
-#define IS_TARGET_ID(id) ((id) == 0x00040000001B8700LL || (id) == 0x000400000017CA00LL || (id) == 0x000400000017FD00LL)
-
 namespace CTRPF = CTRPluginFramework;
+using namespace Core;
 
 int scriptsLoadedCount = 0;
-bool enabledPatching = true;
 std::unordered_map<std::string, std::string> config;
 GameState_s GameState;
-u32 currentCamFOVOffset = 0;
 CTRPF::PluginMenu *gmenu;
 
 namespace CTRPluginFramework
@@ -96,31 +90,27 @@ namespace CTRPluginFramework
     // Useful to do code edits safely
     void    PatchProcess(FwkSettings &settings)
     {
-        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_PATCHPROCESS;
-        u64 titleID = Process::GetTitleID();
-        if (!IS_TARGET_ID(titleID))
+        if (!Core::Utils::checkTitle())
             return;
         settings.UseGameHidMemory = true;
         ToggleTouchscreenForceOn();
-        System::OnAbort = Core::CrashHandler::OnAbort;
-        Process::exceptionCallback = Core::CrashHandler::ExceptionCallback;
+        System::OnAbort = CrashHandler::OnAbort;
+        Process::exceptionCallback = CrashHandler::ExceptionCallback;
         Process::ThrowOldExceptionOnCallbackException = true;
-        Core::CrashHandler::ReserveMemory();
+        CrashHandler::ReserveMemory();
 
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_STAGE1;
         if (!Directory::IsExists(PLUGIN_FOLDER))
             Directory::Create(PLUGIN_FOLDER);
-        if (!Core::Debug::OpenLogFile(LOG_FILE))
+        if (!Debug::OpenLogFile(LOG_FILE))
             OSD::Notify(Utils::Format("Failed to open log file '%s'", LOG_FILE));
-        Core::Debug::LogMessage(Utils::Format("LunaCore version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
-        Core::Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
-        config = Core::Config::LoadConfig(CONFIG_FILE);
+        Debug::LogMessage(Utils::Format("LunaCore version: %d.%d.%d", PLG_VER_MAJ, PLG_VER_MIN, PLG_VER_PAT), false);
+        Debug::LogMessage(Utils::Format("Loading config file '%s'", CONFIG_FILE), false);
+        config = Config::LoadConfig(CONFIG_FILE);
 
-        bool disableZLandZR = Core::Config::GetBoolValue(config, "disable_zl_and_zr", false);
-        bool disableDLandDR = Core::Config::GetBoolValue(config, "disable_dleft_and_dright", false);
+        bool disableZLandZR = Config::GetBoolValue(config, "disable_zl_and_zr", false);
+        bool disableDLandDR = Config::GetBoolValue(config, "disable_dleft_and_dright", false);
 
-        u16 gameVer = Process::GetVersion();
-        if (IS_VUSA_COMP(titleID, gameVer) || IS_VEUR_COMP(titleID, gameVer) || IS_VJPN_COMP(titleID, gameVer) || System::IsCitra()) {
+        if (Core::Utils::checkCompatibility() || System::IsCitra()) {
             Minecraft::PatchProcess();
             SetMainMenuLayoutLoadCallback();
             SetLoadingWorldScreenMessageCallback();
@@ -134,8 +124,7 @@ namespace CTRPluginFramework
                 Process::Write32(0x919530-(4*7), 0); // Pos keycode for DPADLEFT
             }
             hookSomeFunctions();
-        } else {
-            enabledPatching = false;
+            patchEnabled = true;
         }
     }
 
@@ -172,23 +161,23 @@ namespace CTRPluginFramework
 
     int main()
     {
-        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAIN;
-        u64 titleID = Process::GetTitleID();
-        if (!IS_TARGET_ID(titleID))
+        CrashHandler::plg_state = CrashHandler::PLUGIN_MAIN;
+        if (!Core::Utils::checkTitle())
             return 0;
 
         if (!Directory::IsExists(PLUGIN_FOLDER"/layouts"))
             Directory::Create(PLUGIN_FOLDER"/layouts");
 
-        bool loadMenuLayout = Core::Config::GetBoolValue(config, "custom_game_menu_layout", true);
+        bool loadMenuLayout = Config::GetBoolValue(config, "custom_game_menu_layout", true);
 
+        CrashHandler::core_state = CrashHandler::CORE_LOADING_RUNTIME;
         Core::InitCore();
 
         // Update configs
-        if (!Core::Config::SaveConfig(CONFIG_FILE, config))
-            Core::Debug::LogMessage("Failed to save configs", true);
+        if (!Config::SaveConfig(CONFIG_FILE, config))
+            Debug::LogMessage("Failed to save configs", true);
 
-        if (loadMenuLayout && enabledPatching) {
+        if (loadMenuLayout && patchEnabled) {
             if (File::Exists(PLUGIN_FOLDER"/layouts/menu_layout.json") && LoadGameMenuLayout(PLUGIN_FOLDER"/layouts/menu_layout.json"))
                 PatchGameMenuLayoutFunction();
             else
@@ -212,9 +201,8 @@ namespace CTRPluginFramework
         InitMenu(*gmenu);
 
         // Launch menu and mainloop
-        Core::Debug::LogMessage("Starting plugin mainloop", false);
-        Core::CrashHandler::core_state = Core::CrashHandler::CORE_GAME;
-        Core::CrashHandler::plg_state = Core::CrashHandler::PLUGIN_MAINLOOP;
+        Debug::LogMessage("Starting plugin mainloop", false);
+        CrashHandler::plg_state = CrashHandler::PLUGIN_MAINLOOP;
         GameState.CoreLoaded.store(true);
         gmenu->Run();
         

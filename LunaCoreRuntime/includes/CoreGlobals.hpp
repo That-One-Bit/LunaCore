@@ -11,4 +11,6 @@ extern lua_State *Lua_global;
 
 extern CustomMutex Lua_Global_Mut;
 
+extern bool patchEnabled;
+
 extern std::unordered_map<std::string, std::string> modPaths;

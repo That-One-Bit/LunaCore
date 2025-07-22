@@ -13,7 +13,7 @@ static void *reservedMemory = nullptr;
 namespace Core {
     bool CrashHandler::abort = false;
     CrashHandler::PluginState CrashHandler::plg_state = CrashHandler::PLUGIN_PATCHPROCESS;
-    CrashHandler::CoreState CrashHandler::core_state = CrashHandler::CORE_STAGE1;
+    CrashHandler::CoreState CrashHandler::core_state = CrashHandler::CORE_INIT;
     CrashHandler::GameState CrashHandler::game_state = CrashHandler::GAME_LOADING;
 
     void CrashHandler::ReserveMemory() {
@@ -48,26 +48,26 @@ namespace Core {
     static const char *getCoreStateString(CrashHandler::CoreState state) {
         const char *str = "unknown";
         switch (state) {
-            case CrashHandler::CORE_STAGE1:
-                str = "Loading stage 1";
+            case CrashHandler::CORE_INIT:
+                str = "Core startup";
                 break;
-            case CrashHandler::CORE_STAGE2:
-                str = "Loading stage 2";
-                break;
-            case CrashHandler::CORE_STAGE3:
-                str = "Loading stage 3";
+            case CrashHandler::CORE_LOADING_RUNTIME:
+                str = "Loading Lua runtime";
                 break;
             case CrashHandler::CORE_LOADING_MODS:
                 str = "Loading mods";
                 break;
-            case CrashHandler::CORE_LUA_EXEC:
-                str = "Executing Lua code";
+            case CrashHandler::CORE_LOADING_SCRIPTS:
+                str = "Loading scripts";
                 break;
-            case CrashHandler::CORE_GAME:
-                str = "Executing game";
+            case CrashHandler::CORE_EVENT:
+                str = "Event triggered";
                 break;
             case CrashHandler::CORE_HOOK:
-                str = "Executing hook";
+                str = "Hooking a game function";
+                break;
+            case CrashHandler::CORE_HOOKING:
+                str = "Setting up hooks";
                 break;
             case CrashHandler::CORE_EXIT:
                 str = "Exiting";
@@ -131,7 +131,7 @@ namespace Core {
                 u8 rnd = CTRPF::Utils::Random(0, (sizeof(errorMsg) / sizeof(errorMsg[0])) - 1);
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\t\"%s\"\n", errorMsg[rnd]));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tPlugin state: %s\n", getPluginStateString(Core::CrashHandler::plg_state)));
-                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tCore state: %s\n", getCoreStateString(Core::CrashHandler::core_state)));
+                Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tLast Core state: %s\n", getCoreStateString(Core::CrashHandler::core_state)));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\t\tGame state: %s\n", getGameStateString(Core::CrashHandler::game_state)));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\n\tException type: %X\n", excep->type));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\tException at address: %08X\n", regs->pc));
@@ -141,16 +141,18 @@ namespace Core {
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\tR6: %08X\tR7: %08X\n", regs->r[6], regs->r[7]));
                 Core::Debug::LogRaw(CTRPF::Utils::Format("\tR8: %08X\tR9: %08X\n", regs->r[8], regs->r[9]));
             }
+            u32 errorCode = (1 << core_state | 1 << (8 + plg_state) | 1 << (12 + game_state) | possibleOOM << 15 | luaEnvBusy << 16);
             const char* reasonMsg = "Unknown";
             if (possibleOOM)
-                reasonMsg = "Out of memory. Lua memory was bigger than 2048000 bytes";
+                reasonMsg = "Out of memory. Lua memory was bigger than 2 MB";
             else if (luaEnvBusy)
                 reasonMsg = "Core lua runtime error";
             else if (plg_state == PluginState::PLUGIN_PATCHPROCESS)
                 reasonMsg = "Core internal error during startup";
             else if (plg_state == PluginState::PLUGIN_MAIN)
                 reasonMsg = "Core internal error during initialization";
-            Core::Debug::LogRaw(CTRPF::Utils::Format("%sPossible reason: %s\n", Core::Debug::tab, reasonMsg));
+            Core::Debug::LogRaw(CTRPF::Utils::Format("\tPossible reason: %s\n", reasonMsg));
+            Core::Debug::LogRaw(CTRPF::Utils::Format("\tError code: %08X\n", errorCode));
             Core::Debug::CloseLogFile();
             if (plg_state != PluginState::PLUGIN_MAINLOOP)
                 return CTRPF::Process::EXCB_REBOOT;
@@ -162,13 +164,15 @@ namespace Core {
             CTRPF::Screen topScreen = CTRPF::OSD::GetTopScreen();
             topScreen.DrawRect(20, 20, 360, 200, CTRPF::Color::Black, true);
             const char *titleMsg = "Oops.. Game crashed!";
-            const char *tipMsg = "Press A button to exit or B to continue";
+            const char *tipMsg = "See the log file for more details about the crash";
+            const char *tipMsg2 = "Press A button to exit or B to continue";
             if (abort)
                 titleMsg = "Oh no... Game abort!";
             if (possibleOOM)
                 titleMsg = "Looks like we ran out of memory!";
             topScreen.DrawSysfont(titleMsg, 25, 25, CTRPF::Color::Red);
             topScreen.DrawSysfont(tipMsg, 25, 40, CTRPF::Color::White);
+            topScreen.DrawSysfont(tipMsg2, 25, 55, CTRPF::Color::White);
             CTRPF::OSD::SwapBuffers();
         }
         CTRPF::Controller::Update();
