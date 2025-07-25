@@ -243,15 +243,18 @@ Game.Gamepad.KeyCodes.CSTICK = 184549376
 
 Game.Items = {}
 
----Find the item ID using its name
----@param name string
----@return integer?
-function Game.Items.findItemIDByName(name) end
+---@class GameItem
+local GameItem = {}
 
----Find the item ID using its name
+---Find an item using its ID
+---@param name string
+---@return GameItem?
+function Game.Items.findItemByName(name) end
+
+---Find and item using its name
 ---@param itemID integer
----@return string?
-function Game.Items.findItemNameByID(itemID) end
+---@return GameItem?
+function Game.Items.findItemByID(itemID) end
 
 ---Get the item position in creative using the id
 ---@param itemID integer
@@ -262,20 +265,28 @@ function Game.Items.getCreativePosition(itemID, groupID) end
 ---Creates a new item and stores it in the game's items table. Returns the address to the item
 ---@param itemName string
 ---@param itemId integer
----@return lightuserdata?
+---@return GameItem?
 function Game.Items.registerItem(itemName, itemId) end
 
 ---Takes a registered item with Game.Items.registerItem, and sets its texture
----@param item lightuserdata
+---@param item GameItem
 ---@param textureName string
 ---@param textureIndex integer
-function Game.Items.registerItemTexture(item, textureName, textureIndex) end
+function GameItem:setTexture(item, textureName, textureIndex) end
 
 ---Takes a registered item with Game.Items.registerItem, and registers it in creative menu
----@param item lightuserdata
+---@param item GameItem
 ---@param groupId integer
 ---@param position integer
 function Game.Items.registerCreativeItem(item, groupId, position) end
+
+GameItem.StackSize = 64
+
+GameItem.ID = 1
+
+GameItem.NameID = ""
+
+GameItem.DescriptionID = ""
 
 Game.LocalPlayer = {}
 
@@ -363,6 +374,7 @@ Game.LocalPlayer.Camera.Pitch = 0.0
 
 Game.LocalPlayer.Inventory = {}
 
+---@type table<"hand"|integer,InventorySlot>
 Game.LocalPlayer.Inventory.Slots = {}
 
 Game.LocalPlayer.Inventory.ArmorSlots = {}

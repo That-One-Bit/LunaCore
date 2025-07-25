@@ -12,7 +12,7 @@ CTRPFLIB	?=	$(DEVKITPRO)/libctrpf
 TARGET		:= 	LunaCore
 PLGINFO 	:= 	CTRPluginFramework.plgInfo
 PLGVERMAJ	:=	0
-PLGVERMIN	:=	11
+PLGVERMIN	:=	12
 PLGVERPAT	:=	0
 
 BUILD		:= 	Build

@@ -48,42 +48,45 @@ u16 Core::Items::GetCreativeItemPositionOfGroup(u16 itemId, u16 groupId) {
 // ----------------------------------------------------------------------------
 
 //$Game.Items
+//@@GameItem
 
 // ----------------------------------------------------------------------------
 
 /*
-- Find the item ID using its name
+- Find an item using its ID
 ## name: string
-## return: integer?
-### Game.Items.findItemIDByName
+## return: GameItem?
+### Game.Items.findItemByName
 */
-static int l_Items_findItemIDByName(lua_State *L) {
+static int l_Items_findItemByName(lua_State *L) {
     const char *name = luaL_checkstring(L, 1);
     Item *itemData = Core::Items::SearchItemByName(name);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushnumber(L, itemData->itemId);
+        Item** item_ptr = (Item**)lua_newuserdata(L, sizeof(void*));
+        *item_ptr = itemData;
+        luaC_setmetatable(L, "GameItem");
     }
-
     return 1;
 }
 
 /*
-- Find the item ID using its name
+- Find and item using its name
 ## itemID: integer
-## return: string?
-### Game.Items.findItemNameByID
+## return: GameItem?
+### Game.Items.findItemByID
 */
-static int l_Items_findItemNameByID(lua_State *L) {
+static int l_Items_findItemByID(lua_State *L) {
     u16 itemID = luaL_checknumber(L, 1);
     Item *itemData = Core::Items::SearchItemByID(itemID);
     if (itemData == NULL) {
         lua_pushnil(L);
     } else {
-        lua_pushstring(L, itemData->nameId.c_str());
+        Item** item_ptr = (Item**)lua_newuserdata(L, sizeof(void*));
+        *item_ptr = itemData;
+        luaC_setmetatable(L, "GameItem");
     }
-
     return 1;
 }
 
@@ -106,7 +109,7 @@ static int l_Items_getCreativePosition(lua_State *L) {
 - Creates a new item and stores it in the game's items table. Returns the address to the item
 ## itemName: string
 ## itemId: integer
-## return: lightuserdata?
+## return: GameItem?
 ### Game.Items.registerItem
 */
 static int l_Items_registerItem(lua_State *L) {
@@ -115,60 +118,111 @@ static int l_Items_registerItem(lua_State *L) {
     Item* regItem = Game::registerItem(itemName, itemId);
     if (regItem == nullptr)
         lua_pushnil(L);
-    else
-        lua_pushlightuserdata(L, regItem);
+    else {
+        Item** item_ptr = (Item**)lua_newuserdata(L, sizeof(void*));
+        *item_ptr = regItem;
+        luaC_setmetatable(L, "GameItem");
+    }
     return 1;
 }
 
 /*
 - Takes a registered item with Game.Items.registerItem, and sets its texture
-## item: lightuserdata
+## item: GameItem
 ## textureName: string
 ## textureIndex: integer
-### Game.Items.registerItemTexture
+### GameItem:setTexture
 */
 static int l_Items_registerItemTexture(lua_State *L) {
-    Item* item = nullptr;
-    if (lua_type(L, 1) == LUA_TLIGHTUSERDATA)
-        item = (Item*)lua_touserdata(L, 1);
-    else
-        return luaL_typerror(L, 1, "lightuserdata");
+    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
     const char* textureName = luaL_checkstring(L, 2);
     u16 textureIndex = luaL_checkinteger(L, 3);
-    item->setTexture(hash(textureName), textureIndex);
+    item_ptr->setTexture(hash(textureName), textureIndex);
     return 0;
 }
 
 /*
 - Takes a registered item with Game.Items.registerItem, and registers it in creative menu
-## item: lightuserdata
+## item: GameItem
 ## groupId: integer
 ## position: integer
 ### Game.Items.registerCreativeItem
 */
 static int l_Items_registerCreativeItem(lua_State *L) {
-    Item* item = nullptr;
-    if (lua_type(L, 1) == LUA_TLIGHTUSERDATA)
-        item = (Item*)lua_touserdata(L, 1);
-    else
-        return luaL_typerror(L, 1, "lightuserdata");
+    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
     u16 groupId = luaL_checkinteger(L, 2);
     s16 position = luaL_checkinteger(L, 3);
-    Item::addCreativeItem(item, groupId, position);
+    Item::addCreativeItem(item_ptr, groupId, position);
     return 0;
 }
 
 static const luaL_Reg items_functions[] = {
-    {"findItemIDByName", l_Items_findItemIDByName},
-    {"findItemNameByID", l_Items_findItemNameByID},
+    {"findItemByName", l_Items_findItemByName},
+    {"findItemByID", l_Items_findItemByID},
     {"getCreativePosition", l_Items_getCreativePosition},
     {"registerItem", l_Items_registerItem},
-    {"registerItemTexture", l_Items_registerItemTexture},
     {"registerCreativeItem", l_Items_registerCreativeItem},
     {NULL, NULL}
 };
 
+/*
+=GameItem.StackSize = 64
+=GameItem.ID = 1
+=GameItem.NameID = ""
+=GameItem.DescriptionID = ""
+*/
+static int l_GameItem_index(lua_State *L) {
+    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
+    u32 key = hash(luaL_checkstring(L, 2));
+
+    switch (key) {
+        case hash("setTexture"):
+            lua_pushcfunction(L, l_Items_registerItemTexture);
+            break;
+        case hash("StackSize"):
+            lua_pushnumber(L, item_ptr->maxStackSize);
+            break;
+        case hash("ID"):
+            lua_pushnumber(L, item_ptr->itemId);
+            break;
+        case hash("NameID"):
+            lua_pushstring(L, item_ptr->nameId.c_str());
+            break;
+        case hash("DescriptionID"):
+            lua_pushstring(L, item_ptr->descriptionId.c_str());
+            break;
+        default:
+            lua_pushnil(L);
+            break;
+    }
+    return 1;
+}
+
+static int l_GameItem_newindex(lua_State *L) {
+    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
+    u32 key = hash(luaL_checkstring(L, 2));
+
+    switch (key) {
+        case hash("StackSize"):
+            item_ptr->maxStackSize = luaL_checknumber(L, 3);
+            break;
+        default:
+            luaL_error(L, "Unable to set field '%s' of 'GameItem' instance", lua_tostring(L, 2));
+            break;
+    }
+    return 0;
+}
+
 // ----------------------------------------------------------------------------
+
+static inline void RegisterItemsMetatables(lua_State *L) {
+    luaL_newmetatable(L, "GameItem");
+    lua_pushcfunction(L, l_GameItem_index);
+    lua_setfield(L, -2, "__index");
+    lua_pushcfunction(L, l_GameItem_newindex);
+    lua_setfield(L, -2, "__newindex");
+    lua_pop(L, 1);
+}
 
 bool Core::Module::RegisterItemsModule(lua_State *L)
 {
