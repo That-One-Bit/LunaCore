@@ -199,74 +199,38 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
 
 static int l_Inventory_ArmorSlots_index(lua_State *L)
 {
+    int index = 0;
     if (lua_type(L, 2) == LUA_TNUMBER) {
-        int index = lua_tonumber(L, 2);
-        if (index >= 1 && index <= 4) {
-            lua_newtable(L);
-            lua_pushnumber(L, index);
-            lua_setfield(L, -2, "Slot");
-            luaC_setmetatable(L, "InventoryArmorSlotClass"); // At the end or setfield doesn't work
-            return 1;
-        }
+        index = lua_tonumber(L, 2);
     }
     else if (lua_type(L, 2) == LUA_TSTRING) {
         uint32_t key = hash(lua_tostring(L, 2));
-        bool valid = true;
-
         switch (key) {
-            case hash("helmet"): {
-                u32 slot = Minecraft::GetArmorSlotAddress(1);
-                if (slot != 0) {
-                    lua_newtable(L);
-                    lua_pushnumber(L, 1);
-                    lua_setfield(L, -2, "Slot");
-                    luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
-                } else
-                    lua_pushnil(L);
+            case hash("helmet"):
+                index = 1;
                 break;
-            }
-            case hash("chestplate"): {
-                u32 slot = Minecraft::GetArmorSlotAddress(2);
-                if (slot != 0) {
-                    lua_newtable(L);
-                    lua_pushnumber(L, 2);
-                    lua_setfield(L, -2, "Slot");
-                    luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
-                } else
-                    lua_pushnil(L);
+            case hash("chestplate"):
+                index = 2;
                 break;
-            }
-            case hash("leggings"): {
-                u32 slot = Minecraft::GetArmorSlotAddress(3);
-                if (slot != 0) {
-                    lua_newtable(L);
-                    lua_pushnumber(L, 3);
-                    lua_setfield(L, -2, "Slot");
-                    luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
-                } else
-                    lua_pushnil(L);
+            case hash("leggings"):
+                index = 3;
                 break;
-            }
-            case hash("boots"): {
-                u32 slot = Minecraft::GetArmorSlotAddress(4);
-                if (slot != 0) {
-                    lua_newtable(L);
-                    lua_pushnumber(L, 4);
-                    lua_setfield(L, -2, "Slot");
-                    luaC_setmetatable(L, "InventoryArmorSlotClass"); // Again at the END
-                } else
-                    lua_pushnil(L);
-                break;
-            }
-            default:
-                valid = false;
+            case hash("boots"):
+                index = 4;
                 break;
         }
-
-        if (valid)
-            return 1;
-        else
-            return 0;
+    }
+    if (index != 0) {
+        u32 slot = Minecraft::GetArmorSlotAddress(index);
+        if (slot == 0)
+            index = 0;
+    }
+    if (index >= 1 && index <= 4) {
+        lua_newtable(L);
+        lua_pushnumber(L, index);
+        lua_setfield(L, -2, "Slot");
+        luaC_setmetatable(L, "InventoryArmorSlotClass"); // At the end or setfield doesn't work
+        return 1;
     }
     return 0;
 }
