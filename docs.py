@@ -188,6 +188,51 @@ def process_lines(path: str, lines: list, segpos: int):
                 DEF_CLASSES.append(globalName)
                 DOCS_FILE.write(f"\n---@class {globalName}: {globalType}\n")
             DOCS_FILE.write(f"{globalName}"+" = {}\n")
+        elif doc_line.startswith("#$") and len(doc_line) > 2:
+            # Global definition with previous line
+            globalName = doc_line[2:]
+            part1, part2 = globalName.split(":")[0].strip(), globalName.split(":")[1].strip()
+            globalName = part1
+            if not verify_fmt(globalName, True):
+                raise Exception(f"Invalid global name: '{doc_line}' on {path} at line {segpos + j}")
+            if "." in globalName:
+                pathToGlobal = globalName.split(".")
+                curr = DEF_GLOBALS
+                currName = "None"
+                for idx in range(len(pathToGlobal) - 1):
+                    entry = pathToGlobal[idx]
+                    if entry in curr:
+                        if isinstance(curr, type(None)):
+                            raise Exception(f"Trying to path '{currName}' is a function: '{doc_line}' on {path} at line {segpos + j}")
+                        if isinstance(curr, bool):
+                            raise Exception(f"Trying to path '{currName}' is a value: '{doc_line}' on {path} at line {segpos + j}")
+                        curr = curr[entry]
+                        currName = entry
+                    else:
+                        raise Exception(f"Undefined '{entry}': '{doc_line}' on {path} at line {segpos + j}")
+                if pathToGlobal[-1] in curr:
+                    raise Exception(f"Redefined global/field: '{doc_line}' on {path} at line {segpos + j}")
+                curr[pathToGlobal[-1]] = {}
+            else:
+                if globalName in DEF_GLOBALS:
+                    raise Exception(f"Redefined global/field: '{doc_line}' on {path} at line {segpos + j}")
+                DEF_GLOBALS[globalName] = {}
+            DOCS_FILE.write(f"\n{part2}\n")
+            DOCS_FILE.write(f"{globalName}"+" = {}\n")
+        elif doc_line.startswith("@") and len(doc_line) > 1:
+            # Simple class definition
+            splitted = doc_line[1:].split(":", 1)
+            if len(splitted) < 2:
+                raise Exception(f"Invalid class definition: '{doc_line}' on {path} at line {segpos + j}")
+            className = splitted[0].strip()
+            classType = splitted[1].strip()
+            if not verify_fmt(className, False) or not verify_fmt(classType, False):
+                raise Exception(f"Invalid class definition: '{doc_line}' on {path} at line {segpos + j}")
+            DEF_CLASSES.append(className)
+            if firstClass:
+                DOCS_FILE.write("\n")
+                firstClass = False
+            DOCS_FILE.write(f"---@class {className}: {classType}\n")
         elif doc_line.startswith("$") and len(doc_line) > 1:
             # Global definition
             globalName = doc_line[1:].strip()
@@ -216,20 +261,6 @@ def process_lines(path: str, lines: list, segpos: int):
                     raise Exception(f"Redefined global/field: '{doc_line}' on {path} at line {segpos + j}")
                 DEF_GLOBALS[globalName] = {}
             DOCS_FILE.write(f"\n{globalName}"+" = {}\n")
-        elif doc_line.startswith("@") and len(doc_line) > 1:
-            # Simple class definition
-            splitted = doc_line[1:].split(":", 1)
-            if len(splitted) < 2:
-                raise Exception(f"Invalid class definition: '{doc_line}' on {path} at line {segpos + j}")
-            className = splitted[0].strip()
-            classType = splitted[1].strip()
-            if not verify_fmt(className, False) or not verify_fmt(classType, False):
-                raise Exception(f"Invalid class definition: '{doc_line}' on {path} at line {segpos + j}")
-            DEF_CLASSES.append(className)
-            if firstClass:
-                DOCS_FILE.write("\n")
-                firstClass = False
-            DOCS_FILE.write(f"---@class {className}: {classType}\n")
         elif doc_line.startswith("=") and len(doc_line) > 1:
             # Global definition
             if doc_line[1] == "=":

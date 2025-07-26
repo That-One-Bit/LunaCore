@@ -16,7 +16,7 @@ namespace Game {
             bool show = true;
             u8 unk2[3] = {};
             u32 enchant = 0;
-            Item *itemData = nullptr;
+            Item* itemData = nullptr;
             void* renderID = nullptr;
             u8 unk3[24] = {};
         } InventorySlot;

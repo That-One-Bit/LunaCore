@@ -374,30 +374,32 @@ Game.LocalPlayer.Camera.Pitch = 0.0
 
 Game.LocalPlayer.Inventory = {}
 
----@type table<"hand"|integer,InventorySlot>
+---@type table<"hand"|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36,InventorySlot|nil>
 Game.LocalPlayer.Inventory.Slots = {}
 
+---@type table<"helmet"|"chestplate"|"leggings"|"boots"|1|2|3|4,InventorySlot>
 Game.LocalPlayer.Inventory.ArmorSlots = {}
 
 ---@class InventorySlot
 local InventorySlot = {}
 
-InventorySlot.Slot = 0
+---@return boolean
+function InventorySlot:isEmpty() end
 
-InventorySlot.ItemID = 0
+---@type GameItem
+InventorySlot.Item = {}
 
 InventorySlot.ItemCount = 0
 
 InventorySlot.ItemData = 0
-
-InventorySlot.ItemName = ""
 
 ---@class InventoryArmorSlot
 local InventoryArmorSlot = {}
 
 InventoryArmorSlot.Slot = 0
 
-InventoryArmorSlot.ItemID = 0
+---@type GameItem
+InventoryArmorSlot.Item = {}
 
 InventoryArmorSlot.ItemData = 0
 

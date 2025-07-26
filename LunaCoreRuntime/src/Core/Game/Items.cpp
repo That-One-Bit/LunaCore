@@ -134,7 +134,7 @@ static int l_Items_registerItem(lua_State *L) {
 ### GameItem:setTexture
 */
 static int l_Items_registerItemTexture(lua_State *L) {
-    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
+    Item* item_ptr = *(Item**)luaC_funccheckudata(L, 1, "GameItem");
     const char* textureName = luaL_checkstring(L, 2);
     u16 textureIndex = luaL_checkinteger(L, 3);
     item_ptr->setTexture(hash(textureName), textureIndex);
@@ -149,7 +149,7 @@ static int l_Items_registerItemTexture(lua_State *L) {
 ### Game.Items.registerCreativeItem
 */
 static int l_Items_registerCreativeItem(lua_State *L) {
-    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
+    Item* item_ptr = *(Item**)luaC_funccheckudata(L, 1, "GameItem");
     u16 groupId = luaL_checkinteger(L, 2);
     s16 position = luaL_checkinteger(L, 3);
     Item::addCreativeItem(item_ptr, groupId, position);
@@ -172,8 +172,10 @@ static const luaL_Reg items_functions[] = {
 =GameItem.DescriptionID = ""
 */
 static int l_GameItem_index(lua_State *L) {
-    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
-    u32 key = hash(luaL_checkstring(L, 2));
+    Item* item_ptr = *(Item**)lua_touserdata(L, 1);
+    if (lua_type(L, 2) != LUA_TSTRING)
+        return 0;
+    u32 key = hash(lua_tostring(L, 2));
 
     switch (key) {
         case hash("setTexture"):
@@ -199,12 +201,14 @@ static int l_GameItem_index(lua_State *L) {
 }
 
 static int l_GameItem_newindex(lua_State *L) {
-    Item* item_ptr = (Item*)luaL_checkudata(L, 1, "GameItem");
-    u32 key = hash(luaL_checkstring(L, 2));
+    Item* item_ptr = *(Item**)lua_touserdata(L, 1);
+    if (lua_type(L, 2) != LUA_TSTRING)
+        return luaL_error(L, "Unable to set field '?' of 'GameItem' instance");
+    u32 key = hash(lua_tostring(L, 2));
 
     switch (key) {
         case hash("StackSize"):
-            item_ptr->maxStackSize = luaL_checknumber(L, 3);
+            item_ptr->maxStackSize = luaC_indexchecknumber(L, 3);
             break;
         default:
             luaL_error(L, "Unable to set field '%s' of 'GameItem' instance", lua_tostring(L, 2));
@@ -221,11 +225,14 @@ static inline void RegisterItemsMetatables(lua_State *L) {
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, l_GameItem_newindex);
     lua_setfield(L, -2, "__newindex");
+    lua_pushstring(L, "GameItem");
+    lua_setfield(L, -2, "__name");
     lua_pop(L, 1);
 }
 
 bool Core::Module::RegisterItemsModule(lua_State *L)
 {
+    RegisterItemsMetatables(L);
     lua_getglobal(L, "Game");
     luaC_register_field(L, items_functions, "Items");
     lua_pop(L, 1);

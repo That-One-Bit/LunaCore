@@ -147,7 +147,7 @@ static int l_Filesystem_createDirectory(lua_State *L) {
 ### FilesystemFile:read
 */
 static int l_Filesystem_File_read(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     size_t bytes = 0;
     if (lua_type(L, 2) == LUA_TSTRING) {
         std::string readAmount(lua_tostring(L, 2));
@@ -187,7 +187,7 @@ static int l_Filesystem_File_read(lua_State *L) {
 ### FilesystemFile:write
 */
 static int l_Filesystem_File_write(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     size_t bytes = 0;
     const char* data = luaL_checklstring(L, 2, &bytes);
     if (lua_gettop(L) > 2)
@@ -210,7 +210,7 @@ static int l_Filesystem_File_write(lua_State *L) {
 ### FilesystemFile:tell
 */
 static int l_Filesystem_File_tell(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     lua_pushnumber(L, fileStruct->filePtr->tell());
     return 1;
 }
@@ -221,7 +221,7 @@ static int l_Filesystem_File_tell(lua_State *L) {
 ### FilesystemFile:flush
 */
 static int l_Filesystem_File_flush(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     lua_pushboolean(L, fileStruct->filePtr->flush());
     return 1;
 }
@@ -234,7 +234,7 @@ static int l_Filesystem_File_flush(lua_State *L) {
 ### FilesystemFile:seek
 */
 static int l_Filesystem_File_seek(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     std::string whence = "cur";
     size_t offset = 0;
     if (lua_gettop(L) > 1)
@@ -263,7 +263,7 @@ static int l_Filesystem_File_seek(lua_State *L) {
 ### FilesystemFile:isOpen
 */
 static int l_Filesystem_File_isOpen(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     lua_pushboolean(L, fileStruct->filePtr->isOpen());
     return 1;
 }
@@ -274,7 +274,7 @@ static int l_Filesystem_File_isOpen(lua_State *L) {
 ### FilesystemFile:isEOF
 */
 static int l_Filesystem_File_isEOF(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     lua_pushboolean(L, fileStruct->filePtr->endOfFile());
     return 1;
 }
@@ -284,14 +284,14 @@ static int l_Filesystem_File_isEOF(lua_State *L) {
 ### FilesystemFile:close
 */
 static int l_Filesystem_File_close(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)luaC_funccheckudata(L, 1, "FilesystemFile");
     if (fileStruct->filePtr->isOpen())
         fileStruct->filePtr->close();
     return 0;
 }
 
 static int l_Filesystem_File_gc(lua_State *L) {
-    FilesystemFile* fileStruct = (FilesystemFile*)luaL_checkudata(L, 1, "FilesystemFile");
+    FilesystemFile* fileStruct = (FilesystemFile*)lua_touserdata(L, 1);
     if (fileStruct->filePtr->isOpen())
         fileStruct->filePtr->close();
     delete fileStruct->filePtr;
@@ -319,6 +319,8 @@ static inline void RegisterFilesystemMetatables(lua_State *L) {
     lua_setfield(L, -2, "__newindex");
     lua_pushcfunction(L, l_Filesystem_File_gc);
     lua_setfield(L, -2, "__gc");
+    lua_pushstring(L, "FilesystemFile");
+    lua_setfield(L, -2, "__name");
     lua_pop(L, 1);
 }
 
