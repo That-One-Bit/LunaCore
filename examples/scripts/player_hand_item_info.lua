@@ -7,9 +7,12 @@ Game.Event.OnKeyPressed:Connect(function ()
     if Gamepad.isPressed(Gamepad.KeyCodes.DPADDOWN) then
         if Game.World.Loaded then
             local playerHand = Game.LocalPlayer.Inventory.Slots["hand"]
-            Debug.message("ItemID: "..playerHand.ItemID)
-            Debug.message("Item Name: "..playerHand.ItemName)
-            Debug.message("Item Data: "..playerHand.ItemData)
+            if not playerHand:isEmpty() then
+                Debug.message("ItemID: "..playerHand.Item.ID)
+                Debug.message("Item Name: "..playerHand.Item.NameID)
+                Debug.message("Item Data: "..playerHand.ItemData)
+                Debug.message("Item Count: "..playerHand.ItemCount)
+            end
         end
     end
 end)
