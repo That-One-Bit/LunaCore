@@ -217,6 +217,13 @@ static int l_GameItem_newindex(lua_State *L) {
     return 0;
 }
 
+static int l_GameItem_eq(lua_State *L) {
+    Item* pItem = *(Item**)lua_touserdata(L, 1);
+    Item* pItem2 = *(Item**)lua_touserdata(L, 2);
+    lua_pushboolean(L, pItem == pItem2);
+    return 1;
+}
+
 // ----------------------------------------------------------------------------
 
 static inline void RegisterItemsMetatables(lua_State *L) {
@@ -225,6 +232,8 @@ static inline void RegisterItemsMetatables(lua_State *L) {
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, l_GameItem_newindex);
     lua_setfield(L, -2, "__newindex");
+    lua_pushcfunction(L, l_GameItem_eq);
+    lua_setfield(L, -2, "__eq");
     lua_pushstring(L, "GameItem");
     lua_setfield(L, -2, "__name");
     lua_pop(L, 1);

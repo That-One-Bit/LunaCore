@@ -16,7 +16,7 @@ using Item = Game::Item;
 // ----------------------------------------------------------------------------
 
 //$Game.LocalPlayer.Inventory
-//#$Game.LocalPlayer.Inventory.Slots : ---@type table<"hand"|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36,InventorySlot|nil>
+//#$Game.LocalPlayer.Inventory.Slots : ---@type table<"hand"|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36,InventorySlot>
 //#$Game.LocalPlayer.Inventory.ArmorSlots : ---@type table<"helmet"|"chestplate"|"leggings"|"boots"|1|2|3|4,InventorySlot>
 
 // ----------------------------------------------------------------------------
@@ -36,7 +36,7 @@ static int l_InventorySlot_isEmpty(lua_State *L) {
 // ----------------------------------------------------------------------------
 
 /*
-#$InventorySlot.Item : ---@type GameItem
+#$InventorySlot.Item : ---@type GameItem?
 =InventorySlot.ItemCount = 0
 =InventorySlot.ItemData = 0
 */
@@ -103,11 +103,11 @@ static int l_Inventory_Slot_class_newindex(lua_State *L)
     uint32_t key = hash(lua_tostring(L, 2));
     switch (key) {
         case hash("Item"): {
-            Item *itemData = *(Item**)luaC_indexcheckudata(L, 3, "GameItem");
+            Item *itemData = *(Item**)luaC_checkudata(L, 3, "GameItem", "unable to assign %s to %s data type");
             void* renderID = Core::Items::GetRenderIDByItemID(itemData->itemId);
             slotData->itemData = itemData;
             //if (renderID != nullptr)
-            slotData->renderID = renderID;
+                //slotData->renderID = renderID;
             break;
         }
         case hash("ItemCount"):

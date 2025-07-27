@@ -63,17 +63,17 @@ static inline void* luaC_funccheckudata(lua_State *L, int narg, const char* unam
     return nullptr;
 }
 
-static inline void* luaC_indexcheckudata(lua_State *L, int narg, const char* uname) {
+static inline void* luaC_checkudata(lua_State *L, int narg, const char* uname, const char* msg) {
     if (lua_type(L, narg) == LUA_TUSERDATA) {
         if (luaL_getmetafield(L, narg, "__name") == LUA_TNIL)
-            luaL_error(L, "unable to assign %s to %s data type", luaL_typename(L, narg), uname);
+            luaL_error(L, msg, luaL_typename(L, narg), uname);
         else {
             if (lua_type(L, -1) != LUA_TSTRING) {
                 lua_pop(L, 1);
                 luaL_typerror(L, narg, uname);
             }
             if (std::strcmp(uname, lua_tostring(L, -1)) != 0) {
-                lua_pushfstring(L, "unable to assign %s to %s data type", lua_tostring(L, -1), uname);
+                lua_pushfstring(L, msg, lua_tostring(L, -1), uname);
                 lua_remove(L, -2);
                 lua_error(L);
             } else {
@@ -82,7 +82,7 @@ static inline void* luaC_indexcheckudata(lua_State *L, int narg, const char* una
             }
         }
     } else
-        luaL_error(L, "unable to assign %s to %s data type", luaL_typename(L, narg), uname);
+        luaL_error(L, msg, luaL_typename(L, narg), uname);
     return nullptr;
 }
 
