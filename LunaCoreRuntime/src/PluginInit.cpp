@@ -144,8 +144,6 @@ void InitMenu(PluginMenu &menu)
         }
     }));
     devFolder->Append(new MenuEntry("Load script from network", nullptr, [](MenuEntry *entry) {
-        if (!Lua_Global_Mut.try_lock())
-            return
         initSockets();
         Core::Network::TCPServer tcp(5432);
         std::string host = tcp.getHostName();
@@ -202,7 +200,7 @@ void InitMenu(PluginMenu &menu)
             return;
         }
 
-        if (Core::LoadBuffer(buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
+        if (Lua_Global_Mut.try_lock() && Core::LoadBuffer(buffer, size, ("net:/"+std::string(namebuf)).c_str())) {
             MessageBox("Script loaded")();
             if (MessageBox("Do you want to save this script to the sd card?", DialogType::DialogYesNo)()) {
                 File scriptOut;
