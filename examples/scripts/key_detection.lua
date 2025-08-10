@@ -1,6 +1,11 @@
 local keycodes = Game.Gamepad.KeyCodes
 local Debug = Core.Debug
 
+-- This will print the keycode of the pressed key(s)
+Game.Event.OnKeyPressed:Connect(function (keys)
+    Debug.message("Pressed keycode: " .. keys)
+end)
+
 -- This will be executed only when key A is pressed
 Game.Event.OnKeyPressed:Connect(function ()
     if Game.Gamepad.isPressed(keycodes.A) then
@@ -10,7 +15,7 @@ end)
 
 -- This will be executed only when key A is released
 Game.Event.OnKeyReleased:Connect(function ()
-    if Game.Gamepad.isPressed(keycodes.A) then
+    if Game.Gamepad.isReleased(keycodes.A) then
         Debug.message("Released key A")
     end
 end)
