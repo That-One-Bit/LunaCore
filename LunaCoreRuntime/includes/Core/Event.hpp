@@ -10,7 +10,7 @@ namespace Core {
     void EventHandlerCallback();
 
     namespace Event {
-        void TriggerEvent(lua_State* L, const std::string& eventName);
+        void TriggerEvent(lua_State* L, const std::string& eventName, unsigned int nargs = 0);
     }
 
     namespace Module {

@@ -101,13 +101,13 @@ static void RegisterItemsHook(CoreHookContext* ctx) {
     totemItem->padding[6] = 1;
     Game::Item::mTotem = totemItem;
 
-    Lua_Global_Mut.lock();
+    {
+        CustomLockGuard Lock(Lua_Global_Mut);
 
-    GameState.LoadingItems.store(true);
-    Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
-    GameState.LoadingItems.store(false);
-
-    Lua_Global_Mut.unlock();
+        GameState.LoadingItems.store(true);
+        Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegister");
+        GameState.LoadingItems.store(false);
+    }
 
     reinterpret_cast<void(*)()>(0x0056e450)();
     GameState.LoadingItems.store(false);
@@ -129,9 +129,10 @@ static void RegisterItemsTexturesHook(CoreHookContext* ctx) {
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.SettingItemsTextures.store(true);
 
-    Lua_Global_Mut.lock();
-    Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegisterTexture");
-    Lua_Global_Mut.unlock();
+    {
+        CustomLockGuard Lock(Lua_Global_Mut);
+        Core::Event::TriggerEvent(Lua_global, "OnGameItemsRegisterTexture");
+    }
 
     GameState.SettingItemsTextures.store(false);
     Core::CrashHandler::core_state = lastcState;
@@ -153,40 +154,14 @@ static void RegisterCreativeItemsHook(CoreHookContext* ctx) {
     Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
     GameState.LoadingCreativeItems.store(true);
 
-    Lua_Global_Mut.lock();
-    Core::Event::TriggerEvent(Lua_global, "OnGameCreativeItemsRegister");
-    Lua_Global_Mut.unlock();
+    {
+        CustomLockGuard Lock(Lua_Global_Mut);
+        Core::Event::TriggerEvent(Lua_global, "OnGameCreativeItemsRegister");
+    }
 
     GameState.LoadingCreativeItems.store(false);
     Core::CrashHandler::core_state = lastcState;
     hookReturnOverwrite(ctx, (u32)RegisterCreativeItemsOverwriteReturn);
-}
-
-static __attribute((naked)) void LoadGameOverwriteReturn() {
-    asm volatile (
-        "stmdb sp!, {r4-r11, lr}\n"
-        "vpush {d8, d9}\n"
-        "cpy r4, r0\n"
-        "sub sp, sp, #0xfc\n"
-        "ldr r2, =0x22de4c\n"
-        "ldr r1, [r2, #0x0]\n"
-        "ldr r2, =0x22daa0\n"
-        "bx r2\n"
-    );
-}
-
-static void LoadGame(CoreHookContext *ctx) {
-    Core::CrashHandler::CoreState lastcState = Core::CrashHandler::core_state;
-    Core::CrashHandler::core_state = Core::CrashHandler::CORE_HOOK;
-
-    Core::InitCore();
-
-    Lua_Global_Mut.lock();
-    Core::Event::TriggerEvent(Lua_global, "OnGameLoad");
-    Lua_Global_Mut.unlock();
-
-    Core::CrashHandler::core_state = lastcState;
-    hookReturnOverwrite(ctx, (u32)LoadGameOverwriteReturn);
 }
 
 void hookSomeFunctions() {
@@ -195,6 +170,5 @@ void hookSomeFunctions() {
     hookFunction(0x0056c2a0, (u32)RegisterItemsHook);
     hookFunction(0x0056de70, (u32)RegisterItemsTexturesHook);
     hookFunction(0x00578358, (u32)RegisterCreativeItemsHook);
-    //hookFunction(0x0022da8c, (u32)LoadGame);
     Core::CrashHandler::core_state = lastcState;
 }
