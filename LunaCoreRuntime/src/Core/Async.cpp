@@ -95,7 +95,7 @@ static int l_Async_tick(lua_State *L)
         timeoutAsynClock.Restart();
         int call_result = lua_resume(co, 0);
 
-        if (call_result != 0 && call_result != LUA_YIELD) {
+        if (call_result != 0 && call_result != LUA_YIELD) { // Ended with error
             const char *errMsg = lua_tostring(co, -1);
             
             lua_getglobal(L, "debug");
@@ -126,7 +126,7 @@ static int l_Async_tick(lua_State *L)
             lua_pop(L, 1); // Remove either error string or returned value
             lua_gc(L, LUA_GCCOLLECT, 0);
             continue;
-        } else if (call_result == 0) {
+        } else if (call_result == 0) { // Ended successfully
             lua_pop(L, 1); // Remove co
             // Remove co from table with table.remove
             lua_getglobal(L, "table");

@@ -21,3 +21,14 @@ Game.Event.OnKeyDown:Connect(function ()
         Debug.message("Key B is down")
     end
 end)
+
+-- This will be executed until key DPADDOWN is down
+Async.create(function ()
+    local continue = true
+    while continue and Async.wait() do
+        if Game.Gamepad.isDown(keycodes.DPADDOWN) then
+            continue = false
+        end
+    end
+    Core.Debug.message("Ended async task")
+end)
